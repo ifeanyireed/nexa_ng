@@ -268,7 +268,6 @@ export async function DELETE(request: NextRequest) {
       await sql`
         UPDATE crm_leads
         SET converted_deal_id = '',
-            status = CASE WHEN status = 'CONVERTED' THEN 'CURIOUS' ELSE status END,
             updated_at = NOW()
         WHERE (converted_deal_id = ${cleanId} OR id = ${cleanId})
           AND LOWER(tenant_slug) = ${tenantSlug};

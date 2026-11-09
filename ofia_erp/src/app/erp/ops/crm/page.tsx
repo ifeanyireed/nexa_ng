@@ -245,12 +245,38 @@ function SalesCloserPortalContent() {
 
     const outcome = String(call.outcome).toUpperCase().trim();
 
+    // ORANGE: wrong number
+    if (
+      outcome === "WRONG_NUMBER" ||
+      outcome.includes("WRONG")
+    ) {
+      return {
+        color: "orange" as const,
+        label: "Wrong Number",
+        tooltip: "Call Logger: Wrong Number (Click to log new call)",
+        dotClass: "bg-orange-500",
+      };
+    }
+
+    // RED: not interested
+    if (
+      outcome === "NOT_INTERESTED" ||
+      outcome.includes("NOT_INTERESTED")
+    ) {
+      return {
+        color: "red" as const,
+        label: "Not Interested",
+        tooltip: "Call Logger: Not Interested (Click to log new call)",
+        dotClass: "bg-rose-500",
+      };
+    }
+
     // GREEN: interested, proposal, deal won
     if (
       outcome === "CONNECTED_INTERESTED" ||
       outcome === "CONNECTED_NEGOTIATING" ||
       outcome === "CONNECTED_WON" ||
-      outcome.includes("INTERESTED") ||
+      (outcome.includes("INTERESTED") && !outcome.includes("NOT_INTERESTED")) ||
       outcome.includes("NEGOTIATING") ||
       outcome.includes("WON")
     ) {
@@ -293,22 +319,6 @@ function SalesCloserPortalContent() {
         label: outcomeLabel,
         tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
         dotClass: "bg-amber-500",
-      };
-    }
-
-    // RED: wrong number, not interested
-    if (
-      outcome === "WRONG_NUMBER" ||
-      outcome === "NOT_INTERESTED" ||
-      outcome.includes("WRONG") ||
-      outcome.includes("NOT_INTERESTED")
-    ) {
-      const outcomeLabel = outcome === "WRONG_NUMBER" || outcome.includes("WRONG") ? "Wrong Number" : "Not Interested";
-      return {
-        color: "red" as const,
-        label: outcomeLabel,
-        tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
-        dotClass: "bg-rose-500",
       };
     }
 

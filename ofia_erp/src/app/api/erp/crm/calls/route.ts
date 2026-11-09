@@ -374,30 +374,21 @@ export async function POST(request: NextRequest) {
         const scoreText = callScore > 0 ? ` [Call Score: ${callScore}/12]` : "";
         const leadLog = `Call Log (${outcome})${scoreText} by ${repName}${durText}: ${notes || outcome}${followupDate ? ` (Followup: ${followupDate})` : ""}`;
 
-        let newStatus = "CONTACTED";
         let newScore = 80;
         if (outcome === "CONNECTED_WON") {
           newScore = 100;
-          newStatus = "WON";
         } else if (outcome === "CONNECTED_INTERESTED" || outcome === "QUALIFIED") {
           newScore = 95;
-          newStatus = "QUALIFIED";
         } else if (outcome === "CONNECTED_NEGOTIATING") {
           newScore = 90;
-          newStatus = "NEGOTIATION";
-        } else if (outcome === "NOT_INTERESTED") {
-          newStatus = "UNQUALIFIED";
         }
 
+        // Status is managed strictly manually by users on the CRM leads page and must NEVER be overwritten by automated call logs
         await sql`
           UPDATE crm_leads SET
             notes = CASE
               WHEN notes IS NULL OR TRIM(notes) = '' THEN ${leadLog}
               ELSE notes || E'\n' || ${leadLog}
-            END,
-            status = CASE
-              WHEN status IN ('WON', 'CONVERTED') THEN status
-              ELSE ${newStatus}
             END,
             score = GREATEST(score, ${newScore}),
             assigned_rep = CASE

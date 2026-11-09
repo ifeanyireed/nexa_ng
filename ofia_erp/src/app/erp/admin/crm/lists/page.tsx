@@ -648,6 +648,59 @@ export default function AudienceListsPage() {
     return true;
   });
 
+  const handleExportRosterCSV = () => {
+    const listToExport = filteredRoster.length > 0 ? filteredRoster : rosterSubscribers;
+    if (listToExport.length === 0) {
+      alert("No contacts to export in this roster.");
+      return;
+    }
+
+    const escapeCsv = (val?: string | number | null) => {
+      if (val === undefined || val === null) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const headers = [
+      "First Name",
+      "Last Name",
+      "Full Name",
+      "Email",
+      "Phone",
+      "Company",
+      "LinkedIn URL",
+      "Status",
+      "Date Added",
+    ];
+
+    const rows = listToExport.map((sub) => {
+      const fullName = `${sub.firstName || ""} ${sub.lastName || ""}`.trim() || sub.name || "";
+      return [
+        escapeCsv(sub.firstName || ""),
+        escapeCsv(sub.lastName || ""),
+        escapeCsv(fullName),
+        escapeCsv(sub.email || ""),
+        escapeCsv(sub.phone || ""),
+        escapeCsv(sub.company || ""),
+        escapeCsv(sub.linkedinUrl || ""),
+        escapeCsv(sub.status || "SUBSCRIBED"),
+        escapeCsv(sub.createdAt ? new Date(sub.createdAt).toLocaleDateString() : ""),
+      ].join(",");
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const safeListName = (rosterList?.name || "roster").toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${safeListName}-contacts-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleImportSubscribers = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeList || parsedContacts.length === 0) {
@@ -1082,6 +1135,7 @@ export default function AudienceListsPage() {
       <NexaModal
         isOpen={isRosterModalOpen}
         onClose={() => setIsRosterModalOpen(false)}
+        maxWidth="3xl"
         title={`Roster: "${rosterList?.name || 'Audience List'}"`}
         subtitle={`${rosterSubscribers.length} total contact${rosterSubscribers.length === 1 ? '' : 's'} registered in this segment${
           rosterSubscribers.some((s) => !s.email && s.phone)
@@ -1114,6 +1168,16 @@ export default function AudienceListsPage() {
                     ? ` (${rosterSubscribers.filter((s) => !s.email || !s.email.includes("@")).length} missing)`
                     : ""}
                 </span>
+              </NexaButton>
+              <NexaButton
+                variant="secondary"
+                className="text-xs gap-1.5 cursor-pointer"
+                disabled={!rosterList || isRosterLoading || rosterSubscribers.length === 0}
+                onClick={handleExportRosterCSV}
+                title="Export contacts in this roster to CSV"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
               </NexaButton>
               <NexaButton
                 variant="secondary"

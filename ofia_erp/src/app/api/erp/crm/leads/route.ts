@@ -155,28 +155,6 @@ export async function GET(request: NextRequest) {
     const sql = await getTenantSql(tenantSlug);
     await ensureCrmLeadsTable(sql);
 
-    // Business Rule Enforcement: Any contact without a call log in crm_calls should NEVER be set to QUALIFIED!
-    // Auto-revert any uncontacted leads that were mistakenly marked QUALIFIED back to CURIOUS
-    try {
-      await sql`
-        UPDATE crm_leads
-        SET status = 'CURIOUS', updated_at = NOW()
-        WHERE LOWER(tenant_slug) = ${tenantSlug}
-          AND status = 'QUALIFIED'
-          AND NOT EXISTS (
-            SELECT 1 FROM crm_calls
-            WHERE LOWER(crm_calls.tenant_slug) = ${tenantSlug}
-              AND (
-                crm_calls.lead_id = crm_leads.id
-                OR (crm_leads.phone != '' AND crm_calls.phone_number LIKE ('%' || RIGHT(REGEXP_REPLACE(crm_leads.phone, '[^0-9]', '', 'g'), 7)))
-                OR (LOWER(crm_calls.contact_name) = LOWER(crm_leads.name) AND LENGTH(crm_leads.name) > 0)
-              )
-          );
-      `;
-    } catch {
-      // In case crm_calls table has not yet been initialized
-    }
-
     // Audience List Check: Sync actual LinkedIn URLs from audience lists (crm_email_subscribers) into crm_leads
     try {
       await sql`
@@ -209,7 +187,6 @@ export async function GET(request: NextRequest) {
       await sql`
         UPDATE crm_leads l
         SET converted_deal_id = '',
-            status = CASE WHEN l.status = 'CONVERTED' THEN 'CURIOUS' ELSE l.status END,
             updated_at = NOW()
         WHERE LOWER(l.tenant_slug) = ${tenantSlug}
           AND l.converted_deal_id != ''
@@ -417,34 +394,6 @@ export async function POST(request: NextRequest) {
     const value = (body.value || "").trim();
     const notes = (body.notes || "").trim();
     const linkedinUrl = (body.linkedinUrl || body.linkedin_url || "").trim();
-
-    // Business Rule Enforcement: Any contact without a call log in crm_calls should NEVER be set to QUALIFIED!
-    if (status === "QUALIFIED") {
-      const cleanDigits = phone.replace(/[^0-9]/g, "");
-      const lastDigits = cleanDigits.length >= 7 ? cleanDigits.slice(-7) : cleanDigits;
-      const leadName = name.trim().toLowerCase();
-
-      let hasCall = false;
-      try {
-        const [callRow] = await sql`
-          SELECT 1 FROM crm_calls
-          WHERE LOWER(tenant_slug) = ${tenantSlug}
-            AND (
-              lead_id = ${leadId}
-              ${lastDigits ? sql`OR phone_number LIKE ${'%' + lastDigits}` : sql``}
-              ${leadName ? sql`OR (LOWER(contact_name) = ${leadName} AND LENGTH(contact_name) > 0)` : sql``}
-            )
-          LIMIT 1;
-        `;
-        if (callRow) hasCall = true;
-      } catch {
-        hasCall = false;
-      }
-
-      if (!hasCall) {
-        status = "CURIOUS";
-      }
-    }
 
     // Deduplication check: Does this contact already exist by email or phone?
     const cleanDigits = phone.replace(/[^0-9]/g, "");

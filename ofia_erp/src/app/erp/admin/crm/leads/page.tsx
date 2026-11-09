@@ -616,6 +616,14 @@ export default function CrmLeadsPage() {
     );
   };
 
+  const getDealForLead = (lead: CrmLead) => {
+    return deals.find(
+      (d) =>
+        (d.leadId && d.leadId === lead.id) ||
+        (lead.convertedDealId && d.id === lead.convertedDealId)
+    );
+  };
+
   const getCallIndicator = (call?: CrmCall, lead?: CrmLead) => {
     let outcome = call?.outcome ? String(call.outcome).toUpperCase().trim() : "";
 
@@ -635,12 +643,38 @@ export default function CrmLeadsPage() {
       }
     }
 
+    // ORANGE: wrong number
+    if (
+      outcome === "WRONG_NUMBER" ||
+      outcome.includes("WRONG")
+    ) {
+      return {
+        color: "orange" as const,
+        label: "Wrong Number",
+        tooltip: "Call Logger: Wrong Number (Click to log new call)",
+        dotClass: "bg-orange-500",
+      };
+    }
+
+    // RED: not interested
+    if (
+      outcome === "NOT_INTERESTED" ||
+      outcome.includes("NOT_INTERESTED")
+    ) {
+      return {
+        color: "red" as const,
+        label: "Not Interested",
+        tooltip: "Call Logger: Not Interested (Click to log new call)",
+        dotClass: "bg-rose-500",
+      };
+    }
+
     // GREEN: interested, proposal, deal won
     if (
       outcome === "CONNECTED_INTERESTED" ||
       outcome === "CONNECTED_NEGOTIATING" ||
       outcome === "CONNECTED_WON" ||
-      outcome.includes("INTERESTED") ||
+      (outcome.includes("INTERESTED") && !outcome.includes("NOT_INTERESTED")) ||
       outcome.includes("NEGOTIATING") ||
       outcome.includes("WON")
     ) {
@@ -683,22 +717,6 @@ export default function CrmLeadsPage() {
         label: outcomeLabel,
         tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
         dotClass: "bg-amber-500",
-      };
-    }
-
-    // RED: wrong number, not interested
-    if (
-      outcome === "WRONG_NUMBER" ||
-      outcome === "NOT_INTERESTED" ||
-      outcome.includes("WRONG") ||
-      outcome.includes("NOT_INTERESTED")
-    ) {
-      const outcomeLabel = outcome === "WRONG_NUMBER" || outcome.includes("WRONG") ? "Wrong Number" : "Not Interested";
-      return {
-        color: "red" as const,
-        label: outcomeLabel,
-        tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
-        dotClass: "bg-rose-500",
       };
     }
 
@@ -884,32 +902,6 @@ export default function CrmLeadsPage() {
     }
   };
 
-  const getDealForLead = (lead: CrmLead): CrmDeal | undefined => {
-    if (!lead || !Array.isArray(deals)) return undefined;
-    if (lead.convertedDealId) {
-      const match = deals.find((d) => d.id === lead.convertedDealId);
-      if (match) return match;
-    }
-    if (lead.id) {
-      const match = deals.find((d) => d.leadId === lead.id || (d as any).lead_id === lead.id);
-      if (match) return match;
-    }
-    const cleanLeadEmail = (lead.contactEmail || (lead as any).email || "").toLowerCase().trim();
-    if (cleanLeadEmail) {
-      const match = deals.find(
-        (d) => d.email && d.email.toLowerCase().trim() === cleanLeadEmail
-      );
-      if (match) return match;
-    }
-    const cleanPhone = (lead.contactPhone || (lead as any).phone || "").replace(/[^0-9]/g, "");
-    if (cleanPhone.length >= 8) {
-      const match = deals.find(
-        (d) => d.phone && d.phone.replace(/[^0-9]/g, "").endsWith(cleanPhone.slice(-8))
-      );
-      if (match) return match;
-    }
-    return undefined;
-  };
 
   const handleUpdateDealStage = async (dealId: string, lead: CrmLead, newStage: CrmDeal["stage"]) => {
     const newProb =
@@ -969,7 +961,7 @@ export default function CrmLeadsPage() {
             method: "PATCH",
             body: JSON.stringify({
               id: lead.id,
-              status: "CONVERTED",
+              status: "PROPOSAL",
               convertedDealId: data.deal.id,
             }),
           });
@@ -1015,7 +1007,7 @@ export default function CrmLeadsPage() {
         method: "PATCH",
         body: JSON.stringify({
           id: lead.id,
-          status: "CONVERTED",
+          status: "PROPOSAL",
           convertedDealId: dealId,
         }),
       });
@@ -1024,7 +1016,7 @@ export default function CrmLeadsPage() {
       setLeads((prev) =>
         prev.map((l) =>
           l.id === lead.id
-            ? { ...l, status: "CONVERTED", convertedDealId: dealId, dealStage: "LEAD" }
+            ? { ...l, status: "PROPOSAL", convertedDealId: dealId, dealStage: "LEAD" }
             : l
         )
       );
@@ -1072,7 +1064,9 @@ export default function CrmLeadsPage() {
       let callStatusText = "Not Logged";
       if (callInd.color === "green") callStatusText = `Interested (${callInd.label})`;
       else if (callInd.color === "yellow") callStatusText = `Follow-Up (${callInd.label})`;
-      else if (callInd.color === "red") callStatusText = `Unqualified (${callInd.label})`;
+      else if (callInd.color === "red") callStatusText = "Not Interested";
+      else if (callInd.color === "orange") callStatusText = "Wrong Number";
+      else if (callInd.color === "blue") callStatusText = "Not on Call Logger";
 
       const signals = (lead.buyingSignals && lead.buyingSignals.length > 0)
         ? lead.buyingSignals.join(" | ")
@@ -1133,12 +1127,6 @@ export default function CrmLeadsPage() {
   ) => {
     const targetLead = leads.find((l) => l.id === leadId);
 
-    // Business Rule Enforcement: Any contact without a call log should never be set to QUALIFIED!
-    if (updates.status === "QUALIFIED" && targetLead && !hasCallLogForLead(targetLead)) {
-      alert("Gross error prevented: Any contact without a call log should never be set to QUALIFIED. Please log a sales call first.");
-      return;
-    }
-
     setUpdatingLeadId(leadId);
     // Optimistic update
     setLeads((prev) =>
@@ -1197,12 +1185,6 @@ export default function CrmLeadsPage() {
   const handleSaveEditLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingLead) return;
-
-    // Business Rule Enforcement: Any contact without a call log should never be set to QUALIFIED!
-    if (editStatus === "QUALIFIED" && !hasCallLogForLead(editingLead)) {
-      alert("Gross error prevented: Any contact without a call log should never be set to QUALIFIED. Please log a sales call first.");
-      return;
-    }
 
     setIsSavingEdit(true);
 
@@ -1382,7 +1364,7 @@ export default function CrmLeadsPage() {
   };
 
   const callCounts = useMemo(() => {
-    const counts: Record<string, number> = { ALL: leads.length, green: 0, yellow: 0, red: 0, blue: 0 };
+    const counts: Record<string, number> = { ALL: leads.length, green: 0, yellow: 0, red: 0, orange: 0, blue: 0 };
     for (const l of leads) {
       const c = getLeadCallInfo(l);
       const ind = getCallIndicator(c, l);
@@ -1604,7 +1586,8 @@ export default function CrmLeadsPage() {
                 <option value="ALL">All Call Statuses ({callCounts.ALL})</option>
                 <option value="green">🟢 Interested, Proposal, Won ({callCounts.green})</option>
                 <option value="yellow">🟡 Callback, Busy, Voicemail ({callCounts.yellow})</option>
-                <option value="red">🔴 Wrong No, Not Interested ({callCounts.red})</option>
+                <option value="red">🔴 Not Interested ({callCounts.red})</option>
+                <option value="orange">🟠 Wrong Number ({callCounts.orange})</option>
                 <option value="blue">🔵 Not on Call Logger ({callCounts.blue})</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -1625,7 +1608,7 @@ export default function CrmLeadsPage() {
               <Sparkles className={`w-3.5 h-3.5 ${phoneFilter === "MISSING" ? "text-white" : "text-amber-500"}`} />
               <span>Needs Phone ({missingPhoneCount})</span>
             </button>
-            {["ALL", "CURIOUS", "IDENTIFIED", "CONTACTED", "QUALIFIED", "PROPOSAL", "MEETING_BOOKED", "CONVERTED"].map((st) => (
+            {["ALL", "CURIOUS", "IDENTIFIED", "CONTACTED", "PROPOSAL", "MEETING_BOOKED", "QUALIFIED", "CONVERTED"].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
@@ -1713,11 +1696,26 @@ export default function CrmLeadsPage() {
                 ? "bg-rose-600 text-white border-rose-600 shadow-xs"
                 : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
             }`}
-            title="Filter by Wrong Number, Not Interested"
+            title="Filter by Not Interested"
           >
             <span className={`w-2 h-2 rounded-full ${callStatusFilter === "red" ? "bg-white" : "bg-rose-500"}`} />
-            <span>Wrong Number, Not Interested</span>
+            <span>Not Interested</span>
             <span className="text-[10px] opacity-80 font-normal">({callCounts.red})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCallStatusFilter(callStatusFilter === "orange" ? "ALL" : "orange")}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              callStatusFilter === "orange"
+                ? "bg-orange-600 text-white border-orange-600 shadow-xs"
+                : "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20 hover:bg-orange-500/20"
+            }`}
+            title="Filter by Wrong Number"
+          >
+            <span className={`w-2 h-2 rounded-full ${callStatusFilter === "orange" ? "bg-white" : "bg-orange-500"}`} />
+            <span>Wrong Number</span>
+            <span className="text-[10px] opacity-80 font-normal">({callCounts.orange})</span>
           </button>
 
           <button
@@ -1921,10 +1919,7 @@ export default function CrmLeadsPage() {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      {(() => {
-                        const hasCall = hasCallLogForLead(lead);
-                        return (
-                          <div className="relative inline-block">
+                      <div className="relative inline-block">
                             <select
                               value={lead.status}
                               onChange={(e) =>
@@ -1939,22 +1934,14 @@ export default function CrmLeadsPage() {
                               <option value="CURIOUS">CURIOUS</option>
                               <option value="IDENTIFIED">IDENTIFIED</option>
                               <option value="CONTACTED">CONTACTED</option>
-                              <option
-                                value="QUALIFIED"
-                                disabled={!hasCall}
-                                title={!hasCall ? "Call log required to qualify lead" : undefined}
-                              >
-                                QUALIFIED {!hasCall ? "(Call Required)" : ""}
-                              </option>
                               <option value="PROPOSAL">PROPOSAL</option>
                               <option value="MEETING_BOOKED">MEETING_BOOKED</option>
+                              <option value="QUALIFIED">QUALIFIED</option>
                               <option value="CONVERTED">CONVERTED</option>
                               <option value="ARCHIVED">ARCHIVED</option>
                             </select>
                             <ChevronDown className="w-3 h-3 text-[var(--nexa-text-muted)] absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
-                        );
-                      })()}
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -2308,31 +2295,20 @@ export default function CrmLeadsPage() {
               <label className="block text-xs font-semibold text-[var(--nexa-text-secondary)] mb-1.5">
                 Lead Status
               </label>
-              {(() => {
-                const hasCallInModal = editingLead ? hasCallLogForLead(editingLead) : false;
-                return (
-                  <select
-                    value={editStatus}
-                    onChange={(e) => setEditStatus(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
-                  >
-                    <option value="CURIOUS">CURIOUS</option>
-                    <option value="IDENTIFIED">IDENTIFIED</option>
-                    <option value="CONTACTED">CONTACTED</option>
-                    <option
-                      value="QUALIFIED"
-                      disabled={!hasCallInModal}
-                      title={!hasCallInModal ? "Call log required to qualify lead" : undefined}
-                    >
-                      QUALIFIED {!hasCallInModal ? "(Call Required)" : ""}
-                    </option>
-                    <option value="PROPOSAL">PROPOSAL</option>
-                    <option value="MEETING_BOOKED">MEETING_BOOKED</option>
-                    <option value="CONVERTED">CONVERTED</option>
-                    <option value="ARCHIVED">ARCHIVED</option>
-                  </select>
-                );
-              })()}
+              <select
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
+              >
+                <option value="CURIOUS">CURIOUS</option>
+                <option value="IDENTIFIED">IDENTIFIED</option>
+                <option value="CONTACTED">CONTACTED</option>
+                <option value="PROPOSAL">PROPOSAL</option>
+                <option value="MEETING_BOOKED">MEETING_BOOKED</option>
+                <option value="QUALIFIED">QUALIFIED</option>
+                <option value="CONVERTED">CONVERTED</option>
+                <option value="ARCHIVED">ARCHIVED</option>
+              </select>
             </div>
           </div>
 

@@ -753,6 +753,13 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         CREATE INDEX IF NOT EXISTS idx_wf_pip_tenant_person ON workforce_pips(LOWER(tenant_slug), person_id);
         CREATE INDEX IF NOT EXISTS idx_wf_pip_tenant_status ON workforce_pips(LOWER(tenant_slug), status);
         CREATE INDEX IF NOT EXISTS idx_wf_pip_tenant_created ON workforce_pips(LOWER(tenant_slug), created_at DESC);
+
+        -- Phase 8: Workforce Planning & Deployment Multi-Stage Approval Gate
+        ALTER TABLE workforce_deployments ADD COLUMN IF NOT EXISTS requested_by VARCHAR(255) DEFAULT '';
+        ALTER TABLE workforce_deployments ADD COLUMN IF NOT EXISTS approved_by VARCHAR(255) DEFAULT '';
+        ALTER TABLE workforce_deployments ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ DEFAULT NULL;
+        ALTER TABLE workforce_deployments ADD COLUMN IF NOT EXISTS location VARCHAR(255) DEFAULT '';
+        ALTER TABLE workforce_deployments ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '';
       `;
       ensuredTenantDbs.add(cleanSlug);
     } catch (e: any) {
@@ -925,11 +932,13 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
           INSERT INTO workforce_deployments (
             id, tenant_slug, tenant_id, person_id, person_name, role,
             client_name, contract_title, start_date, end_date, allocation_percent,
-            status, billing_rate_monthly, cost_rate_monthly
+            status, billing_rate_monthly, cost_rate_monthly, requested_by, approved_by,
+            approved_at, location, notes
           ) VALUES (
             ${d.id}, ${cleanSlug}, ${cleanSlug}, ${d.personId}, ${d.personName}, ${d.role},
             ${d.clientName}, ${d.contractTitle}, ${d.startDate}, ${d.endDate}, ${d.allocationPercent},
-            ${d.status}, ${d.billingRateMonthly}, ${d.costRateMonthly}
+            ${d.status}, ${d.billingRateMonthly}, ${d.costRateMonthly}, ${d.requestedBy || ""},
+            ${d.approvedBy || ""}, ${d.approvedAt || null}, ${d.location || ""}, ${d.notes || ""}
           ) ON CONFLICT (id) DO NOTHING;
         `;
       }
@@ -1523,6 +1532,11 @@ export async function GET(request: Request) {
       status: r.status,
       billingRateMonthly: Number(r.billing_rate_monthly || 0),
       costRateMonthly: Number(r.cost_rate_monthly || 0),
+      requestedBy: r.requested_by || undefined,
+      approvedBy: r.approved_by || undefined,
+      approvedAt: r.approved_at ? new Date(r.approved_at).toISOString() : undefined,
+      location: r.location || undefined,
+      notes: r.notes || undefined,
     }));
 
     const clients: ClientServiceAccount[] = clientsRows.map((r: any) => ({
@@ -2730,27 +2744,160 @@ export async function POST(request: Request) {
 
       case "CREATE_DEPLOYMENT": {
         const id = payload.id || `dep-${Date.now()}`;
+        const initialStatus = payload.status || "pending_approval";
         await sql`
           INSERT INTO workforce_deployments (
             id, tenant_slug, tenant_id, person_id, person_name, role,
             client_name, contract_title, start_date, end_date, allocation_percent,
-            status, billing_rate_monthly, cost_rate_monthly
+            status, billing_rate_monthly, cost_rate_monthly, requested_by,
+            location, notes
           ) VALUES (
             ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.personId}, ${payload.personName},
             ${payload.role}, ${payload.clientName}, ${payload.contractTitle},
             ${payload.startDate}, ${payload.endDate}, ${payload.allocationPercent || 100},
-            'active', ${payload.billingRateMonthly || 0}, ${payload.costRateMonthly || 0}
+            ${initialStatus}, ${payload.billingRateMonthly || 0}, ${payload.costRateMonthly || 0},
+            ${payload.requestedBy || "Operations Lead"}, ${payload.location || "Lagos"}, ${payload.notes || ""}
           );
         `;
 
-        // Update the person's status to deployed
+        if (initialStatus === "active") {
+          await sql`
+            UPDATE workforce_people
+            SET status = 'deployed', current_client = ${payload.clientName}, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${payload.personId} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
+
+        const auditId = `audit-${Date.now()}`;
         await sql`
-          UPDATE workforce_people
-          SET status = 'deployed', current_client = ${payload.clientName}, updated_at = CURRENT_TIMESTAMP
-          WHERE id = ${payload.personId} AND LOWER(tenant_slug) = ${cleanSlug};
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'deployment', ${id},
+            'DEPLOYMENT_REQUESTED', ${payload.requestedBy || "Operations Manager"},
+            ${JSON.stringify({ personName: payload.personName, clientName: payload.clientName, status: initialStatus })}
+          );
         `;
 
-        return NextResponse.json({ success: true, id, message: "Staff deployed to client engagement" });
+        return NextResponse.json({
+          success: true,
+          id,
+          message: initialStatus === "active" ? "Staff deployed to client engagement" : "Deployment requisition submitted for Directorate gate approval",
+        });
+      }
+
+      case "APPROVE_DEPLOYMENT": {
+        const depRows = await sql`
+          SELECT * FROM workforce_deployments
+          WHERE id = ${payload.deploymentId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        if (depRows.length === 0) {
+          return NextResponse.json({ success: false, error: "Deployment record not found" }, { status: 404 });
+        }
+
+        const dep = depRows[0];
+        const approver = payload.approvedBy || "Managing Director";
+
+        await sql`
+          UPDATE workforce_deployments
+          SET status = 'active',
+              approved_by = ${approver},
+              approved_at = CURRENT_TIMESTAMP,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.deploymentId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        await sql`
+          UPDATE workforce_people
+          SET status = 'deployed', current_client = ${dep.client_name}, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${dep.person_id} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        // Increment fulfilled headcount in matching workforce requests if found
+        await sql`
+          UPDATE workforce_requests
+          SET fulfilled_headcount = LEAST(required_headcount, fulfilled_headcount + 1),
+              status = CASE WHEN fulfilled_headcount + 1 >= required_headcount THEN 'fulfilled' ELSE 'partially_fulfilled' END,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE LOWER(client_name) = LOWER(${dep.client_name})
+            AND LOWER(contract_title) = LOWER(${dep.contract_title})
+            AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'deployment', ${payload.deploymentId},
+            'DEPLOYMENT_GATE_APPROVED', ${approver},
+            ${JSON.stringify({ personName: dep.person_name, clientName: dep.client_name, contractTitle: dep.contract_title })}
+          );
+        `;
+
+        return NextResponse.json({
+          success: true,
+          message: `Deployment ratified: ${dep.person_name} activated on ${dep.client_name}`,
+        });
+      }
+
+      case "ROLL_OFF_DEPLOYMENT": {
+        const depRows = await sql`
+          SELECT * FROM workforce_deployments
+          WHERE id = ${payload.deploymentId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        if (depRows.length === 0) {
+          return NextResponse.json({ success: false, error: "Deployment record not found" }, { status: 404 });
+        }
+
+        const dep = depRows[0];
+        const reason = payload.reason || "Scheduled contract roll-off";
+
+        await sql`
+          UPDATE workforce_deployments
+          SET status = 'completed',
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.deploymentId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        await sql`
+          UPDATE workforce_people
+          SET status = 'active', current_client = '', updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${dep.person_id} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'deployment', ${payload.deploymentId},
+            'DEPLOYMENT_ROLLED_OFF', ${payload.actorName || "Operations Director"},
+            ${JSON.stringify({ personName: dep.person_name, clientName: dep.client_name, reason })}
+          );
+        `;
+
+        return NextResponse.json({
+          success: true,
+          message: `Staff ${dep.person_name} rolled off to bench successfully`,
+        });
+      }
+
+      case "UPDATE_DEPLOYMENT": {
+        await sql`
+          UPDATE workforce_deployments
+          SET allocation_percent = COALESCE(${payload.allocationPercent ?? null}, allocation_percent),
+              end_date = COALESCE(${payload.endDate ?? null}, end_date),
+              billing_rate_monthly = COALESCE(${payload.billingRateMonthly ?? null}, billing_rate_monthly),
+              cost_rate_monthly = COALESCE(${payload.costRateMonthly ?? null}, cost_rate_monthly),
+              notes = COALESCE(${payload.notes ?? null}, notes),
+              status = COALESCE(${payload.status ?? null}, status),
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.deploymentId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        return NextResponse.json({ success: true, message: "Deployment allocation updated" });
       }
 
       case "CREATE_CLIENT": {

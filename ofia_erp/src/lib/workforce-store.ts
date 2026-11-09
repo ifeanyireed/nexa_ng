@@ -36,6 +36,9 @@ import {
   EvaluationCycle,
   PerformanceScorecard,
   PerformanceImprovementPlan,
+  WorkforceCapacitySkillDeficit,
+  WorkforceGanttAllocation,
+  WorkforceGanttItem,
 } from "./workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -1047,24 +1050,215 @@ export function useWorkforceManager() {
     [saveLocalCache, mutateBackend]
   );
 
-  // 7. Deployment actions
+  // 7. Deployment actions & Multi-Stage Gate
   const deployPerson = useCallback(
     (allocation: DeploymentAllocation) => {
+      const fullAllocation: DeploymentAllocation = {
+        ...allocation,
+        id: allocation.id || `dep-${Date.now()}`,
+        status: allocation.status || "pending_approval",
+      };
+
       setDeployments((prev) => {
-        const updated = [allocation, ...prev];
-        const updatedPeople = people.map((p) =>
-          p.name === allocation.personName
-            ? { ...p, status: "deployed" as const, currentClient: allocation.clientName }
-            : p
-        );
-        setPeople(updatedPeople);
+        const updated = [fullAllocation, ...prev];
+        let updatedPeople = people;
+        if (fullAllocation.status === "active") {
+          updatedPeople = people.map((p) =>
+            p.name === allocation.personName || p.id === allocation.personId
+              ? { ...p, status: "deployed" as const, currentClient: allocation.clientName }
+              : p
+          );
+          setPeople(updatedPeople);
+        }
         saveLocalCache({ deployments: updated, people: updatedPeople });
         return updated;
       });
-      mutateBackend("CREATE_DEPLOYMENT", allocation);
+
+      mutateBackend("CREATE_DEPLOYMENT", fullAllocation);
     },
     [people, saveLocalCache, mutateBackend]
   );
+
+  const approveDeployment = useCallback(
+    async (deploymentId: string, approvedBy: string = "Managing Director") => {
+      const targetDep = deployments.find((d) => d.id === deploymentId);
+      if (!targetDep) return;
+
+      const nowIso = new Date().toISOString();
+      const updatedDeployments = deployments.map((d) =>
+        d.id === deploymentId
+          ? {
+              ...d,
+              status: "active" as const,
+              approvedBy,
+              approvedAt: nowIso,
+            }
+          : d
+      );
+      setDeployments(updatedDeployments);
+
+      // Transition employee to deployed
+      const updatedPeople = people.map((p) =>
+        p.id === targetDep.personId || p.name.toLowerCase() === targetDep.personName.toLowerCase()
+          ? { ...p, status: "deployed" as const, currentClient: targetDep.clientName }
+          : p
+      );
+      setPeople(updatedPeople);
+
+      // Update matching workforce requests
+      const updatedRequests = workforceRequests.map((req) => {
+        if (
+          req.clientName.toLowerCase() === targetDep.clientName.toLowerCase() &&
+          req.contractTitle.toLowerCase() === targetDep.contractTitle.toLowerCase()
+        ) {
+          const newFulfilled = Math.min(req.requiredHeadcount, req.fulfilledHeadcount + 1);
+          return {
+            ...req,
+            fulfilledHeadcount: newFulfilled,
+            status: newFulfilled >= req.requiredHeadcount ? ("fulfilled" as const) : ("partially_fulfilled" as const),
+          };
+        }
+        return req;
+      });
+      setWorkforceRequests(updatedRequests);
+
+      saveLocalCache({
+        deployments: updatedDeployments,
+        people: updatedPeople,
+        workforceRequests: updatedRequests,
+      });
+
+      await mutateBackend("APPROVE_DEPLOYMENT", { deploymentId, approvedBy });
+    },
+    [deployments, people, workforceRequests, saveLocalCache, mutateBackend]
+  );
+
+  const rollOffDeployment = useCallback(
+    async (deploymentId: string, reason: string = "Scheduled roll-off to bench") => {
+      const targetDep = deployments.find((d) => d.id === deploymentId);
+      if (!targetDep) return;
+
+      const updatedDeployments = deployments.map((d) =>
+        d.id === deploymentId ? { ...d, status: "completed" as const } : d
+      );
+      setDeployments(updatedDeployments);
+
+      // Return employee to bench/active
+      const updatedPeople = people.map((p) =>
+        p.id === targetDep.personId || p.name.toLowerCase() === targetDep.personName.toLowerCase()
+          ? { ...p, status: "active" as const, currentClient: undefined }
+          : p
+      );
+      setPeople(updatedPeople);
+
+      saveLocalCache({ deployments: updatedDeployments, people: updatedPeople });
+      await mutateBackend("ROLL_OFF_DEPLOYMENT", { deploymentId, reason });
+    },
+    [deployments, people, saveLocalCache, mutateBackend]
+  );
+
+  const updateDeployment = useCallback(
+    (deploymentId: string, updates: Partial<DeploymentAllocation>) => {
+      setDeployments((prev) => {
+        const updated = prev.map((d) => (d.id === deploymentId ? { ...d, ...updates } : d));
+        saveLocalCache({ deployments: updated });
+        return updated;
+      });
+      mutateBackend("UPDATE_DEPLOYMENT", { deploymentId, ...updates });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  // Phase 8 Computed: Dynamic Capacity Matrix & Skill Deficit Analysis
+  const capacityDeficits: WorkforceCapacitySkillDeficit[] = useMemo(() => {
+    const skillMap = new Map<string, { demand: number; category: string }>();
+
+    workforceRequests.forEach((req) => {
+      const remainingDemand = Math.max(0, req.requiredHeadcount - req.fulfilledHeadcount);
+      req.requiredSkills.forEach((skill) => {
+        const existing = skillMap.get(skill) || { demand: 0, category: "Technical" };
+        existing.demand += remainingDemand;
+        skillMap.set(skill, existing);
+      });
+    });
+
+    // Also include core skills from competencies
+    competencies.forEach((comp) => {
+      if (!skillMap.has(comp.competency)) {
+        skillMap.set(comp.competency, { demand: 0, category: comp.category });
+      }
+    });
+
+    const result: WorkforceCapacitySkillDeficit[] = [];
+
+    skillMap.forEach((info, skill) => {
+      const benchPeople = people.filter(
+        (p) =>
+          (p.status === "active" || p.status === "bench") &&
+          p.skills.some((s) => s.name.toLowerCase().includes(skill.toLowerCase()) || skill.toLowerCase().includes(s.name.toLowerCase()))
+      );
+
+      const deployedPeople = people.filter(
+        (p) =>
+          p.status === "deployed" &&
+          p.skills.some((s) => s.name.toLowerCase().includes(skill.toLowerCase()) || skill.toLowerCase().includes(s.name.toLowerCase()))
+      );
+
+      const deficit = info.demand - benchPeople.length;
+      const urgency = deficit > 2 ? "critical" : deficit > 0 ? "moderate" : "adequate";
+
+      result.push({
+        skill,
+        category: info.category,
+        demandHeadcount: info.demand,
+        availableBenchHeadcount: benchPeople.length,
+        deployedHeadcount: deployedPeople.length,
+        deficit,
+        urgency,
+      });
+    });
+
+    return result.sort((a, b) => b.deficit - a.deficit);
+  }, [workforceRequests, people, competencies]);
+
+  // Phase 8 Computed: Gantt Availability Items
+  const ganttItems: WorkforceGanttItem[] = useMemo(() => {
+    return people.map((person) => {
+      const personDeployments = deployments
+        .filter(
+          (d) =>
+            d.personId === person.id ||
+            d.personName.toLowerCase() === person.name.toLowerCase()
+        )
+        .map((d) => ({
+          id: d.id,
+          clientName: d.clientName,
+          contractTitle: d.contractTitle,
+          startDate: d.startDate,
+          endDate: d.endDate,
+          allocationPercent: d.allocationPercent,
+          status: d.status,
+        }));
+
+      let upcomingRollOffDays: number | undefined;
+      const activeDep = personDeployments.find((d) => d.status === "active" || d.status === "ending_soon");
+      if (activeDep && activeDep.endDate) {
+        const diffMs = new Date(activeDep.endDate).getTime() - Date.now();
+        upcomingRollOffDays = Math.max(0, Math.ceil(diffMs / (1000 * 3600 * 24)));
+      }
+
+      return {
+        personId: person.id,
+        personName: person.name,
+        role: person.role,
+        designation: person.designation,
+        department: person.department,
+        status: person.status === "deployed" ? "deployed" : "bench",
+        allocations: personDeployments,
+        upcomingRollOffDays,
+      };
+    });
+  }, [people, deployments]);
 
   // 8. Service delivery actions
   const addTicket = useCallback(
@@ -1567,6 +1761,8 @@ export function useWorkforceManager() {
     promotions,
     workforceRequests,
     deployments,
+    capacityDeficits,
+    ganttItems,
     clients,
     tickets,
     workLogs,
@@ -1616,6 +1812,9 @@ export function useWorkforceManager() {
     createPip,
     updatePip,
     deployPerson,
+    approveDeployment,
+    rollOffDeployment,
+    updateDeployment,
     addTicket,
     resolveTicket,
     createDepartment,

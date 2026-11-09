@@ -265,9 +265,14 @@ export interface DeploymentAllocation {
   startDate: string;
   endDate: string;
   allocationPercent: number;
-  status: "active" | "ending_soon" | "completed";
+  status: "pending_approval" | "approved" | "active" | "ending_soon" | "completed" | "terminated";
   billingRateMonthly: number;
   costRateMonthly: number;
+  requestedBy?: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  location?: string;
+  notes?: string;
 }
 
 export interface ClientServiceAccount {
@@ -610,5 +615,40 @@ export interface PerformanceImprovementPlan {
   status: "active" | "successful" | "failed" | "extended";
   outcomeNotes?: string;
   createdAt: string;
+}
+
+// ----------------------------------------------------
+// Phase 8: Workforce Planning, Gantt & Capacity Matrix
+// ----------------------------------------------------
+
+export interface WorkforceCapacitySkillDeficit {
+  skill: string;
+  category: string;
+  demandHeadcount: number;
+  availableBenchHeadcount: number;
+  deployedHeadcount: number;
+  deficit: number;
+  urgency: "critical" | "moderate" | "adequate";
+}
+
+export interface WorkforceGanttAllocation {
+  id: string;
+  clientName: string;
+  contractTitle: string;
+  startDate: string;
+  endDate: string;
+  allocationPercent: number;
+  status: "pending_approval" | "approved" | "active" | "ending_soon" | "completed" | "terminated";
+}
+
+export interface WorkforceGanttItem {
+  personId: string;
+  personName: string;
+  role: string;
+  designation: string;
+  department: string;
+  status: "deployed" | "bench" | "leave" | "training";
+  allocations: WorkforceGanttAllocation[];
+  upcomingRollOffDays?: number;
 }
 

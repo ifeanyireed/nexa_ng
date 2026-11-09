@@ -308,6 +308,10 @@ export interface DailyWorkLog {
   hoursWorked: number;
   summary: string;
   supervisorSignedOff: boolean;
+  clientSignedOff?: boolean;
+  clientSignedBy?: string;
+  clientSignedAt?: string;
+  deliverableRef?: string;
 }
 
 export interface CompensationScale {
@@ -650,5 +654,23 @@ export interface WorkforceGanttItem {
   status: "deployed" | "bench" | "leave" | "training";
   allocations: WorkforceGanttAllocation[];
   upcomingRollOffDays?: number;
+}
+
+// ----------------------------------------------------
+// Phase 9: Restricted Client Portal & Quality Feedback
+// ----------------------------------------------------
+
+export interface ClientCsatReview {
+  id: string;
+  clientName: string;
+  stakeholderName: string;
+  stakeholderEmail: string;
+  month: string;
+  ratingTechnical: number;
+  ratingPunctuality: number;
+  ratingSla: number;
+  overallScorePercent: number;
+  feedbackText: string;
+  createdAt: string;
 }
 

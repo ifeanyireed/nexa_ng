@@ -19,6 +19,7 @@ import {
   X,
   Radio,
   FileCheck2,
+  ExternalLink,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -69,15 +70,27 @@ export default function ServiceDeliveryManagementPage() {
       subtitle="Module 08 · Client service accounts, SLA tracking, outsourced incident tickets, and verified work logs."
       activeModule="workforce"
       action={
-        <NexaButton
-          size="sm"
-          variant="primary"
-          className="gap-2 text-xs"
-          onClick={() => setIsNewTicketModalOpen(true)}
-        >
-          <Plus className="w-4 h-4" />
-          Log Service Ticket
-        </NexaButton>
+        <div className="flex items-center gap-2.5">
+          <Link href="/erp/client">
+            <NexaButton
+              size="sm"
+              variant="secondary"
+              className="gap-2 text-xs"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Restricted Client Portal
+            </NexaButton>
+          </Link>
+          <NexaButton
+            size="sm"
+            variant="primary"
+            className="gap-2 text-xs"
+            onClick={() => setIsNewTicketModalOpen(true)}
+          >
+            <Plus className="w-4 h-4" />
+            Log Service Ticket
+          </NexaButton>
+        </div>
       }
     >
       <div className="space-y-8">

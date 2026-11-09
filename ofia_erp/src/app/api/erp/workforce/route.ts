@@ -33,6 +33,7 @@ import {
   EvaluationCycle,
   PerformanceScorecard,
   PerformanceImprovementPlan,
+  ClientCsatReview,
 } from "@/lib/workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -66,6 +67,7 @@ import {
   INITIAL_EVALUATION_CYCLES,
   INITIAL_SCORECARDS,
   INITIAL_PIPS,
+  INITIAL_CSAT_REVIEWS,
 } from "@/lib/workforce-defaults";
 
 function getTenantKey(request: Request): string | null {
@@ -760,6 +762,31 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         ALTER TABLE workforce_deployments ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ DEFAULT NULL;
         ALTER TABLE workforce_deployments ADD COLUMN IF NOT EXISTS location VARCHAR(255) DEFAULT '';
         ALTER TABLE workforce_deployments ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '';
+
+        -- Phase 9: Restricted Client Portal & Quality CSAT Feedback
+        ALTER TABLE workforce_work_logs ADD COLUMN IF NOT EXISTS client_signed_off BOOLEAN DEFAULT FALSE;
+        ALTER TABLE workforce_work_logs ADD COLUMN IF NOT EXISTS client_signed_by VARCHAR(255) DEFAULT '';
+        ALTER TABLE workforce_work_logs ADD COLUMN IF NOT EXISTS client_signed_at TIMESTAMPTZ DEFAULT NULL;
+        ALTER TABLE workforce_work_logs ADD COLUMN IF NOT EXISTS deliverable_ref VARCHAR(255) DEFAULT '';
+
+        CREATE TABLE IF NOT EXISTS workforce_csat_reviews (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          client_name VARCHAR(255) NOT NULL,
+          stakeholder_name VARCHAR(255) NOT NULL,
+          stakeholder_email VARCHAR(255) NOT NULL,
+          month VARCHAR(20) NOT NULL,
+          rating_technical INT NOT NULL DEFAULT 5,
+          rating_punctuality INT NOT NULL DEFAULT 5,
+          rating_sla INT NOT NULL DEFAULT 5,
+          overall_score_percent NUMERIC(5,2) NOT NULL DEFAULT 100,
+          feedback_text TEXT DEFAULT '',
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_csat_tenant_client ON workforce_csat_reviews(LOWER(tenant_slug), LOWER(client_name));
+        CREATE INDEX IF NOT EXISTS idx_wf_csat_tenant_created ON workforce_csat_reviews(LOWER(tenant_slug), created_at DESC);
       `;
       ensuredTenantDbs.add(cleanSlug);
     } catch (e: any) {
@@ -976,10 +1003,12 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         await sql`
           INSERT INTO workforce_work_logs (
             id, tenant_slug, tenant_id, person_name, client_name,
-            date, hours_worked, summary, supervisor_signed_off
+            date, hours_worked, summary, supervisor_signed_off,
+            client_signed_off, client_signed_by, client_signed_at, deliverable_ref
           ) VALUES (
             ${wl.id}, ${cleanSlug}, ${cleanSlug}, ${wl.personName}, ${wl.clientName},
-            ${wl.date}, ${wl.hoursWorked}, ${wl.summary}, ${wl.supervisorSignedOff}
+            ${wl.date}, ${wl.hoursWorked}, ${wl.summary}, ${wl.supervisorSignedOff},
+            ${wl.clientSignedOff ?? false}, ${wl.clientSignedBy || ""}, ${wl.clientSignedAt || null}, ${wl.deliverableRef || ""}
           ) ON CONFLICT (id) DO NOTHING;
         `;
       }
@@ -1257,6 +1286,20 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
           ) ON CONFLICT (id) DO NOTHING;
         `;
       }
+
+      for (const csat of INITIAL_CSAT_REVIEWS) {
+        await sql`
+          INSERT INTO workforce_csat_reviews (
+            id, tenant_slug, tenant_id, client_name, stakeholder_name, stakeholder_email,
+            month, rating_technical, rating_punctuality, rating_sla, overall_score_percent,
+            feedback_text, created_at
+          ) VALUES (
+            ${csat.id}, ${cleanSlug}, ${cleanSlug}, ${csat.clientName}, ${csat.stakeholderName}, ${csat.stakeholderEmail},
+            ${csat.month}, ${csat.ratingTechnical}, ${csat.ratingPunctuality}, ${csat.ratingSla},
+            ${csat.overallScorePercent}, ${csat.feedbackText}, ${csat.createdAt}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
     }
   } catch (err: any) {
     console.warn(`[Workforce DB] Initial seed notice for '${cleanSlug}':`, err.message);
@@ -1311,6 +1354,7 @@ export async function GET(request: Request) {
       cyclesRows,
       scorecardsRows,
       pipsRows,
+      csatReviewsRows,
     ] = await Promise.all([
       sql`SELECT * FROM workforce_job_openings WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_candidates WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
@@ -1343,6 +1387,7 @@ export async function GET(request: Request) {
       sql`SELECT * FROM workforce_evaluation_cycles WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY start_date DESC;`,
       sql`SELECT * FROM workforce_scorecards WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY submitted_at DESC;`,
       sql`SELECT * FROM workforce_pips WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
+      sql`SELECT * FROM workforce_csat_reviews WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
     ]);
 
     // Map rows to typed models
@@ -1572,6 +1617,24 @@ export async function GET(request: Request) {
       hoursWorked: Number(r.hours_worked || 8),
       summary: r.summary,
       supervisorSignedOff: Boolean(r.supervisor_signed_off),
+      clientSignedOff: Boolean(r.client_signed_off),
+      clientSignedBy: r.client_signed_by || undefined,
+      clientSignedAt: r.client_signed_at ? new Date(r.client_signed_at).toISOString() : undefined,
+      deliverableRef: r.deliverable_ref || undefined,
+    }));
+
+    const csatReviews: ClientCsatReview[] = csatReviewsRows.map((r: any) => ({
+      id: r.id,
+      clientName: r.client_name,
+      stakeholderName: r.stakeholder_name,
+      stakeholderEmail: r.stakeholder_email,
+      month: r.month,
+      ratingTechnical: Number(r.rating_technical || 5),
+      ratingPunctuality: Number(r.rating_punctuality || 5),
+      ratingSla: Number(r.rating_sla || 5),
+      overallScorePercent: Number(r.overall_score_percent || 100),
+      feedbackText: r.feedback_text || "",
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : "",
     }));
 
     const compensationScales: CompensationScale[] = scalesRows.map((r: any) => ({
@@ -1917,6 +1980,7 @@ export async function GET(request: Request) {
       evaluationCycles,
       scorecards,
       pips,
+      csatReviews,
       assignments,
       tasks,
       attendance,
@@ -3410,6 +3474,103 @@ export async function POST(request: Request) {
           personId,
           corporateEmail,
           message: "System user provisioned and personnel profile activated",
+        });
+      }
+
+      case "CLIENT_SIGN_WORK_LOG": {
+        const { workLogId, signedBy } = payload;
+        await sql`
+          UPDATE workforce_work_logs
+          SET client_signed_off = true,
+              client_signed_by = ${signedBy || "Client Representative"},
+              client_signed_at = CURRENT_TIMESTAMP
+          WHERE id = ${workLogId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'work_log', ${workLogId},
+            'WORK_LOG_CLIENT_SIGNED', ${signedBy || "Client Representative"},
+            ${JSON.stringify({ workLogId, signedBy })}
+          );
+        `;
+        return NextResponse.json({ success: true, message: "Work log timesheet signed off by client" });
+      }
+
+      case "SUBMIT_CSAT_REVIEW": {
+        const csatId = payload.id || `csat-${Date.now()}`;
+        const ratingTech = Number(payload.ratingTechnical || 5);
+        const ratingPunct = Number(payload.ratingPunctuality || 5);
+        const ratingSla = Number(payload.ratingSla || 5);
+        const overallScorePercent = payload.overallScorePercent != null
+          ? Number(payload.overallScorePercent)
+          : Math.round(((ratingTech + ratingPunct + ratingSla) / 15) * 100);
+
+        await sql`
+          INSERT INTO workforce_csat_reviews (
+            id, tenant_slug, tenant_id, client_name, stakeholder_name, stakeholder_email,
+            month, rating_technical, rating_punctuality, rating_sla, overall_score_percent,
+            feedback_text, created_at
+          ) VALUES (
+            ${csatId}, ${cleanSlug}, ${cleanSlug}, ${payload.clientName},
+            ${payload.stakeholderName}, ${payload.stakeholderEmail}, ${payload.month},
+            ${ratingTech}, ${ratingPunct}, ${ratingSla}, ${overallScorePercent},
+            ${payload.feedbackText || ""}, CURRENT_TIMESTAMP
+          );
+        `;
+
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'csat_review', ${csatId},
+            'CSAT_REVIEW_SUBMITTED', ${payload.stakeholderName || "Client Stakeholder"},
+            ${JSON.stringify({ clientName: payload.clientName, overallScorePercent, month: payload.month })}
+          );
+        `;
+        return NextResponse.json({
+          success: true,
+          csatId,
+          message: "Client satisfaction & quality review recorded successfully",
+        });
+      }
+
+      case "LOG_CLIENT_TICKET": {
+        const ticketId = payload.id || `tkt-${Date.now()}`;
+        const ticketNum = payload.ticketNumber || `TKT-${Math.floor(1000 + Math.random() * 9000)}`;
+        const priority = payload.priority || "high";
+        const slaMinutes = priority === "critical" ? 60 : priority === "high" ? 120 : 240;
+
+        await sql`
+          INSERT INTO workforce_tickets (
+            id, tenant_slug, tenant_id, ticket_number, client_name, subject,
+            priority, assigned_specialist, status, sla_minutes_remaining, created_at
+          ) VALUES (
+            ${ticketId}, ${cleanSlug}, ${cleanSlug}, ${ticketNum}, ${payload.clientName},
+            ${payload.subject}, ${priority}, ${payload.assignedSpecialist || "Triage Desk"},
+            'open', ${slaMinutes}, CURRENT_TIMESTAMP
+          );
+        `;
+
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'ticket', ${ticketId},
+            'CLIENT_TICKET_LOGGED', ${payload.clientName},
+            ${JSON.stringify({ ticketNumber: ticketNum, subject: payload.subject, priority })}
+          );
+        `;
+        return NextResponse.json({
+          success: true,
+          ticketId,
+          ticketNumber: ticketNum,
+          message: "Incident ticket logged with SLA countdown timer active",
         });
       }
 

@@ -30,6 +30,7 @@ import {
   EvaluationCycle,
   PerformanceScorecard,
   PerformanceImprovementPlan,
+  ClientCsatReview,
 } from "./workforce-types";
 
 export const INITIAL_JOB_OPENINGS: JobOpening[] = [
@@ -984,6 +985,10 @@ export const INITIAL_WORK_LOGS: DailyWorkLog[] = [
     hoursWorked: 8.5,
     summary: "Configured WebSocket connection pooling for delivery couriers and resolved GPS ping timeouts.",
     supervisorSignedOff: true,
+    clientSignedOff: true,
+    clientSignedBy: "Babajide Coker (Operations Director)",
+    clientSignedAt: "2027-04-15T18:30:00Z",
+    deliverableRef: "deliv-01",
   },
   {
     id: "log-02",
@@ -993,6 +998,10 @@ export const INITIAL_WORK_LOGS: DailyWorkLog[] = [
     hoursWorked: 9,
     summary: "Calibrated biometric fingerprint readers across 40 exam terminals and performed dry-run mock audit.",
     supervisorSignedOff: true,
+    clientSignedOff: true,
+    clientSignedBy: "Mrs. Folashade Adeleke (Registrar)",
+    clientSignedAt: "2027-04-15T19:00:00Z",
+    deliverableRef: "deliv-02",
   },
   {
     id: "log-03",
@@ -1002,6 +1011,7 @@ export const INITIAL_WORK_LOGS: DailyWorkLog[] = [
     hoursWorked: 8,
     summary: "Executed database migration test and verified exam candidate rosters for term assessments.",
     supervisorSignedOff: true,
+    clientSignedOff: false,
   },
 ];
 
@@ -1905,6 +1915,35 @@ export const INITIAL_PIPS: PerformanceImprovementPlan[] = [
     status: "active",
     outcomeNotes: "Week 1-2 check-in completed. Progress observed in LMS coursework.",
     createdAt: "2027-04-16T10:00:00Z",
+  },
+];
+
+export const INITIAL_CSAT_REVIEWS: ClientCsatReview[] = [
+  {
+    id: "csat-01",
+    clientName: "Prime Logistics Ltd",
+    stakeholderName: "Babajide Coker",
+    stakeholderEmail: "b.coker@primelogistics.ng",
+    month: "2027-04",
+    ratingTechnical: 5,
+    ratingPunctuality: 5,
+    ratingSla: 5,
+    overallScorePercent: 98,
+    feedbackText: "Outstanding dedication from Kalu Uche. GPS sync latency dropped significantly across our mainland fleet dispatch hub.",
+    createdAt: "2027-04-28T14:20:00Z",
+  },
+  {
+    id: "csat-02",
+    clientName: "Apex Academy Lagos",
+    stakeholderName: "Mrs. Folashade Adeleke",
+    stakeholderEmail: "registrar@apexacademy.sch.ng",
+    month: "2027-04",
+    ratingTechnical: 5,
+    ratingPunctuality: 4,
+    ratingSla: 5,
+    overallScorePercent: 94,
+    feedbackText: "Chinedu Eze demonstrated exemplary technical mastery in biometric calibration. Term exams proceeded with zero hardware downtime.",
+    createdAt: "2027-04-29T11:00:00Z",
   },
 ];
 

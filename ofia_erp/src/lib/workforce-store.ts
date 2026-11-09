@@ -36,6 +36,7 @@ import {
   EvaluationCycle,
   PerformanceScorecard,
   PerformanceImprovementPlan,
+  ClientCsatReview,
   WorkforceCapacitySkillDeficit,
   WorkforceGanttAllocation,
   WorkforceGanttItem,
@@ -72,6 +73,7 @@ import {
   INITIAL_EVALUATION_CYCLES,
   INITIAL_SCORECARDS,
   INITIAL_PIPS,
+  INITIAL_CSAT_REVIEWS,
 } from "./workforce-defaults";
 import { extractSubdomainOrParam } from "./tenant-context";
 
@@ -130,6 +132,7 @@ export function useWorkforceManager() {
   const [evaluationCycles, setEvaluationCycles] = useState<EvaluationCycle[]>(INITIAL_EVALUATION_CYCLES);
   const [scorecards, setScorecards] = useState<PerformanceScorecard[]>(INITIAL_SCORECARDS);
   const [pips, setPips] = useState<PerformanceImprovementPlan[]>(INITIAL_PIPS);
+  const [csatReviews, setCsatReviews] = useState<ClientCsatReview[]>(INITIAL_CSAT_REVIEWS);
 
   // Save changes to localStorage cache
   const saveLocalCache = useCallback(
@@ -149,6 +152,7 @@ export function useWorkforceManager() {
           evaluationCycles: overrides?.evaluationCycles ?? evaluationCycles,
           scorecards: overrides?.scorecards ?? scorecards,
           pips: overrides?.pips ?? pips,
+          csatReviews: overrides?.csatReviews ?? csatReviews,
           assignments: overrides?.assignments ?? assignments,
           tasks: overrides?.tasks ?? tasks,
           attendance: overrides?.attendance ?? attendance,
@@ -199,6 +203,7 @@ export function useWorkforceManager() {
       interviews,
       offers,
       onboardingPackets,
+      csatReviews,
     ]
   );
 
@@ -250,6 +255,7 @@ export function useWorkforceManager() {
           if (Array.isArray(data.evaluationCycles) && data.evaluationCycles.length > 0) setEvaluationCycles(data.evaluationCycles);
           if (Array.isArray(data.scorecards) && data.scorecards.length > 0) setScorecards(data.scorecards);
           if (Array.isArray(data.pips) && data.pips.length > 0) setPips(data.pips);
+          if (Array.isArray(data.csatReviews) && data.csatReviews.length > 0) setCsatReviews(data.csatReviews);
         }
       }
     } catch (err) {
@@ -304,6 +310,7 @@ export function useWorkforceManager() {
           if (parsed.evaluationCycles) setEvaluationCycles(parsed.evaluationCycles);
           if (parsed.scorecards) setScorecards(parsed.scorecards);
           if (parsed.pips) setPips(parsed.pips);
+          if (parsed.csatReviews) setCsatReviews(parsed.csatReviews);
           if (parsed.assignments) setAssignments(parsed.assignments);
           if (parsed.tasks) setTasks(parsed.tasks);
           if (parsed.attendance) setAttendance(parsed.attendance);
@@ -1695,6 +1702,64 @@ export function useWorkforceManager() {
     [saveLocalCache, mutateBackend]
   );
 
+  // Phase 9: Restricted Client Portal Actions
+  const clientSignWorkLog = useCallback(
+    (workLogId: string, signedBy: string) => {
+      const now = new Date().toISOString();
+      setWorkLogs((prev) => {
+        const updated = prev.map((w) =>
+          w.id === workLogId
+            ? { ...w, clientSignedOff: true, clientSignedBy: signedBy, clientSignedAt: now }
+            : w
+        );
+        saveLocalCache({ workLogs: updated });
+        return updated;
+      });
+      mutateBackend("CLIENT_SIGN_WORK_LOG", { workLogId, signedBy });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const submitCsatReview = useCallback(
+    (review: Omit<ClientCsatReview, "id" | "createdAt">) => {
+      const newReview: ClientCsatReview = {
+        id: `csat-${Date.now()}`,
+        ...review,
+        createdAt: new Date().toISOString(),
+      };
+      setCsatReviews((prev) => {
+        const updated = [newReview, ...prev];
+        saveLocalCache({ csatReviews: updated });
+        return updated;
+      });
+      mutateBackend("SUBMIT_CSAT_REVIEW", newReview);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const logClientTicket = useCallback(
+    (ticket: { clientName: string; subject: string; priority: "P1" | "P2" | "P3"; assignedSpecialist?: string }) => {
+      const newTicket: ServiceTicket = {
+        id: `tkt-${Date.now()}`,
+        ticketNumber: `TKT-${Math.floor(1000 + Math.random() * 9000)}`,
+        clientName: ticket.clientName,
+        subject: ticket.subject,
+        priority: ticket.priority,
+        assignedSpecialist: ticket.assignedSpecialist || "Triage Desk",
+        status: "open",
+        createdAt: new Date().toLocaleDateString(),
+        slaMinutesRemaining: ticket.priority === "P1" ? 60 : ticket.priority === "P2" ? 120 : 240,
+      };
+      setTickets((prev) => {
+        const updated = [newTicket, ...prev];
+        saveLocalCache({ tickets: updated });
+        return updated;
+      });
+      mutateBackend("LOG_CLIENT_TICKET", newTicket);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
   // Real-time KPI calculations
   const kpis: WorkforceKpis = useMemo(() => {
     const total = people.length;
@@ -1753,6 +1818,7 @@ export function useWorkforceManager() {
     evaluationCycles,
     scorecards,
     pips,
+    csatReviews,
     assignments,
     tasks,
     attendance,
@@ -1815,6 +1881,9 @@ export function useWorkforceManager() {
     approveDeployment,
     rollOffDeployment,
     updateDeployment,
+    clientSignWorkLog,
+    submitCsatReview,
+    logClientTicket,
     addTicket,
     resolveTicket,
     createDepartment,

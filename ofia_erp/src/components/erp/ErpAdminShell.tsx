@@ -965,7 +965,7 @@ export function ErpAdminShell({
     { label: "CRM & Marketing", icon: <BarChart3 className="w-6 h-6" />, href: "/erp/admin/crm", badge: "CRM", key: "crm", section: "Ofia Enterprise Suite" },
     { label: "Accounting & Ledgers", icon: <Layers className="w-6 h-6" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
     { label: "HR & Appraisals", icon: <Users className="w-6 h-6" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
-    { label: "Worforce manager", icon: <Network className="w-6 h-6" />, href: "/erp/admin/workforce", badge: "OS", key: "workforce", section: "Ofia Enterprise Suite" },
+    { label: "Workforce Manager", icon: <Network className="w-6 h-6" />, href: "/erp/admin/workforce", badge: "OS", key: "workforce", section: "Ofia Enterprise Suite" },
     { label: "User Management", icon: <UserCheck className="w-6 h-6" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
@@ -1990,6 +1990,7 @@ export function ErpAdminShell({
                     if (tab.href === "/erp/admin/users") return pathname === "/erp/admin/users";
                     if (tab.href === "/erp/admin/departments") return pathname.startsWith("/erp/admin/departments");
                     if (tab.href === "/erp/admin/mobility") return pathname === "/erp/admin/mobility";
+                    if (tab.href === "/erp/admin/workforce") return pathname === "/erp/admin/workforce";
                     if (
                       tab.href === "/erp/admin" ||
                       tab.href === "/erp/admin/ai" ||
@@ -2039,6 +2040,7 @@ export function ErpAdminShell({
                   g.tabs.some((t) => {
                     if (pathname === t.href) return true;
                     if (t.href === "/erp/admin/mobility") return pathname === "/erp/admin/mobility";
+                    if (t.href === "/erp/admin/workforce") return pathname === "/erp/admin/workforce";
                     return pathname.startsWith(t.href);
                   })
                 )?.name;

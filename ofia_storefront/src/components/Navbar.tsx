@@ -58,10 +58,10 @@ export default function Navbar() {
         {/* Right CTA Actions */}
         <div className="hidden md:flex items-center gap-3">
           <Link
-            href="/login"
+            href="/account"
             className="text-sm font-medium text-stone-700 hover:text-[#0069ff] px-3 py-2 transition-colors duration-200"
           >
-            Login
+            Account
           </Link>
           <button className="flex items-center gap-2 bg-[#0069ff] hover:bg-[#0056d6] text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-[0_6px_20px_rgba(0,105,255,0.32)] transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer">
             <span>Book Call</span>
@@ -103,10 +103,10 @@ export default function Navbar() {
           ))}
           <div className="pt-3 mt-1 border-t border-white/10 flex items-center justify-between">
             <Link
-              href="/login"
+              href="/account"
               className="text-sm font-medium text-zinc-300 hover:text-white px-2 py-1"
             >
-              Login
+              Account
             </Link>
             <button className="flex items-center gap-2 bg-[#0069ff] text-white px-4 py-2 rounded-full text-sm font-medium">
               <span>Book Call</span>

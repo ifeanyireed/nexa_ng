@@ -91,39 +91,120 @@ function mapRowToStorefrontOrder(r: any): StorefrontOrderPayload {
 /**
  * Retrieves orders strictly partitioned by tenantSlug against their dedicated database.
  */
-export async function getStorefrontOrders(tenantSlug: string): Promise<StorefrontOrderPayload[]> {
+export async function getStorefrontOrders(
+  tenantSlug: string,
+  customerFilter?: { email?: string; phone?: string }
+): Promise<StorefrontOrderPayload[]> {
   ensureStorageReady();
   const clean = (tenantSlug || "").toLowerCase().trim();
   if (!clean) return [];
+
+  const cleanEmail = (customerFilter?.email || "").toLowerCase().trim();
+  const cleanPhone = (customerFilter?.phone || "").trim();
 
   const sql = await getTenantSql(clean);
 
   // 1. Query dedicated Neon PostgreSQL database
   if (sql) {
     try {
-      const rows = await sql`
-        SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-               customer_name, COALESCE(customer_email, '') as customer_email,
-               customer_phone, channel, status, payment_status, delivery_method,
-               COALESCE(shipping_address, '') as shipping_address,
-               COALESCE(city, 'Lagos') as city,
-               COALESCE(payment_method, 'card') as payment_method,
-               COALESCE(items_summary, '') as items_summary,
-               item_count, total_amount, raw_amount,
-               COALESCE(currency, '₦') as currency,
-               COALESCE(items, '[]'::jsonb) as items,
-               COALESCE(notes, '') as notes,
-               COALESCE(is_escrow, FALSE) as is_escrow,
-               COALESCE(escrow_status, 'NONE') as escrow_status,
-               COALESCE(settlement_status, 'AVAILABLE') as settlement_status,
-               COALESCE(merchant_amount, 0) as merchant_amount,
-               COALESCE(platform_fee, 0) as platform_fee,
-               created_at, updated_at
-        FROM shop_orders
-        WHERE LOWER(tenant_slug) = ${clean}
-        ORDER BY created_at DESC
-        LIMIT 100
-      `;
+      const rows = cleanEmail && cleanPhone
+        ? await sql`
+            SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+                   customer_name, COALESCE(customer_email, '') as customer_email,
+                   customer_phone, channel, status, payment_status, delivery_method,
+                   COALESCE(shipping_address, '') as shipping_address,
+                   COALESCE(city, 'Lagos') as city,
+                   COALESCE(payment_method, 'card') as payment_method,
+                   COALESCE(items_summary, '') as items_summary,
+                   item_count, total_amount, raw_amount,
+                   COALESCE(currency, '₦') as currency,
+                   COALESCE(items, '[]'::jsonb) as items,
+                   COALESCE(notes, '') as notes,
+                   COALESCE(is_escrow, FALSE) as is_escrow,
+                   COALESCE(escrow_status, 'NONE') as escrow_status,
+                   COALESCE(settlement_status, 'AVAILABLE') as settlement_status,
+                   COALESCE(merchant_amount, 0) as merchant_amount,
+                   COALESCE(platform_fee, 0) as platform_fee,
+                   created_at, updated_at
+            FROM shop_orders
+            WHERE LOWER(tenant_slug) = ${clean}
+              AND (LOWER(customer_email) = ${cleanEmail} OR customer_phone = ${cleanPhone})
+            ORDER BY created_at DESC
+            LIMIT 100
+          `
+        : cleanEmail
+        ? await sql`
+            SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+                   customer_name, COALESCE(customer_email, '') as customer_email,
+                   customer_phone, channel, status, payment_status, delivery_method,
+                   COALESCE(shipping_address, '') as shipping_address,
+                   COALESCE(city, 'Lagos') as city,
+                   COALESCE(payment_method, 'card') as payment_method,
+                   COALESCE(items_summary, '') as items_summary,
+                   item_count, total_amount, raw_amount,
+                   COALESCE(currency, '₦') as currency,
+                   COALESCE(items, '[]'::jsonb) as items,
+                   COALESCE(notes, '') as notes,
+                   COALESCE(is_escrow, FALSE) as is_escrow,
+                   COALESCE(escrow_status, 'NONE') as escrow_status,
+                   COALESCE(settlement_status, 'AVAILABLE') as settlement_status,
+                   COALESCE(merchant_amount, 0) as merchant_amount,
+                   COALESCE(platform_fee, 0) as platform_fee,
+                   created_at, updated_at
+            FROM shop_orders
+            WHERE LOWER(tenant_slug) = ${clean}
+              AND LOWER(customer_email) = ${cleanEmail}
+            ORDER BY created_at DESC
+            LIMIT 100
+          `
+        : cleanPhone
+        ? await sql`
+            SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+                   customer_name, COALESCE(customer_email, '') as customer_email,
+                   customer_phone, channel, status, payment_status, delivery_method,
+                   COALESCE(shipping_address, '') as shipping_address,
+                   COALESCE(city, 'Lagos') as city,
+                   COALESCE(payment_method, 'card') as payment_method,
+                   COALESCE(items_summary, '') as items_summary,
+                   item_count, total_amount, raw_amount,
+                   COALESCE(currency, '₦') as currency,
+                   COALESCE(items, '[]'::jsonb) as items,
+                   COALESCE(notes, '') as notes,
+                   COALESCE(is_escrow, FALSE) as is_escrow,
+                   COALESCE(escrow_status, 'NONE') as escrow_status,
+                   COALESCE(settlement_status, 'AVAILABLE') as settlement_status,
+                   COALESCE(merchant_amount, 0) as merchant_amount,
+                   COALESCE(platform_fee, 0) as platform_fee,
+                   created_at, updated_at
+            FROM shop_orders
+            WHERE LOWER(tenant_slug) = ${clean}
+              AND customer_phone = ${cleanPhone}
+            ORDER BY created_at DESC
+            LIMIT 100
+          `
+        : await sql`
+            SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+                   customer_name, COALESCE(customer_email, '') as customer_email,
+                   customer_phone, channel, status, payment_status, delivery_method,
+                   COALESCE(shipping_address, '') as shipping_address,
+                   COALESCE(city, 'Lagos') as city,
+                   COALESCE(payment_method, 'card') as payment_method,
+                   COALESCE(items_summary, '') as items_summary,
+                   item_count, total_amount, raw_amount,
+                   COALESCE(currency, '₦') as currency,
+                   COALESCE(items, '[]'::jsonb) as items,
+                   COALESCE(notes, '') as notes,
+                   COALESCE(is_escrow, FALSE) as is_escrow,
+                   COALESCE(escrow_status, 'NONE') as escrow_status,
+                   COALESCE(settlement_status, 'AVAILABLE') as settlement_status,
+                   COALESCE(merchant_amount, 0) as merchant_amount,
+                   COALESCE(platform_fee, 0) as platform_fee,
+                   created_at, updated_at
+            FROM shop_orders
+            WHERE LOWER(tenant_slug) = ${clean}
+            ORDER BY created_at DESC
+            LIMIT 100
+          `;
 
       if (rows && rows.length > 0) {
         return rows.map(mapRowToStorefrontOrder);
@@ -139,12 +220,24 @@ export async function getStorefrontOrders(tenantSlug: string): Promise<Storefron
       const data = fs.readFileSync(ORDERS_FILE, "utf8");
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed)) {
-        return parsed.filter((o) => (o.tenantSlug || "").toLowerCase().trim() === clean);
+        return parsed.filter((o) => {
+          const matchTenant = (o.tenantSlug || "").toLowerCase().trim() === clean;
+          if (!matchTenant) return false;
+          if (cleanEmail && (o.customerEmail || "").toLowerCase().trim() === cleanEmail) return true;
+          if (cleanPhone && (o.customerPhone || "").trim() === cleanPhone) return true;
+          return !cleanEmail && !cleanPhone;
+        });
       }
     }
   } catch {}
 
-  return memoryOrders.filter((o) => (o.tenantSlug || "").toLowerCase().trim() === clean);
+  return memoryOrders.filter((o) => {
+    const matchTenant = (o.tenantSlug || "").toLowerCase().trim() === clean;
+    if (!matchTenant) return false;
+    if (cleanEmail && (o.customerEmail || "").toLowerCase().trim() === cleanEmail) return true;
+    if (cleanPhone && (o.customerPhone || "").trim() === cleanPhone) return true;
+    return !cleanEmail && !cleanPhone;
+  });
 }
 
 /**
@@ -435,33 +528,96 @@ export async function updateStorefrontOrderStatus(
 /**
  * Retrieves bookings strictly partitioned by tenantSlug.
  */
-export async function getStorefrontBookings(tenantSlug: string): Promise<StorefrontBookingPayload[]> {
+export async function getStorefrontBookings(
+  tenantSlug: string,
+  customerFilter?: { email?: string; phone?: string }
+): Promise<StorefrontBookingPayload[]> {
   ensureStorageReady();
   const clean = (tenantSlug || "").toLowerCase().trim();
   if (!clean) return [];
+
+  const cleanEmail = (customerFilter?.email || "").toLowerCase().trim();
+  const cleanPhone = (customerFilter?.phone || "").trim();
 
   const sql = await getTenantSql(clean);
 
   // 1. Neon PostgreSQL query strictly scoped to tenant
   if (sql) {
     try {
-      const rows = await sql`
-        SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-               customer_name, COALESCE(customer_email, '') as customer_email,
-               customer_phone,
-               COALESCE(service_title, service_name, 'Inspection / Service') as service_title,
-               COALESCE(date_time, slot_date || ' ' || slot_time, 'TBD') as date_time,
-               status, COALESCE(vertical, 'cars') as vertical,
-               COALESCE(notes, '') as notes,
-               COALESCE(total_amount, '₦0') as amount,
-               COALESCE(technician_id, '') as technician_id,
-               COALESCE(technician_name, '') as technician_name,
-               created_at, updated_at
-        FROM shop_bookings
-        WHERE LOWER(tenant_slug) = ${clean}
-        ORDER BY created_at DESC
-        LIMIT 100
-      `;
+      const rows = cleanEmail && cleanPhone
+        ? await sql`
+            SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+                   customer_name, COALESCE(customer_email, '') as customer_email,
+                   customer_phone,
+                   COALESCE(service_title, service_name, 'Inspection / Service') as service_title,
+                   COALESCE(date_time, slot_date || ' ' || slot_time, 'TBD') as date_time,
+                   status, COALESCE(vertical, 'cars') as vertical,
+                   COALESCE(notes, '') as notes,
+                   COALESCE(total_amount, '₦0') as amount,
+                   COALESCE(technician_id, '') as technician_id,
+                   COALESCE(technician_name, '') as technician_name,
+                   created_at, updated_at
+            FROM shop_bookings
+            WHERE LOWER(tenant_slug) = ${clean}
+              AND (LOWER(customer_email) = ${cleanEmail} OR customer_phone = ${cleanPhone})
+            ORDER BY created_at DESC
+            LIMIT 100
+          `
+        : cleanEmail
+        ? await sql`
+            SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+                   customer_name, COALESCE(customer_email, '') as customer_email,
+                   customer_phone,
+                   COALESCE(service_title, service_name, 'Inspection / Service') as service_title,
+                   COALESCE(date_time, slot_date || ' ' || slot_time, 'TBD') as date_time,
+                   status, COALESCE(vertical, 'cars') as vertical,
+                   COALESCE(notes, '') as notes,
+                   COALESCE(total_amount, '₦0') as amount,
+                   COALESCE(technician_id, '') as technician_id,
+                   COALESCE(technician_name, '') as technician_name,
+                   created_at, updated_at
+            FROM shop_bookings
+            WHERE LOWER(tenant_slug) = ${clean}
+              AND LOWER(customer_email) = ${cleanEmail}
+            ORDER BY created_at DESC
+            LIMIT 100
+          `
+        : cleanPhone
+        ? await sql`
+            SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+                   customer_name, COALESCE(customer_email, '') as customer_email,
+                   customer_phone,
+                   COALESCE(service_title, service_name, 'Inspection / Service') as service_title,
+                   COALESCE(date_time, slot_date || ' ' || slot_time, 'TBD') as date_time,
+                   status, COALESCE(vertical, 'cars') as vertical,
+                   COALESCE(notes, '') as notes,
+                   COALESCE(total_amount, '₦0') as amount,
+                   COALESCE(technician_id, '') as technician_id,
+                   COALESCE(technician_name, '') as technician_name,
+                   created_at, updated_at
+            FROM shop_bookings
+            WHERE LOWER(tenant_slug) = ${clean}
+              AND customer_phone = ${cleanPhone}
+            ORDER BY created_at DESC
+            LIMIT 100
+          `
+        : await sql`
+            SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+                   customer_name, COALESCE(customer_email, '') as customer_email,
+                   customer_phone,
+                   COALESCE(service_title, service_name, 'Inspection / Service') as service_title,
+                   COALESCE(date_time, slot_date || ' ' || slot_time, 'TBD') as date_time,
+                   status, COALESCE(vertical, 'cars') as vertical,
+                   COALESCE(notes, '') as notes,
+                   COALESCE(total_amount, '₦0') as amount,
+                   COALESCE(technician_id, '') as technician_id,
+                   COALESCE(technician_name, '') as technician_name,
+                   created_at, updated_at
+            FROM shop_bookings
+            WHERE LOWER(tenant_slug) = ${clean}
+            ORDER BY created_at DESC
+            LIMIT 100
+          `;
 
       if (rows && rows.length > 0) {
         return rows.map((r: any) => ({
@@ -500,12 +656,24 @@ export async function getStorefrontBookings(tenantSlug: string): Promise<Storefr
       const data = fs.readFileSync(BOOKINGS_FILE, "utf8");
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed)) {
-        return parsed.filter((b) => (b.tenantSlug || "").toLowerCase().trim() === clean);
+        return parsed.filter((b) => {
+          const matchTenant = (b.tenantSlug || "").toLowerCase().trim() === clean;
+          if (!matchTenant) return false;
+          if (cleanEmail && (b.customerEmail || "").toLowerCase().trim() === cleanEmail) return true;
+          if (cleanPhone && (b.customerPhone || "").trim() === cleanPhone) return true;
+          return !cleanEmail && !cleanPhone;
+        });
       }
     }
   } catch {}
 
-  return memoryBookings.filter((b) => (b.tenantSlug || "").toLowerCase().trim() === clean);
+  return memoryBookings.filter((b) => {
+    const matchTenant = (b.tenantSlug || "").toLowerCase().trim() === clean;
+    if (!matchTenant) return false;
+    if (cleanEmail && (b.customerEmail || "").toLowerCase().trim() === cleanEmail) return true;
+    if (cleanPhone && (b.customerPhone || "").trim() === cleanPhone) return true;
+    return !cleanEmail && !cleanPhone;
+  });
 }
 
 /**

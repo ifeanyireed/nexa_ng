@@ -22,6 +22,7 @@ import {
 import { VendorStore } from "@/types/storefront";
 import { useCart } from "@/context/CartContext";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useBuyerAuth } from "@/context/BuyerAuthContext";
 
 interface StoreHeaderProps {
   store: VendorStore;
@@ -40,7 +41,12 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
   const pathname = usePathname();
   const { totalCount, setIsCartOpen } = useCart();
   const { isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
+  const { buyer, isAuthenticated } = useBuyerAuth();
   const announcement = handshake?.storefrontConfig?.announcement;
+  const accountHref = tenantSlug ? `/account?tenant=${encodeURIComponent(tenantSlug)}` : "/account";
+  const buyerInitials = buyer?.fullName
+    ? buyer.fullName.split(" ").filter(Boolean).map((w) => w[0]).join("").toUpperCase().slice(0, 2)
+    : "OA";
 
   // Vertical-specific navigation links
   const getNavLinks = () => {
@@ -318,17 +324,21 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
             <Bell className="w-5 h-5" />
           </button>
 
-          {/* User Avatar with circular photo & dropdown chevron matching moodboard */}
+          {/* User Avatar with circular badge/initials & dropdown chevron */}
           <Link
-            href="/account"
+            href={accountHref}
             className="flex items-center gap-1.5 p-1 pr-2.5 rounded-full bg-white/80 hover:bg-white shadow-2xs border border-stone-200/60 transition-all cursor-pointer"
-            title="Account"
+            title={isAuthenticated && buyer ? `${buyer.fullName} (Account)` : "Customer Account"}
           >
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80"
-              alt="User Avatar"
-              className="w-7 h-7 rounded-full object-cover"
-            />
+            {isAuthenticated && buyer ? (
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                {buyerInitials}
+              </div>
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-stone-100 text-stone-700 flex items-center justify-center shrink-0">
+                <User className="w-3.5 h-3.5" />
+              </div>
+            )}
             <ChevronDown className="w-3.5 h-3.5 text-stone-500" />
           </Link>
 
@@ -363,7 +373,7 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
             ))}
 
             <Link
-              href="/account"
+              href={accountHref}
               onClick={() => setMobileOpen(false)}
               className="flex items-center gap-2.5 px-4 py-2.5 rounded-full text-base font-semibold text-stone-800 hover:bg-stone-100 transition-colors"
             >

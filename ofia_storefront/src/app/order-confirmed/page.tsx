@@ -10,15 +10,17 @@ import {
   ArrowRight,
   ShieldCheck,
 } from "lucide-react";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 
 function ConfirmationContent() {
   const searchParams = useSearchParams();
   const orderRef = searchParams.get("ref") || "";
   const customerName = searchParams.get("name") || "Customer";
-  const tenantSlug = searchParams.get("tenant");
+  const { tenantSlug: contextTenantSlug } = useStorefrontTenant();
+  const tenantSlug = searchParams.get("tenant") || contextTenantSlug;
   const isEscrow = searchParams.get("escrow") === "1";
-  const returnHref = tenantSlug ? `/?tenant=${encodeURIComponent(tenantSlug)}` : "/templates";
-  const returnLabel = tenantSlug ? `Back to ${tenantSlug.toUpperCase()} Storefront` : "Explore All Templates";
+  const returnHref = tenantSlug ? "/" : "/templates";
+  const returnLabel = tenantSlug ? `Back to Storefront` : "Explore All Templates";
 
   return (
     <div className="max-w-2xl mx-auto p-8 sm:p-12 rounded-3xl bg-white border border-stone-200 shadow-xl text-center space-y-6 animate-fade-in">

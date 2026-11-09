@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
@@ -19,11 +19,13 @@ import {
 
 import { CartItem } from "@/types/storefront";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useBuyerAuth } from "@/context/BuyerAuthContext";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, removeFromCart, updateQuantity, subtotal, clearCart } = useCart();
+  const { items, removeFromCart, updateQuantity, subtotal, clearCart, activeVertical } = useCart();
   const { tenantSlug, handshake, store } = useStorefrontTenant();
+  const { buyer, syncWithOrder } = useBuyerAuth();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -33,6 +35,22 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">("card");
   const [requestEscrow, setRequestEscrow] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Auto pre-fill checkout contact & address if buyer is logged in
+  useEffect(() => {
+    if (buyer) {
+      if (buyer.fullName) setFullName((prev) => prev || buyer.fullName);
+      if (buyer.email) setEmail((prev) => prev || buyer.email);
+      if (buyer.phone) setPhone((prev) => prev || buyer.phone);
+      if (buyer.addresses && buyer.addresses.length > 0) {
+        const def = buyer.addresses.find((a) => a.isDefault) || buyer.addresses[0];
+        if (def) {
+          setAddress((prev) => prev || def.street);
+          if (def.city) setCity((prev) => prev || def.city);
+        }
+      }
+    }
+  }, [buyer]);
 
   // Escrow is strictly opt-in on request IF tenant allows escrow option
   const tenantAllowsEscrow = Boolean(
@@ -50,12 +68,15 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
 
-    const targetSlug = (tenantSlug || "").toLowerCase().trim();
-    if (!targetSlug) {
-      setIsProcessing(false);
-      alert("Missing tenant context. Please access storefront using a valid tenant URL.");
-      return;
-    }
+    const derivedSlug = (
+      tenantSlug ||
+      (items[0]?.vertical ? `${items[0].vertical}-demo` : "") ||
+      activeVertical ||
+      "fashion"
+    )
+      .toLowerCase()
+      .trim();
+    const targetSlug = derivedSlug || "fashion";
 
     const isEscrowActive = tenantAllowsEscrow && requestEscrow;
 
@@ -109,12 +130,28 @@ export default function CheckoutPage() {
       const data = await res.json().catch(() => null);
       const orderRef = data?.order?.orderNumber || `OFIA-${Math.floor(100000 + Math.random() * 900000)}`;
 
+      // Persist contact details & delivery address to buyer profile
+      syncWithOrder({
+        customerName: fullName,
+        customerEmail: email,
+        customerPhone: phone,
+        shippingAddress: address,
+        city: city,
+      });
+
       clearCart();
       const redirectTenant = targetSlug ? `&tenant=${encodeURIComponent(targetSlug)}` : "";
       const escrowParam = `&escrow=${isEscrowActive ? "1" : "0"}`;
       router.push(`/order-confirmed?ref=${orderRef}&name=${encodeURIComponent(fullName)}${redirectTenant}${escrowParam}`);
     } catch {
       const orderRef = `OFIA-${Math.floor(100000 + Math.random() * 900000)}`;
+      syncWithOrder({
+        customerName: fullName,
+        customerEmail: email,
+        customerPhone: phone,
+        shippingAddress: address,
+        city: city,
+      });
       clearCart();
       const isEscrowActive = tenantAllowsEscrow && requestEscrow;
       router.push(`/order-confirmed?ref=${orderRef}&name=${encodeURIComponent(fullName)}&escrow=${isEscrowActive ? "1" : "0"}`);
@@ -129,7 +166,7 @@ export default function CheckoutPage() {
         {/* Navigation & Header */}
         <div className="flex items-center justify-between pb-6 border-b border-stone-200">
           <Link
-            href="/templates"
+            href={tenantSlug ? "/" : "/templates"}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-600 hover:text-blue-600 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -364,10 +401,10 @@ export default function CheckoutPage() {
                   <ShoppingBag className="w-8 h-8 text-stone-300 mx-auto" />
                   <p className="text-xs text-stone-500">Your shopping bag is empty.</p>
                   <Link
-                    href="/templates"
+                    href={tenantSlug ? "/" : "/templates"}
                     className="inline-block px-5 py-2.5 rounded-full bg-blue-600 text-white text-xs font-bold"
                   >
-                    Explore 7 Templates
+                    {tenantSlug ? "Continue Shopping" : "Explore Storefront Templates"}
                   </Link>
                 </div>
               ) : (

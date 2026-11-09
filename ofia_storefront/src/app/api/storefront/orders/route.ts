@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
   }
 
   const tenantSlug = rawTenant.toLowerCase().trim();
+  const email = searchParams.get("email") || searchParams.get("customerEmail") || undefined;
+  const phone = searchParams.get("phone") || searchParams.get("customerPhone") || undefined;
 
   try {
     if (ref) {
@@ -37,7 +39,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const orders = await getStorefrontOrders(tenantSlug);
+    const customerFilter = (email || phone) ? { email, phone } : undefined;
+    const orders = await getStorefrontOrders(tenantSlug, customerFilter);
     return NextResponse.json({ success: true, count: orders.length, orders });
   } catch (err: any) {
     return NextResponse.json(

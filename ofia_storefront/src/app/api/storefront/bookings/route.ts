@@ -20,9 +20,12 @@ export async function GET(request: NextRequest) {
   }
 
   const tenantSlug = rawTenant.toLowerCase().trim();
+  const email = searchParams.get("email") || searchParams.get("customerEmail") || undefined;
+  const phone = searchParams.get("phone") || searchParams.get("customerPhone") || undefined;
 
   try {
-    const bookings = await getStorefrontBookings(tenantSlug);
+    const customerFilter = (email || phone) ? { email, phone } : undefined;
+    const bookings = await getStorefrontBookings(tenantSlug, customerFilter);
     return NextResponse.json({ success: true, count: bookings.length, bookings });
   } catch (err: any) {
     return NextResponse.json(

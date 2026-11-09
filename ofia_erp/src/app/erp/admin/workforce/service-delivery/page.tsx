@@ -20,12 +20,16 @@ import {
   Radio,
   FileCheck2,
   ExternalLink,
+  UserPlus,
+  Mail,
+  Send,
+  Check,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { useWorkforceManager } from "@/lib/workforce-store";
-import { ServiceTicket, DailyWorkLog } from "@/lib/workforce-types";
+import { ServiceTicket, DailyWorkLog, ClientServiceAccount } from "@/lib/workforce-types";
 
 export default function ServiceDeliveryManagementPage() {
   const {
@@ -34,6 +38,7 @@ export default function ServiceDeliveryManagementPage() {
     workLogs,
     addTicket,
     resolveTicket,
+    addClientAccount,
   } = useWorkforceManager();
 
   const [activeTab, setActiveTab] = useState<"clients" | "tickets" | "logs">("clients");
@@ -42,6 +47,67 @@ export default function ServiceDeliveryManagementPage() {
   const [ticketClient, setTicketClient] = useState("First Zenith Financial");
   const [ticketSpecialist, setTicketSpecialist] = useState("Zainab Al-Hassan");
   const [ticketPriority, setTicketPriority] = useState<ServiceTicket["priority"]>("P1");
+
+  // Client provisioning modal state
+  const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [industry, setIndustry] = useState("Enterprise Logistics & Fleet Ops");
+  const [slaTargetHours, setSlaTargetHours] = useState<number>(2);
+  const [monthlyContractValue, setMonthlyContractValue] = useState<number>(2500000);
+  const [accountManager, setAccountManager] = useState("Tunde Bakare");
+  const [stakeholderName, setStakeholderName] = useState("");
+  const [stakeholderEmail, setStakeholderEmail] = useState("");
+  const [stakeholderDesig, setStakeholderDesig] = useState("Operations Director");
+  const [sendActivationEmail, setSendActivationEmail] = useState(true);
+  const [isSubmittingClient, setIsSubmittingClient] = useState(false);
+  const [provisionToast, setProvisionToast] = useState<string | null>(null);
+
+  const handleProvisionClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clientName.trim()) return;
+
+    setIsSubmittingClient(true);
+    try {
+      const newClient: ClientServiceAccount = {
+        id: `cli-${Date.now()}`,
+        clientName: clientName.trim(),
+        industry,
+        activeContractsCount: 1,
+        deployedStaffCount: 0,
+        monthlyContractValue: Number(monthlyContractValue) || 2500000,
+        slaTargetHours: Number(slaTargetHours) || 2,
+        slaCompliancePercent: 100,
+        accountManager,
+        health: "healthy",
+      };
+
+      const primaryStakeholder = stakeholderEmail.trim()
+        ? {
+            name: stakeholderName.trim() || `${clientName.trim()} Stakeholder`,
+            email: stakeholderEmail.trim().toLowerCase(),
+            designation: stakeholderDesig.trim() || "Operations Director",
+          }
+        : undefined;
+
+      await addClientAccount(newClient, primaryStakeholder);
+      setIsNewClientModalOpen(false);
+      setProvisionToast(
+        `Corporate account "${clientName.trim()}" successfully provisioned${
+          primaryStakeholder ? ` and activation credentials dispatched to ${primaryStakeholder.email}` : ""
+        }!`
+      );
+      setTimeout(() => setProvisionToast(null), 6000);
+
+      // Reset form
+      setClientName("");
+      setStakeholderName("");
+      setStakeholderEmail("");
+    } catch (err) {
+      console.error("Failed to provision client:", err);
+    } finally {
+      setIsSubmittingClient(false);
+    }
+  };
 
   const handleCreateTicket = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,17 +149,41 @@ export default function ServiceDeliveryManagementPage() {
           </Link>
           <NexaButton
             size="sm"
-            variant="primary"
+            variant="secondary"
             className="gap-2 text-xs"
             onClick={() => setIsNewTicketModalOpen(true)}
           >
             <Plus className="w-4 h-4" />
             Log Service Ticket
           </NexaButton>
+          <NexaButton
+            size="sm"
+            variant="primary"
+            className="gap-2 text-xs"
+            onClick={() => setIsNewClientModalOpen(true)}
+          >
+            <UserPlus className="w-4 h-4" />
+            Provision Client Account
+          </NexaButton>
         </div>
       }
     >
       <div className="space-y-8">
+        {provisionToast && (
+          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between text-xs animate-in fade-in duration-300">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="font-medium">{provisionToast}</span>
+            </div>
+            <button
+              onClick={() => setProvisionToast(null)}
+              className="p-1 hover:bg-emerald-500/20 rounded text-emerald-400"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* TOP SERVICE DELIVERY METRICS */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="p-5 bg-nexa-surface border border-nexa-border rounded-xl">
@@ -387,6 +477,201 @@ export default function ServiceDeliveryManagementPage() {
                   </NexaButton>
                   <NexaButton type="submit" size="sm" variant="primary">
                     Create Incident Ticket
+                  </NexaButton>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* PROVISION CLIENT ACCOUNT & STAKEHOLDER MODAL */}
+        {isNewClientModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-nexa-card border border-nexa-border rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between border-b border-nexa-border pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                    <UserPlus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-nexa-text-primary">
+                      Provision Client Account & Stakeholder Login
+                    </h3>
+                    <p className="text-xs text-nexa-text-secondary mt-0.5">
+                      Register B2B service contract, define SLA commitments, and issue restricted portal access.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsNewClientModalOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-nexa-surface text-nexa-text-secondary transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleProvisionClient} className="space-y-4 text-xs">
+                {/* SECTION 1: CLIENT ENTITY */}
+                <div className="space-y-3">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-wider text-nexa-text-secondary flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-blue-400" />
+                    Corporate Entity & Contract SLA
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-nexa-text-secondary mb-1">Company / Organization Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        placeholder="e.g. Zenith Horizon Logistics"
+                        className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-nexa-text-secondary mb-1">Industry Vertical</label>
+                      <select
+                        value={industry}
+                        onChange={(e) => setIndustry(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none"
+                      >
+                        <option value="Enterprise Logistics & Fleet Ops">Enterprise Logistics & Fleet Ops</option>
+                        <option value="Banking, FinTech & Payment Rails">Banking, FinTech & Payment Rails</option>
+                        <option value="Oil & Gas / Energy Infrastructure">Oil & Gas / Energy Infrastructure</option>
+                        <option value="Telecommunications & Cloud ISP">Telecommunications & Cloud ISP</option>
+                        <option value="Healthcare & Diagnostic Services">Healthcare & Diagnostic Services</option>
+                        <option value="Omnichannel Retail & FMCG">Omnichannel Retail & FMCG</option>
+                        <option value="Public Sector & Institutions">Public Sector & Institutions</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-nexa-text-secondary mb-1">SLA Target (Hours)</label>
+                      <select
+                        value={slaTargetHours}
+                        onChange={(e) => setSlaTargetHours(Number(e.target.value))}
+                        className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none"
+                      >
+                        <option value={1}>1 Hour (P1 Critical)</option>
+                        <option value={2}>2 Hours (Tier-1 Enterprise)</option>
+                        <option value={4}>4 Hours (Standard SLA)</option>
+                        <option value={8}>8 Hours (Business Day)</option>
+                        <option value={24}>24 Hours (Next Day)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-nexa-text-secondary mb-1">Monthly Contract (NGN)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="50000"
+                        value={monthlyContractValue}
+                        onChange={(e) => setMonthlyContractValue(Number(e.target.value))}
+                        className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-nexa-text-secondary mb-1">Account Manager</label>
+                      <input
+                        type="text"
+                        value={accountManager}
+                        onChange={(e) => setAccountManager(e.target.value)}
+                        placeholder="Internal Lead"
+                        className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 2: PRIMARY STAKEHOLDER / LOGIN */}
+                <div className="space-y-3 pt-3 border-t border-nexa-border">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-wider text-nexa-text-secondary flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-emerald-400" />
+                    Primary Client Stakeholder (Portal Login Access)
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-nexa-text-secondary mb-1">Stakeholder Full Name</label>
+                      <input
+                        type="text"
+                        value={stakeholderName}
+                        onChange={(e) => setStakeholderName(e.target.value)}
+                        placeholder="e.g. Babajide Coker"
+                        className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-nexa-text-secondary mb-1">Corporate Email Address *</label>
+                      <input
+                        type="email"
+                        required
+                        value={stakeholderEmail}
+                        onChange={(e) => setStakeholderEmail(e.target.value)}
+                        placeholder="e.g. b.coker@company.ng"
+                        className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-nexa-text-secondary mb-1">Corporate Designation / Role</label>
+                    <input
+                      type="text"
+                      value={stakeholderDesig}
+                      onChange={(e) => setStakeholderDesig(e.target.value)}
+                      placeholder="e.g. Operations Director / Head of Infrastructure"
+                      className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 text-slate-300">
+                    <input
+                      type="checkbox"
+                      id="sendActivation"
+                      checked={sendActivationEmail}
+                      onChange={(e) => setSendActivationEmail(e.target.checked)}
+                      className="rounded border-nexa-border text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="sendActivation" className="text-xs text-nexa-text-secondary">
+                      Dispatch activation invitation & password initialization link to stakeholder email
+                    </label>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-nexa-border flex justify-end gap-2.5">
+                  <NexaButton
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setIsNewClientModalOpen(false)}
+                    disabled={isSubmittingClient}
+                  >
+                    Cancel
+                  </NexaButton>
+                  <NexaButton
+                    type="submit"
+                    size="sm"
+                    variant="primary"
+                    disabled={isSubmittingClient}
+                    className="gap-2"
+                  >
+                    {isSubmittingClient ? (
+                      <span>Provisioning...</span>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Provision Account & Issue Access</span>
+                      </>
+                    )}
                   </NexaButton>
                 </div>
               </form>

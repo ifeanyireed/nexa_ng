@@ -52,6 +52,43 @@ export default function RestrictedClientPortalPage() {
   // Active client selector (default to first available client)
   const defaultClientName = clients[0]?.clientName || "Prime Logistics Ltd";
   const [selectedClientName, setSelectedClientName] = useState<string>(defaultClientName);
+  const [isLockedToClient, setIsLockedToClient] = useState(false);
+
+  // Auto-bind to authenticated corporate stakeholder session
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = localStorage.getItem("erp_current_user");
+      const userRole = localStorage.getItem("nexa_user_role") || "";
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.name) setStakeholderName(u.name + (u.designation ? ` (${u.designation})` : ""));
+        if (u.email) setStakeholderEmail(u.email);
+
+        const company = u.company || "";
+        const effectiveRole = u.role || userRole;
+
+        if (effectiveRole === "client" || company) {
+          const matched = clients.find(
+            (c) =>
+              c.clientName.toLowerCase() === company.toLowerCase() ||
+              company.toLowerCase().includes(c.clientName.toLowerCase()) ||
+              c.clientName.toLowerCase().includes(company.toLowerCase())
+          );
+          if (matched) {
+            setSelectedClientName(matched.clientName);
+          } else if (company) {
+            setSelectedClientName(company);
+          }
+          if (effectiveRole === "client") {
+            setIsLockedToClient(true);
+          }
+        }
+      } else if (userRole === "client") {
+        setIsLockedToClient(true);
+      }
+    } catch {}
+  }, [clients]);
 
   // Active portal tab
   const [activeTab, setActiveTab] = useState<"overview" | "tickets" | "timesheets" | "deliverables" | "csat">("overview");
@@ -207,26 +244,36 @@ export default function RestrictedClientPortalPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-            {/* Corporate Account Switcher */}
-            <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 rounded-lg px-3 py-1.5">
-              <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
-              <label htmlFor="client-switch" className="text-xs text-slate-400 sr-only">
-                Active Client
-              </label>
-              <select
-                id="client-switch"
-                value={selectedClientName}
-                onChange={(e) => setSelectedClientName(e.target.value)}
-                aria-label="Active Client Account"
-                className="bg-transparent text-xs font-medium text-slate-200 focus:outline-none cursor-pointer"
-              >
-                {clients.map((c) => (
-                  <option key={c.id} value={c.clientName} className="bg-slate-900 text-slate-200">
-                    {c.clientName}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Corporate Account Scope / Switcher */}
+            {isLockedToClient ? (
+              <div className="flex items-center gap-2 bg-blue-950/70 border border-blue-700/80 rounded-lg px-3 py-1.5 text-xs font-semibold text-blue-200">
+                <Building2 className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>{selectedClientName}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-900 border border-blue-600 text-blue-200">
+                  Dedicated Scope
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 rounded-lg px-3 py-1.5">
+                <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                <label htmlFor="client-switch" className="text-xs text-slate-400 sr-only">
+                  Active Client
+                </label>
+                <select
+                  id="client-switch"
+                  value={selectedClientName}
+                  onChange={(e) => setSelectedClientName(e.target.value)}
+                  aria-label="Active Client Account"
+                  className="bg-transparent text-xs font-medium text-slate-200 focus:outline-none cursor-pointer"
+                >
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.clientName} className="bg-slate-900 text-slate-200">
+                      {c.clientName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Stakeholder Identity */}
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300">
@@ -234,14 +281,16 @@ export default function RestrictedClientPortalPage() {
               <span>{stakeholderName}</span>
             </div>
 
-            {/* Link back to Workforce Admin for operators */}
-            <Link
-              href="/erp/admin/workforce/service-delivery"
-              className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-800/60 transition"
-            >
-              <span>Console</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
+            {/* Link back to Workforce Admin for operators (hidden for client role) */}
+            {!isLockedToClient && (
+              <Link
+                href="/erp/admin/workforce/service-delivery"
+                className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-800/60 transition"
+              >
+                <span>Console</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
           </div>
         </div>
       </header>

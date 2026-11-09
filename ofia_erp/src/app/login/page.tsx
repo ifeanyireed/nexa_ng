@@ -244,11 +244,12 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
           resolvedRole = "hr";
         } else if (rawRole.includes("accountant")) {
           resolvedRole = "accountant";
+        } else if (rawRole.includes("client")) {
+          resolvedRole = "client";
         } else if (
           rawRole.includes("employee") ||
           rawRole.includes("staff") ||
-          rawRole.includes("viewer") ||
-          rawRole.includes("client")
+          rawRole.includes("viewer")
         ) {
           resolvedRole = "employee";
         }
@@ -299,6 +300,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
             name: resolvedName,
             department: resolvedDept,
             designation: resolvedDesig,
+            company: (res.user && res.user.company) || "",
             avatar: resolveAvatarUrl(resolvedAvatar, resolvedName),
             assignedPages: resolvedAssignedPages,
           })
@@ -344,12 +346,16 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
       route = "/erp/admin/dispatch";
     } else if (activeRole === "sales_closer") {
       route = "/erp/ops/crm";
+    } else if (activeRole === "client") {
+      route = "/erp/client";
     } else {
       route = "/erp/employee";
     }
 
     if (assignedPages && assignedPages.length > 0 && !assignedPages.includes("employee")) {
-      if (assignedPages.includes("sales_closer")) {
+      if (assignedPages.includes("client")) {
+        route = "/erp/client";
+      } else if (assignedPages.includes("sales_closer")) {
         route = "/erp/ops/crm";
       } else if (assignedPages.includes("crm")) {
         route = "/erp/admin/crm";

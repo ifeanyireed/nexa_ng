@@ -3028,7 +3028,26 @@ export async function POST(request: Request) {
             ${payload.slaCompliancePercent || 100}, ${payload.accountManager}, ${payload.health || "healthy"}
           );
         `;
-        return NextResponse.json({ success: true, id, message: "Client service account registered" });
+
+        // If primary stakeholder specified, provision stakeholder record under workforce_people
+        if (payload.primaryStakeholder && payload.primaryStakeholder.email) {
+          const stakeholderId = `stk-${Date.now()}`;
+          await sql`
+            INSERT INTO workforce_people (
+              id, tenant_slug, tenant_id, name, email, role, designation,
+              department, status, location, join_date, current_client
+            ) VALUES (
+              ${stakeholderId}, ${cleanSlug}, ${cleanSlug}, ${payload.primaryStakeholder.name},
+              ${payload.primaryStakeholder.email}, 'client', ${payload.primaryStakeholder.designation || "Corporate Client Representative"},
+              'Client Stakeholder', 'active', 'Client HQ', ${new Date().toISOString().split("T")[0]}, ${payload.clientName}
+            ) ON CONFLICT (id) DO UPDATE SET
+              email = EXCLUDED.email,
+              current_client = EXCLUDED.current_client,
+              role = 'client';
+          `;
+        }
+
+        return NextResponse.json({ success: true, id, message: "Client service account and stakeholder provisioned" });
       }
 
       case "CREATE_TICKET": {

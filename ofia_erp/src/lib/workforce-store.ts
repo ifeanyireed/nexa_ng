@@ -1278,6 +1278,40 @@ export function useWorkforceManager() {
   }, [people, deployments]);
 
   // 8. Service delivery actions
+  const addClientAccount = useCallback(
+    async (
+      client: ClientServiceAccount,
+      primaryStakeholder?: { name: string; email: string; designation: string }
+    ) => {
+      setClients((prev) => {
+        const updated = [client, ...prev];
+        saveLocalCache({ clients: updated });
+        return updated;
+      });
+
+      await mutateBackend("CREATE_CLIENT", {
+        ...client,
+        primaryStakeholder,
+      });
+
+      if (primaryStakeholder?.email) {
+        await mutateBackend("DISPATCH_NOTIFICATION", {
+          type: "client_portal_invite",
+          channel: "email",
+          recipient: primaryStakeholder.email,
+          title: `Welcome to ${client.clientName} Corporate Portal`,
+          message: `Your corporate client portal access has been provisioned. Sign in to view your deployed specialists and SLA desk.`,
+          metadata: {
+            clientName: client.clientName,
+            stakeholderName: primaryStakeholder.name,
+            portalUrl: "/erp/client",
+          },
+        });
+      }
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
   const addTicket = useCallback(
     (ticket: ServiceTicket) => {
       setTickets((prev) => {
@@ -2002,6 +2036,7 @@ export function useWorkforceManager() {
     aiSummarizeDailyOperations,
     addTicket,
     resolveTicket,
+    addClientAccount,
     createDepartment,
     updateDepartment,
     deleteDepartment,

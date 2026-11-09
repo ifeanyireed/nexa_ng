@@ -21,7 +21,8 @@ export type RoleKey =
   | "employee"
   | "cashier"
   | "inventory_officer"
-  | "dispatcher";
+  | "dispatcher"
+  | "client";
 
 export interface RoleInfo {
   key: RoleKey;
@@ -120,6 +121,14 @@ export const ERP_ROLES: RoleInfo[] = [
     description: "Zonal dispatch routing, driver manifests, parcel tracking, and proof-of-delivery.",
     color: "#3B82F6",
     avatarBg: "bg-blue-500",
+  },
+  {
+    key: "client",
+    label: "Corporate Client Stakeholder",
+    badge: "Client User",
+    description: "Restricted visibility into outsourced staff, deliverables, SLA support tickets, timesheets, and CSAT reviews.",
+    color: "#2563EB",
+    avatarBg: "bg-blue-600",
   },
 ];
 
@@ -257,6 +266,14 @@ export interface AssignablePage {
 }
 
 export const ASSIGNABLE_PAGES: AssignablePage[] = [
+  {
+    key: "client",
+    label: "Corporate Client Portal",
+    description: "Restricted stakeholder portal for outsourced staffing, SLA desk, timesheets, and CSAT reviews.",
+    route: "/erp/client",
+    category: "Portals & Team",
+    badge: "Client",
+  },
   {
     key: "sales_closer",
     label: "Sales Closer Portal",
@@ -408,6 +425,8 @@ export function getDefaultPagesForRole(role: RoleKey | string, designation?: str
       return ["employee", "shop"];
     case "dispatcher":
       return ["employee", "dispatch", "dispatch_ops", "mobility"];
+    case "client":
+      return ["client"];
     case "employee":
     default:
       return ["employee"];
@@ -532,6 +551,13 @@ export function isRouteOrModuleAssignedToUser(
       reqMod === "md"
     )) return true;
 
+    // Corporate Client Portal
+    if (p === "client" && (
+      cleanPath.startsWith("/erp/client") ||
+      cleanPath.startsWith("/client") ||
+      reqMod === "client"
+    )) return true;
+
     // Employee Portal
     if (p === "employee" && (
       cleanPath.startsWith("/erp/employee") ||
@@ -635,6 +661,7 @@ export const EMPTY_PERMISSION_MATRIX: PermissionMatrix = {
   cashier: { mission: true },
   inventory_officer: { mission: true },
   dispatcher: { mission: true },
+  client: { mission: true },
 };
 
 export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = EMPTY_PERMISSION_MATRIX;
@@ -701,6 +728,7 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
         cashier: { mission: true },
         inventory_officer: { mission: true },
         dispatcher: { mission: true },
+        client: { mission: true },
       };
 
       // Super Admin provisioned module set (stored under 'tenant_provision' or 'admin')
@@ -1156,6 +1184,13 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
     controlPanels: ["shop"],
     portals: ["employee"],
     homeRoute: "/erp/admin/shop/pos",
+  },
+  client: {
+    key: "client",
+    label: "Corporate Client Stakeholder",
+    controlPanels: [],
+    portals: [] as any,
+    homeRoute: "/erp/client",
   },
 };
 

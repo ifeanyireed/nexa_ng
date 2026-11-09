@@ -1,51 +1,71 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Product, VerticalType } from "@/types/storefront";
-import { MOCK_PRODUCTS } from "@/data/mockStores";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 
 export function useStorefrontProducts(vertical: VerticalType) {
   const { tenantSlug } = useStorefrontTenant();
-  const [products, setProducts] = useState<Product[]>(() =>
-    MOCK_PRODUCTS.filter((p) => p.vertical === vertical)
-  );
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLiveMerchantCatalog, setIsLiveMerchantCatalog] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState<number>(0);
+
+  const refetch = useCallback(() => {
+    setRetryCount((prev) => prev + 1);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
 
     async function fetchProducts() {
       if (!tenantSlug) {
-        setProducts(MOCK_PRODUCTS.filter((p) => p.vertical === vertical));
-        setIsLiveMerchantCatalog(false);
+        if (isMounted) {
+          setProducts([]);
+          setIsLiveMerchantCatalog(false);
+          setError(null);
+        }
         return;
       }
 
       setIsLoading(true);
+      setError(null);
+
       try {
         const res = await fetch(
           `/api/storefront/products?tenant=${encodeURIComponent(tenantSlug)}&vertical=${encodeURIComponent(vertical)}`,
           { cache: "no-store" }
         );
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted && data.products && data.products.length > 0) {
-            setProducts(data.products);
-            setIsLiveMerchantCatalog(Boolean(data.isLiveMerchantCatalog));
-            return;
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const errMsg = errData.error || "Connect to Internet";
+          if (isMounted) {
+            setError(errMsg === "Connect to Internet" ? "Connect to Internet" : "Connect to Internet");
+            setProducts([]);
+            setIsLiveMerchantCatalog(false);
           }
+          return;
+        }
+
+        const data = await res.json();
+        if (isMounted) {
+          setProducts(Array.isArray(data.products) ? data.products : []);
+          setIsLiveMerchantCatalog(Boolean(data.isLiveMerchantCatalog));
+          setError(null);
         }
       } catch (err) {
-        console.warn("[useStorefrontProducts] Failed to fetch live products, falling back to seeds:", err);
+        console.warn("[useStorefrontProducts] Database fetch failed:", err);
+        if (isMounted) {
+          setError("Connect to Internet");
+          setProducts([]);
+          setIsLiveMerchantCatalog(false);
+        }
       } finally {
-        if (isMounted) setIsLoading(false);
-      }
-
-      if (isMounted) {
-        setProducts(MOCK_PRODUCTS.filter((p) => p.vertical === vertical));
-        setIsLiveMerchantCatalog(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
@@ -54,7 +74,7 @@ export function useStorefrontProducts(vertical: VerticalType) {
     return () => {
       isMounted = false;
     };
-  }, [tenantSlug, vertical]);
+  }, [tenantSlug, vertical, retryCount]);
 
-  return { products, isLiveMerchantCatalog, isLoading };
+  return { products, isLiveMerchantCatalog, isLoading, error, refetch };
 }

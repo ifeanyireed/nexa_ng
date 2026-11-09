@@ -3,26 +3,24 @@
 import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
-import { Filter, ArrowUpDown, ArrowRight, Check } from "lucide-react";
+import { Filter, ArrowUpDown, ArrowRight, Check, WifiOff, Loader2 } from "lucide-react";
 
 function FashionCatalogContent() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category");
+  const collectionParam = searchParams.get("collection");
 
   const { store: dynamicStore, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.fashion;
   const config = handshake?.storefrontConfig;
 
-  const { products: liveProducts } = useStorefrontProducts("fashion");
-  const allProducts =
-    liveProducts && liveProducts.length > 0
-      ? liveProducts
-      : MOCK_PRODUCTS.filter((p) => p.vertical === "fashion");
+  const { products: liveProducts, isLoading, error: productsError, refetch } = useStorefrontProducts("fashion");
+  const allProducts = liveProducts || [];
 
   const [selectedCategory, setSelectedCategory] = useState(categoryParam || "All");
   const [selectedSize, setSelectedSize] = useState("All");
@@ -133,9 +131,40 @@ function FashionCatalogContent() {
           </div>
         </div>
 
-        {/* Product Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => (
+        {productsError ? (
+          <div className="my-12 p-8 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-700">
+              <WifiOff className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-amber-950">Connect to Internet</h3>
+              <p className="text-xs text-amber-800 mt-1">
+                Unable to reach the live store catalog database. Please verify your connection and retry.
+              </p>
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="px-5 py-2 rounded-full bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              Retry Connection
+            </button>
+          </div>
+        ) : isLoading ? (
+          <div className="my-16 flex flex-col items-center justify-center text-stone-400 space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+            <p className="text-xs font-medium">Loading atelier catalogue...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="my-16 p-8 rounded-3xl border border-dashed border-stone-300 text-center max-w-md mx-auto space-y-3">
+            <p className="text-sm font-bold text-zinc-900">No pieces found</p>
+            <p className="text-xs text-stone-500">
+              There are currently no items matching this filter in the live inventory.
+            </p>
+          </div>
+        ) : (
+          /* Product Cards Grid */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProducts.map((product) => (
             <div
               key={product.id}
               className="group bg-white rounded-3xl overflow-hidden border border-stone-200/80 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
@@ -214,7 +243,8 @@ function FashionCatalogContent() {
             </div>
           ))}
         </div>
-      </main>
+      )}
+    </main>
 
       <StoreFooter store={store} />
     </div>

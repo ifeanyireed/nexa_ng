@@ -28,6 +28,7 @@ import {
   Check,
   Palette,
   ZoomIn,
+  WifiOff,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -37,6 +38,7 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaModal } from "@/components/nexa/NexaModal";
 import { Pagination } from "@/components/nexa/Pagination";
 import { ImageUploadInput } from "@/components/common/ImageUploadInput";
+import { MultiImageUploadInput } from "@/components/common/MultiImageUploadInput";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant } from "@/lib/tenant-context";
 import {
@@ -83,6 +85,7 @@ export default function VerticalCatalogPage() {
 
   const [products, setProducts] = useState<CommerceProductItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
@@ -101,9 +104,12 @@ export default function VerticalCatalogPage() {
   const [formStock, setFormStock] = useState("10");
   const [formSku, setFormSku] = useState("");
   const [formImage, setFormImage] = useState("");
+  const [formImages, setFormImages] = useState<string[]>([]);
   const [formAttributes, setFormAttributes] = useState<Record<string, any>>({});
 
   // African Fashion Matrix Studio States
+  const [tenantAfricanPrints, setTenantAfricanPrints] = useState<FabricPrint[]>(AFRICAN_PRINT_PRESETS);
+  const [tenantCategories, setTenantCategories] = useState<string[]>([]);
   const [fashionPrints, setFashionPrints] = useState<FabricPrint[]>([
     AFRICAN_PRINT_PRESETS[0],
     AFRICAN_PRINT_PRESETS[1],
@@ -481,6 +487,7 @@ export default function VerticalCatalogPage() {
     if (!activeTenant?.slug) return;
     const slug = activeTenant.slug;
     setIsLoading(true);
+    setFetchError(null);
     try {
       const res = await fetch(
         `/api/erp/shop/products?tenant=${encodeURIComponent(slug)}&vertical=${encodeURIComponent(verticalKey)}`,
@@ -488,15 +495,16 @@ export default function VerticalCatalogPage() {
       );
       if (res.ok) {
         const data = await res.json();
-        if (data.products && Array.isArray(data.products) && data.products.length > 0) {
-          setProducts(data.products);
-          setIsLoading(false);
-          return;
-        }
+        setProducts(Array.isArray(data.products) ? data.products : []);
+        setFetchError(null);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setProducts([]);
+        setFetchError(errData.error === "Connect to Internet" ? "Connect to Internet" : "Connect to Internet");
       }
-      setProducts(getDefaultProductsForVertical(verticalKey));
     } catch {
-      setProducts(getDefaultProductsForVertical(verticalKey));
+      setProducts([]);
+      setFetchError("Connect to Internet");
     } finally {
       setIsLoading(false);
     }
@@ -505,6 +513,19 @@ export default function VerticalCatalogPage() {
   useEffect(() => {
     if (activeTenant?.slug) {
       loadProducts();
+      fetch(`/api/erp/shop/store-settings?tenant=${encodeURIComponent(activeTenant.slug)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.config) {
+            if (Array.isArray(data.config.africanPrints) && data.config.africanPrints.length > 0) {
+              setTenantAfricanPrints(data.config.africanPrints);
+            }
+            if (Array.isArray(data.config.categories) && data.config.categories.length > 0) {
+              setTenantCategories(data.config.categories.map((c: any) => c.name || c));
+            }
+          }
+        })
+        .catch(() => {});
     }
   }, [activeTenant?.slug, loadProducts]);
 
@@ -516,6 +537,7 @@ export default function VerticalCatalogPage() {
     setFormStock("10");
     setFormSku(initSku);
     setFormImage("");
+    setFormImages([]);
     const initAttrs: Record<string, any> = {};
     currentVerticalDef.attributeFields.forEach((field) => {
       initAttrs[field.key] = field.type === "boolean" ? true : "";
@@ -559,8 +581,16 @@ export default function VerticalCatalogPage() {
 
     setIsSaving(true);
 
+    const finalImages = formImages.filter(Boolean);
+    const primaryImage =
+      finalImages[0] ||
+      formImage ||
+      "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
+    const imagesToSave = finalImages.length > 0 ? finalImages : [primaryImage];
+
     const mergedAttributes = {
       ...formAttributes,
+      images: imagesToSave,
       ...(verticalKey === "fashion"
         ? {
             prints: fashionPrints,
@@ -579,7 +609,8 @@ export default function VerticalCatalogPage() {
       category: formCategory,
       stock: finalStock,
       sku: formSku,
-      image: formImage || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+      image: primaryImage,
+      images: imagesToSave,
       vertical: verticalKey,
       tenantSlug: slug,
       status: finalStock > 0 ? "ACTIVE" : "OUT_OF_STOCK",
@@ -625,7 +656,13 @@ export default function VerticalCatalogPage() {
     setFormCategory(product.category);
     setFormStock(String(product.stock));
     setFormSku(product.sku || "");
-    setFormImage(product.image || "");
+    const initialImages = Array.isArray(product.images) && product.images.length > 0
+      ? product.images.filter(Boolean)
+      : Array.isArray(product.attributes?.images) && product.attributes.images.length > 0
+      ? product.attributes.images.filter(Boolean)
+      : (product.image ? [product.image] : []);
+    setFormImages(initialImages);
+    setFormImage(initialImages[0] || product.image || "");
     setFormAttributes(product.attributes || {});
 
     if (verticalKey === "fashion") {
@@ -758,8 +795,9 @@ export default function VerticalCatalogPage() {
     products.forEach((p) => {
       if (p.category) set.add(p.category);
     });
+    tenantCategories.forEach((c) => set.add(c));
     return Array.from(set);
-  }, [products]);
+  }, [products, tenantCategories]);
 
   const storefrontCatalogUrl = getStorefrontUrl(verticalKey, activeTenant);
 
@@ -804,6 +842,23 @@ export default function VerticalCatalogPage() {
       }
     >
       <div className="space-y-6">
+        {fetchError && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-amber-700 dark:text-amber-400">
+            <div className="flex items-center gap-3">
+              <WifiOff className="w-5 h-5 shrink-0" />
+              <div>
+                <p className="text-xs font-bold">{fetchError}</p>
+                <p className="text-[11px] opacity-80">Unable to reach store database. Please verify your internet connection.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => loadProducts()}
+              className="px-3 py-1.5 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        )}
         {/* KPI CARDS */}
         <ErpStatGrid
           stats={[
@@ -904,6 +959,12 @@ export default function VerticalCatalogPage() {
                     <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/75 text-white backdrop-blur-xs">
                       {p.category}
                     </span>
+                    {p.images && p.images.length > 1 && (
+                      <span className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/75 text-white backdrop-blur-xs flex items-center gap-1">
+                        <ImageIcon className="w-2.5 h-2.5" />
+                        <span>{p.images.length} photos</span>
+                      </span>
+                    )}
                   </div>
 
                   <div>
@@ -1054,15 +1115,16 @@ export default function VerticalCatalogPage() {
             </div>
 
             <div className="sm:col-span-2">
-              <ImageUploadInput
-                label="Product Image"
-                value={formImage}
-                onChange={(url) => setFormImage(url)}
+              <MultiImageUploadInput
+                label={`${currentVerticalDef.productTerm} Images & Gallery`}
+                value={formImages}
+                onChange={(urls) => {
+                  setFormImages(urls);
+                  setFormImage(urls[0] || "");
+                }}
                 tenantSlug={activeTenant?.slug}
-                aspectRatio="square"
                 folder="catalog"
-                placeholder="https://... or upload from device"
-                helperText="Upload a high-resolution PNG, JPG, or WEBP photo from your device, or paste a CDN link."
+                helperText="Upload multiple high-resolution photos for this apparel item. The first photo serves as the primary storefront cover, while the others appear in the product gallery carousel."
               />
             </div>
           </div>
@@ -1107,7 +1169,7 @@ export default function VerticalCatalogPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
-                  {AFRICAN_PRINT_PRESETS.map((print) => {
+                  {tenantAfricanPrints.map((print) => {
                     const isSelected = fashionPrints.some(
                       (p) => p.name.toLowerCase() === print.name.toLowerCase()
                     );

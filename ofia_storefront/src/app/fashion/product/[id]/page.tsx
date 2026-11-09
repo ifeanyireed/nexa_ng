@@ -3,9 +3,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import SwipeableImageGallery from "@/components/common/SwipeableImageGallery";
 import { useCart } from "@/context/CartContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
@@ -20,13 +21,15 @@ import {
   X,
   Info,
   ZoomIn,
+  WifiOff,
+  Loader2,
 } from "lucide-react";
 
 export default function FashionProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
-  const { products: liveProducts } = useStorefrontProducts("fashion");
+  const { products: liveProducts, isLoading, error: productsError, refetch } = useStorefrontProducts("fashion");
   const tenantQuery = tenantSlug ? `?tenant=${tenantSlug}` : "";
 
   const store = {
@@ -35,15 +38,11 @@ export default function FashionProductDetailPage() {
   };
   const { addToCart } = useCart();
 
-  const productId = (params?.id as string) || "fsh-001";
-  const allProducts = liveProducts.length > 0 ? liveProducts : MOCK_PRODUCTS.filter((p) => p.vertical === "fashion");
-  const product =
-    allProducts.find((p) => p.id === productId) ||
-    allProducts[0] ||
-    MOCK_PRODUCTS[0];
+  const productId = (params?.id as string) || "";
+  const product = liveProducts.find((p) => p.id === productId);
 
   const normalizedPrints = useMemo(() => {
-    if (!product.fashionMeta?.prints || !Array.isArray(product.fashionMeta.prints)) return [];
+    if (!product?.fashionMeta?.prints || !Array.isArray(product.fashionMeta.prints)) return [];
     return product.fashionMeta.prints.map((p) => {
       if (typeof p === "string") {
         return {
@@ -58,20 +57,20 @@ export default function FashionProductDetailPage() {
         description: p.description || "Artisanal African fabric print",
       };
     });
-  }, [product.fashionMeta?.prints]);
+  }, [product?.fashionMeta?.prints]);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedPrint, setSelectedPrint] = useState(
-    normalizedPrints[0]?.name || (typeof product.fashionMeta?.prints?.[0] === "string" ? product.fashionMeta.prints[0] : (product.fashionMeta?.prints?.[0] as any)?.name) || ""
+    normalizedPrints[0]?.name || (typeof product?.fashionMeta?.prints?.[0] === "string" ? product.fashionMeta.prints[0] : (product?.fashionMeta?.prints?.[0] as any)?.name) || ""
   );
   const [selectedPrintImage, setSelectedPrintImage] = useState(
-    normalizedPrints[0]?.image || (product.fashionMeta?.prints?.[0] as any)?.image || ""
+    normalizedPrints[0]?.image || (product?.fashionMeta?.prints?.[0] as any)?.image || ""
   );
   const [selectedColor, setSelectedColor] = useState(
-    product.fashionMeta?.colors[0]?.name || "Raw Sandstone"
+    product?.fashionMeta?.colors[0]?.name || "Raw Sandstone"
   );
   const [selectedSize, setSelectedSize] = useState(
-    product.fashionMeta?.sizes[1] || "M"
+    product?.fashionMeta?.sizes[1] || "M"
   );
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
@@ -97,14 +96,84 @@ export default function FashionProductDetailPage() {
 
   // Find exact SKU matrix variant match (Print + Color + Size)
   const matchingVariant = useMemo(() => {
-    if (!product.variants || product.variants.length === 0) return null;
+    if (!product?.variants || product.variants.length === 0) return null;
     return product.variants.find((v) => {
       const matchSize = !v.size || v.size === selectedSize;
       const matchColor = !v.color || v.color === selectedColor;
       const matchPrint = !v.print || v.print === selectedPrint;
       return matchSize && matchColor && matchPrint;
     });
-  }, [product.variants, selectedSize, selectedColor, selectedPrint]);
+  }, [product?.variants, selectedSize, selectedColor, selectedPrint]);
+
+  // Auto-sync selected image when matching variant has a specific image
+  useEffect(() => {
+    if (matchingVariant?.image && product?.images) {
+      const idx = product.images.findIndex((img) => img === matchingVariant.image);
+      if (idx !== -1) {
+        setSelectedImage(idx);
+      }
+    }
+  }, [matchingVariant?.image, product?.images]);
+
+  if (productsError) {
+    return (
+      <div className="min-h-screen bg-white text-[#1A1A1A] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <main className="max-w-md mx-auto my-20 p-8 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-700 mx-auto">
+            <WifiOff className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-amber-950">Connect to Internet</h2>
+            <p className="text-xs text-amber-800 mt-1">
+              Unable to reach store catalog database. Please verify your internet connection.
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="px-5 py-2 rounded-full bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+          >
+            Retry Connection
+          </button>
+        </main>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <div className="my-24 flex flex-col items-center justify-center space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+          <p className="text-xs text-stone-500">Loading apparel piece...</p>
+        </div>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-white text-[#1A1A1A] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <main className="max-w-md mx-auto my-20 p-8 rounded-3xl border border-dashed border-stone-300 text-center space-y-4">
+          <p className="text-base font-bold text-zinc-900">Piece Not Found</p>
+          <p className="text-xs text-stone-500">
+            This design is no longer available in the active atelier catalog.
+          </p>
+          <Link
+            href={`/fashion/catalog${tenantQuery}`}
+            className="inline-block px-5 py-2 rounded-full bg-zinc-900 hover:bg-amber-600 text-white text-xs font-bold transition"
+          >
+            Explore Catalog
+          </Link>
+        </main>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
 
   const effectivePrice = matchingVariant?.price || product.price;
   const isVariantOutOfStock = matchingVariant
@@ -150,37 +219,25 @@ export default function FashionProductDetailPage() {
 
         {/* Product Workspace: Gallery + Size/Color Selector */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          {/* Left Gallery (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="relative aspect-[4/5] bg-stone-100 rounded-3xl overflow-hidden border border-stone-200/80 shadow-md">
-              <img
-                src={product.images[selectedImage] || product.images[0]}
-                alt={product.title}
-                className="w-full h-full object-cover transition-all duration-300"
-              />
-              {product.isNewDrop && (
-                <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-bold uppercase tracking-wider shadow-sm">
-                  New Drop
-                </div>
-              )}
-            </div>
-
-            {/* Thumbnail selector */}
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              {product.images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImage(idx)}
-                  className={`w-20 h-24 rounded-2xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
-                    selectedImage === idx
-                      ? "border-amber-700 shadow-md scale-105"
-                      : "border-transparent opacity-70 hover:opacity-100"
-                  }`}
-                >
-                  <img src={img} alt="thumb" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
+          {/* Left Gallery (7 cols) - Swipeable Across Multiple Uploaded Angles */}
+          <div className="lg:col-span-7">
+            <SwipeableImageGallery
+              images={product.images}
+              title={product.title}
+              selectedIndex={selectedImage}
+              onSelectIndex={setSelectedImage}
+              aspectRatioClass="aspect-[4/5]"
+              thumbnailShapeClass="w-20 h-24 rounded-2xl"
+              activeThumbnailClass="border-amber-700 shadow-md scale-105 ring-2 ring-amber-700/20"
+              inactiveThumbnailClass="border-transparent opacity-70 hover:opacity-100"
+              badges={
+                product.isNewDrop ? (
+                  <div className="px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-bold uppercase tracking-wider shadow-sm">
+                    New Drop
+                  </div>
+                ) : null
+              }
+            />
           </div>
 
           {/* Right Product Configurator & Purchasing (5 cols) */}

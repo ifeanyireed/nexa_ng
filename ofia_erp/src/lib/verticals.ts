@@ -1221,8 +1221,8 @@ export function getStorefrontUrl(
       : "reedbreed";
   const slug = (tenant?.slug || defaultSlug).toLowerCase().trim();
 
-  // Root platform domain fallback (e.g. ofia.ng)
-  const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "ofia.ng")
+  // Root platform storefront domain fallback (strictly *.ofia.shop)
+  const storefrontRootDomain = (process.env.NEXT_PUBLIC_STOREFRONT_DOMAIN || "ofia.shop")
     .replace(/^https?:\/\//, "")
     .replace(/\/$/, "");
 
@@ -1242,13 +1242,18 @@ export function getStorefrontUrl(
     return `http://${slug}.localhost:3005${resolvedPath}`;
   }
 
-  // 3. Production: if tenant has dedicated/custom domain (e.g. funmyclothing.ofia.ng or reedbreed.cc)
-  if (tenant?.domain && !tenant.domain.includes("localhost")) {
+  // 3. Production: if tenant has custom external brand domain (e.g. www.funmyclothing.com)
+  if (
+    tenant?.domain &&
+    !tenant.domain.includes("localhost") &&
+    !tenant.domain.endsWith(".ofia.ng") &&
+    !tenant.domain.endsWith(".ofia.shop")
+  ) {
     const cleanDomain = tenant.domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
     return `https://${cleanDomain}${resolvedPath}`;
   }
 
-  // 4. Production fallback: tenantslug.rootDomain (e.g. funmyclothing.ofia.ng)
-  return `https://${slug}.${rootDomain}${resolvedPath}`;
+  // 4. Production storefront URL: https://<tenantSlug>.ofia.shop/<path>
+  return `https://${slug}.${storefrontRootDomain}${resolvedPath}`;
 }
 

@@ -197,7 +197,6 @@ export const GLOBAL_STOREFRONT_ROUTES = new Set([
   "order-confirmed",
   "order-tracking",
   "search",
-  "templates",
   "account",
   "dispatch",
   "info",

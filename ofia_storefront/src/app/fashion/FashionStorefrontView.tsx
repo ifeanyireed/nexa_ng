@@ -13,13 +13,13 @@ import StorefrontValueBadges from "@/components/common/StorefrontValueBadges";
 import StorefrontFeatureBanner from "@/components/common/StorefrontFeatureBanner";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
-import { ArrowRight, Shirt, Scissors, Shield, Ruler, Truck, RefreshCw } from "lucide-react";
+import { ArrowRight, Shirt, Scissors, Shield, Ruler, Truck, RefreshCw, WifiOff } from "lucide-react";
 
 export default function FashionStorefrontView() {
   const { store: dynamicStore, isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.fashion;
   const config = handshake?.storefrontConfig;
-  const { products: fashionProducts, isLiveMerchantCatalog } = useStorefrontProducts("fashion");
+  const { products: fashionProducts, isLiveMerchantCatalog, error: productsError, refetch: refetchProducts } = useStorefrontProducts("fashion");
 
   const canBookServices = isFeatureEnabled("services");
   const tenantQuery = "";
@@ -36,17 +36,27 @@ export default function FashionStorefrontView() {
     itemUnit: "pieces",
     defaults: {
       card1: {
-        title: "Men's\nCollection",
-        count: "180+ pieces",
+        title: "Vida\nCollection",
+        count: fashionProducts.length > 0 ? `${Math.ceil(fashionProducts.length / 2)} pieces` : "Exclusive 12+ pieces",
         image: "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80",
-        href: `/fashion/catalog${tenantQuery}`,
+        images: [
+          "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80",
+        ],
+        href: `/fashion/catalog?collection=vida`,
         theme: "light",
       },
       card2: {
-        title: "Women's\nCollection",
-        count: "260+ pieces",
+        title: "Adetola\nCollection",
+        count: fashionProducts.length > 0 ? `${Math.floor(fashionProducts.length / 2)} pieces` : "Artisanal 16+ pieces",
         image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
-        href: `/fashion/catalog${tenantQuery}`,
+        images: [
+          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=800&q=80",
+        ],
+        href: `/fashion/catalog?collection=adetola`,
         theme: "light",
       },
       card3: {
@@ -82,22 +92,44 @@ export default function FashionStorefrontView() {
     <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
       <StoreHeader store={store} />
 
+      {productsError && (
+        <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 pt-3">
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-4 text-amber-950">
+            <div className="flex items-center gap-3">
+              <WifiOff className="w-5 h-5 text-amber-600 shrink-0" />
+              <div>
+                <p className="text-xs font-bold text-amber-950">Connect to Internet</p>
+                <p className="text-[11px] text-amber-800">
+                  Unable to connect to live fashion catalog database. Please verify your connection.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => refetchProducts()}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Hero & Category Collage Section */}
       <section className="w-full max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 py-2.5 sm:py-3 lg:py-3.5 flex flex-col gap-3 sm:gap-4 lg:gap-4 lg:h-[calc(100vh-70px)] lg:min-h-[560px] lg:max-h-[calc(100vh-70px)] box-border">
         {/* Row 1: Top Hero Showcase (9 cols) & Companion Cart Rail (3 cols) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full lg:flex-1 min-h-0 items-stretch">
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
-              eyebrow={config?.hero?.eyebrow || store.tagline || "Capsule Drop & Couture"}
+              eyebrow={config?.season ? `${config.season} Drop` : (config?.hero?.eyebrow || store.tagline || "Capsule Drop & Couture")}
               headline={config?.hero?.headline || store.name}
-              highlightText={config?.hero?.highlightText !== undefined ? config.hero.highlightText : "· Artisanal Tailoring & Silhouettes"}
-              description={config?.hero?.description || store.description || "Artisanal linen tunics, hand-embroidered kaftans, and architectural outerwear tailored for effortless tropical elegance."}
+              highlightText={config?.collectionName ? `· ${config.collectionName}` : (config?.hero?.highlightText !== undefined ? config.hero.highlightText : "· Artisanal Tailoring & Silhouettes")}
+              description={config?.collectionDescription || config?.hero?.description || store.description || "Artisanal linen tunics, hand-embroidered kaftans, and architectural outerwear tailored for effortless tropical elegance."}
               ctaLabel={config?.hero?.ctaLabel || (canBookServices ? "Schedule Bespoke Fitting" : "Explore Capsule Catalog")}
               ctaHref={config?.hero?.ctaHref || (canBookServices ? `/fashion/custom-tailoring${tenantQuery}` : `/fashion/catalog${tenantQuery}`)}
               footnote={config?.hero?.footnote || "Free Doorstep Sizing Exchanges · 7-Day Fit Guarantee"}
               image={config?.hero?.image || store.coverImage || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Capsule Collection`}
-              badge={config?.hero?.badge || (tenantSlug ? undefined : "Capsule Drop")}
+              badge={config?.season || config?.hero?.badge || "Harmattan / Resort 2026"}
               bgColor={config?.hero?.bgColor || "#FAF9F5"}
             />
           </div>
@@ -157,7 +189,7 @@ export default function FashionStorefrontView() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-amber-700">
-                  {config?.featuredSection?.eyebrow || "Signature Apparel"}
+                  {config?.season ? `${config.season} Selection` : (config?.featuredSection?.eyebrow || "Signature Apparel")}
                 </span>
                 {isLiveMerchantCatalog && (
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -166,7 +198,7 @@ export default function FashionStorefrontView() {
                 )}
               </div>
               <h2 className="font-dropa text-3xl sm:text-4xl lg:text-5xl font-bold text-zinc-900 tracking-tight mt-1">
-                {config?.featuredSection?.title || "Featured Collection Drops"}
+                {config?.collectionName ? `${config.collectionName} Drops` : (config?.featuredSection?.title || "Featured Collection Drops")}
               </h2>
             </div>
             <Link

@@ -32,9 +32,15 @@ export async function GET(request: NextRequest) {
       products,
     });
   } catch (err: any) {
+    const isOffline = err.message === "Connect to Internet" || /fetch failed|neon|network/i.test(err.message || "");
     return NextResponse.json(
-      { success: false, error: "Failed to fetch ERP shop products: " + err.message },
-      { status: 500 }
+      {
+        success: false,
+        error: "Connect to Internet",
+        message: isOffline ? "Connect to Internet" : err.message,
+        dbError: true,
+      },
+      { status: 503 }
     );
   }
 }

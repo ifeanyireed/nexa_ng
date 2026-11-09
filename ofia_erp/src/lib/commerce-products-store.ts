@@ -336,54 +336,15 @@ export async function getErpProducts(tenantSlug?: string, vertical?: VerticalKey
             };
           });
         }
+        return [];
       }
     } catch (dbErr) {
-      console.warn("[ERPCommerceProductsStore] Neon query warning:", dbErr);
+      console.warn("[ERPCommerceProductsStore] Neon database error:", dbErr);
+      throw new Error("Connect to Internet");
     }
   }
 
-  // 2. Fallback to local sync file
-  let allProducts: any[] = [];
-  try {
-    if (fs.existsSync(PRODUCTS_FILE)) {
-      const raw = fs.readFileSync(PRODUCTS_FILE, "utf-8");
-      allProducts = JSON.parse(raw);
-    } else {
-      allProducts = memoryProducts;
-    }
-  } catch (err) {
-    allProducts = memoryProducts;
-  }
-
-  let filtered = allProducts;
-  if (normalizedSlug) {
-    const tenantSpecific = allProducts.filter(
-      (p) =>
-        p.storeSlug?.toLowerCase() === normalizedSlug ||
-        p.tenantSlug?.toLowerCase() === normalizedSlug
-    );
-    if (tenantSpecific.length > 0) {
-      filtered = tenantSpecific;
-    }
-  }
-
-  if (vertical) {
-    filtered = filtered.filter((p) => p.vertical === vertical);
-  }
-
-  return filtered.map((p) => ({
-    id: p.id,
-    name: p.title || p.name || "Untitled Item",
-    price: Number(p.price) || 0,
-    formattedPrice: p.formattedPrice || `₦${Number(p.price || 0).toLocaleString()}`,
-    category: p.category || "General",
-    stock: p.stock ?? (p.inStock ? 10 : 0),
-    image: Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : (p.image || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80"),
-    vertical: p.vertical as VerticalKey,
-    sku: p.sku || `SKU-${p.id.slice(-4).toUpperCase()}`,
-    status: p.status || (p.inStock ? "ACTIVE" : "OUT_OF_STOCK"),
-    attributes: p.attributes || {},
-  }));
+  return [];
 }
 
 export async function saveErpProduct(item: Partial<CommerceProductItem> & { tenantSlug: string; vertical: VerticalKey }): Promise<any> {

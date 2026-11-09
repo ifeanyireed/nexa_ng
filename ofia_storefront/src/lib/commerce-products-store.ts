@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import { Product, VerticalType, AFRICAN_PRINT_PRESETS } from "@/types/storefront";
-import { MOCK_PRODUCTS } from "@/data/mockStores";
 import { getTenantSql, getTenantDatabaseConfig } from "./tenant-db-resolver";
 import { SEED_TENANT_HANDSHAKES } from "./storefront-tenant";
 
@@ -23,20 +22,20 @@ const PRODUCTS_FILE = path.join(SYNC_DIR, "products.json");
 // In-memory fallback
 let memoryProducts: Product[] = [];
 
-// Helper to ensure file exists with seed data
+// Helper to ensure file exists
 function ensureProductsFile(): void {
   try {
     if (!fs.existsSync(SYNC_DIR)) {
       fs.mkdirSync(SYNC_DIR, { recursive: true });
     }
     if (!fs.existsSync(PRODUCTS_FILE)) {
-      fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(MOCK_PRODUCTS, null, 2), "utf-8");
-      memoryProducts = [...MOCK_PRODUCTS];
+      fs.writeFileSync(PRODUCTS_FILE, JSON.stringify([], null, 2), "utf-8");
+      memoryProducts = [];
     }
   } catch (err) {
     console.warn("[CommerceProductsStore] File system access warning, using in-memory store:", err);
     if (memoryProducts.length === 0) {
-      memoryProducts = [...MOCK_PRODUCTS];
+      memoryProducts = [];
     }
   }
 }
@@ -98,7 +97,7 @@ export const VERTICAL_EDITORIAL_FALLBACK_IMAGES: Record<string, string[]> = {
 export async function getStorefrontProducts(
   tenantSlug?: string,
   vertical?: VerticalType
-): Promise<{ products: Product[]; isLiveMerchantCatalog: boolean }> {
+): Promise<{ products: Product[]; isLiveMerchantCatalog: boolean; error?: string | null; dbError?: boolean }> {
   ensureProductsFile();
 
   const normalizedSlug = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
@@ -118,10 +117,9 @@ export async function getStorefrontProducts(
 
     // STRICT ISOLATION GUARD:
     // If a specific vertical was requested (e.g. "fashion"), but this tenant is registered under a DIFFERENT vertical (e.g. "cars"),
-    // do NOT serve car inventory as fashion products! Return the vertical's curated template products.
+    // do NOT serve car inventory as fashion products.
     if (vertical && tenantVertical && tenantVertical !== vertical) {
-      const fallbackList = MOCK_PRODUCTS.filter((p) => p.vertical === vertical);
-      return { products: fallbackList, isLiveMerchantCatalog: false };
+      return { products: [], isLiveMerchantCatalog: false, error: null };
     }
 
     try {
@@ -259,60 +257,22 @@ export async function getStorefrontProducts(
             };
           });
 
-          return { products: liveProducts, isLiveMerchantCatalog: true };
+          return { products: liveProducts, isLiveMerchantCatalog: true, error: null };
         }
+        return { products: [], isLiveMerchantCatalog: true, error: null };
       }
-    } catch (err) {
-      console.warn(`[CommerceProductsStore] Live inventory lookup error for tenant '${normalizedSlug}':`, err);
+    } catch (err: any) {
+      console.warn(`[CommerceProductsStore] Database lookup error for tenant '${normalizedSlug}':`, err);
+      return {
+        products: [],
+        isLiveMerchantCatalog: false,
+        error: "Connect to Internet",
+        dbError: true,
+      };
     }
   }
 
-  let allProducts: Product[] = [];
-
-  try {
-    if (fs.existsSync(PRODUCTS_FILE)) {
-      const raw = fs.readFileSync(PRODUCTS_FILE, "utf-8");
-      allProducts = JSON.parse(raw);
-    } else {
-      allProducts = memoryProducts;
-    }
-  } catch (err) {
-    console.error("[CommerceProductsStore] Error reading products file:", err);
-    allProducts = memoryProducts.length > 0 ? memoryProducts : MOCK_PRODUCTS;
-  }
-
-  // 2. If tenant is specified, search for merchant-specific products in local cache
-  if (normalizedSlug) {
-    const merchantProducts = allProducts.filter(
-      (p) =>
-        p.storeSlug?.toLowerCase() === normalizedSlug ||
-        (p as any).tenantSlug?.toLowerCase() === normalizedSlug
-    );
-
-    if (merchantProducts.length > 0) {
-      if (vertical) {
-        const filtered = merchantProducts.filter((p) => p.vertical === vertical);
-        if (filtered.length > 0) {
-          return { products: filtered, isLiveMerchantCatalog: true };
-        }
-        // If merchant has cached products but none match the requested vertical, fall back to mock products
-        const fallbackList = MOCK_PRODUCTS.filter((p) => p.vertical === vertical);
-        return { products: fallbackList, isLiveMerchantCatalog: false };
-      }
-      return { products: merchantProducts, isLiveMerchantCatalog: true };
-    }
-  }
-
-  // 3. Fallback to vertical mock seeds
-  let fallbackList = allProducts;
-  if (vertical) {
-    fallbackList = allProducts.filter((p) => p.vertical === vertical);
-    if (fallbackList.length === 0) {
-      fallbackList = MOCK_PRODUCTS.filter((p) => p.vertical === vertical);
-    }
-  }
-
-  return { products: fallbackList, isLiveMerchantCatalog: false };
+  return { products: [], isLiveMerchantCatalog: false, error: null };
 }
 
 export async function saveStorefrontProduct(product: Partial<Product> & { storeSlug: string; vertical: VerticalType }): Promise<Product> {

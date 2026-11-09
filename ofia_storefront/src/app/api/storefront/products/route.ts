@@ -14,23 +14,42 @@ export async function GET(request: NextRequest) {
   const vertical = searchParams.get("vertical") as VerticalType | null;
 
   try {
-    const { products, isLiveMerchantCatalog } = await getStorefrontProducts(
+    const result = await getStorefrontProducts(
       tenantSlug || undefined,
       vertical || undefined
     );
+
+    if (result.dbError || result.error === "Connect to Internet") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Connect to Internet",
+          message: "Unable to reach database. Connect to Internet.",
+          dbError: true,
+          products: [],
+        },
+        { status: 503 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       tenantSlug: tenantSlug || null,
       vertical: vertical || null,
-      count: products.length,
-      isLiveMerchantCatalog,
-      products,
+      count: result.products.length,
+      isLiveMerchantCatalog: result.isLiveMerchantCatalog,
+      products: result.products,
     });
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, error: "Failed to fetch products: " + err.message },
-      { status: 500 }
+      {
+        success: false,
+        error: "Connect to Internet",
+        message: err.message || "Failed to fetch products",
+        dbError: true,
+        products: [],
+      },
+      { status: 503 }
     );
   }
 }

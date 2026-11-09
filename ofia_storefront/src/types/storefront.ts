@@ -364,6 +364,9 @@ export interface TenantStorefrontHandshake {
     storeName: string;
     headline: string;
     description?: string;
+    season?: string;
+    collectionName?: string;
+    collectionDescription?: string;
     primaryColor: string;
     secondaryColor: string;
     logoUrl?: string;
@@ -423,6 +426,8 @@ export interface TenantStorefrontHandshake {
         title?: string;
         count?: string;
         image?: string;
+        images?: string[];
+        productIds?: string[];
         href?: string;
         theme?: "light" | "dark";
       };
@@ -430,6 +435,8 @@ export interface TenantStorefrontHandshake {
         title?: string;
         count?: string;
         image?: string;
+        images?: string[];
+        productIds?: string[];
         href?: string;
         theme?: "light" | "dark";
       };
@@ -447,6 +454,28 @@ export interface TenantStorefrontHandshake {
         }>;
       };
     };
+    collectionsList?: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      season?: string;
+      images: string[];
+      productIds?: string[];
+      isHero1?: boolean;
+      isHero2?: boolean;
+    }>;
+    categories?: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      image?: string;
+    }>;
+    africanPrints?: Array<{
+      id: string;
+      name: string;
+      image: string;
+      description?: string;
+    }>;
     featuredSection?: {
       eyebrow?: string;
       title?: string;

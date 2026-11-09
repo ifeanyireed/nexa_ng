@@ -40,26 +40,92 @@ export function useCollectionsBento({
   const card1: CategoryCardData = useMemo(() => {
     const c1 = config?.collections?.card1;
     const rawTitle = c1?.title || defaults.card1.title;
+
+    // Resolve sliding images:
+    let resolvedImages: string[] = [];
+    if (Array.isArray(c1?.images) && c1.images.length > 0) {
+      resolvedImages = c1.images.filter(Boolean);
+    } else if (Array.isArray(c1?.productIds) && c1.productIds.length > 0) {
+      const selectedProducts = products.filter((p) => c1.productIds.includes(p.id));
+      resolvedImages = selectedProducts
+        .map((p) => (p.images && p.images[0]) || (p as any).image || "")
+        .filter(Boolean);
+    }
+
+    if (resolvedImages.length === 0 && products.length > 0) {
+      // Pick first half of products for Collection 1
+      const half = Math.ceil(products.length / 2);
+      const pool = products.slice(0, half);
+      resolvedImages = pool
+        .map((p) => (p.images && p.images[0]) || (p as any).image || "")
+        .filter(Boolean)
+        .slice(0, 5);
+    }
+
+    if (resolvedImages.length === 0) {
+      resolvedImages = defaults.card1.images || (defaults.card1.image ? [defaults.card1.image] : []);
+    }
+
+    const primaryImage = resolvedImages[0] || c1?.image || defaults.card1.image;
+
     return {
       title: typeof rawTitle === "string" ? rawTitle.replace(/\\n/g, "\n") : rawTitle,
-      count: c1?.count || defaults.card1.count,
-      image: c1?.image || defaults.card1.image,
+      count:
+        c1?.count ||
+        (products.length > 0
+          ? `${Math.ceil(products.length / 2)} ${itemUnit}`
+          : defaults.card1.count),
+      image: primaryImage,
+      images: resolvedImages,
       href: c1?.href || defaults.card1.href,
       theme: (c1?.theme as ContrastTheme) || defaults.card1.theme || "light",
     };
-  }, [config?.collections?.card1, defaults.card1]);
+  }, [config?.collections?.card1, defaults.card1, products, itemUnit]);
 
   const card2: CategoryCardData = useMemo(() => {
     const c2 = config?.collections?.card2;
     const rawTitle = c2?.title || defaults.card2.title;
+
+    // Resolve sliding images:
+    let resolvedImages: string[] = [];
+    if (Array.isArray(c2?.images) && c2.images.length > 0) {
+      resolvedImages = c2.images.filter(Boolean);
+    } else if (Array.isArray(c2?.productIds) && c2.productIds.length > 0) {
+      const selectedProducts = products.filter((p) => c2.productIds.includes(p.id));
+      resolvedImages = selectedProducts
+        .map((p) => (p.images && p.images[0]) || (p as any).image || "")
+        .filter(Boolean);
+    }
+
+    if (resolvedImages.length === 0 && products.length > 0) {
+      // Pick second half of products for Collection 2
+      const half = Math.ceil(products.length / 2);
+      const pool = products.slice(half);
+      resolvedImages = (pool.length > 0 ? pool : products)
+        .map((p) => (p.images && p.images[0]) || (p as any).image || "")
+        .filter(Boolean)
+        .slice(0, 5);
+    }
+
+    if (resolvedImages.length === 0) {
+      resolvedImages = defaults.card2.images || (defaults.card2.image ? [defaults.card2.image] : []);
+    }
+
+    const primaryImage = resolvedImages[0] || c2?.image || defaults.card2.image;
+
     return {
       title: typeof rawTitle === "string" ? rawTitle.replace(/\\n/g, "\n") : rawTitle,
-      count: c2?.count || defaults.card2.count,
-      image: c2?.image || defaults.card2.image,
+      count:
+        c2?.count ||
+        (products.length > 0
+          ? `${Math.floor(products.length / 2)} ${itemUnit}`
+          : defaults.card2.count),
+      image: primaryImage,
+      images: resolvedImages,
       href: c2?.href || defaults.card2.href,
       theme: (c2?.theme as ContrastTheme) || defaults.card2.theme || "light",
     };
-  }, [config?.collections?.card2, defaults.card2]);
+  }, [config?.collections?.card2, defaults.card2, products, itemUnit]);
 
   // Compute live categories from catalog products
   const autoPills: FloatingPillItem[] = useMemo(() => {
@@ -102,42 +168,22 @@ export function useCollectionsBento({
       href: `${catalogPath}?category=${encodeURIComponent(cat)}`,
     }));
 
-    // If catalog has fewer than 3 categories, fill remainder from defaults
-    if (generated.length < 3 && defaults.card3.pills.length > generated.length) {
-      for (let i = generated.length; i < 3 && i < defaults.card3.pills.length; i++) {
-        generated.push(defaults.card3.pills[i]);
-      }
-    }
-
     return generated;
   }, [products, defaults.card3.pills, catalogPath, itemUnit]);
 
-  // Mode defaults to "auto" if not explicitly set to "static"
-  const mode = config?.collections?.card3?.mode || "auto";
-
   const card3 = useMemo(() => {
     const c3 = config?.collections?.card3;
-    let pills = defaults.card3.pills;
-
-    if (mode === "auto") {
-      pills = autoPills;
-    } else if (c3?.pills && Array.isArray(c3.pills) && c3.pills.length > 0) {
-      pills = c3.pills;
-    }
-
-    const rawTitle = c3?.title || defaults.card3.title;
     return {
-      title: typeof rawTitle === "string" ? rawTitle.replace(/\\n/g, "\n") : rawTitle,
-      href: c3?.href || defaults.card3.href,
+      title: c3?.title || defaults.card3.title,
       backgroundImage: c3?.backgroundImage || defaults.card3.backgroundImage,
+      href: c3?.href || defaults.card3.href,
       theme: (c3?.theme as ContrastTheme) || defaults.card3.theme || "light",
-      pills,
+      pills: autoPills,
     };
-  }, [config?.collections?.card3, defaults.card3, mode, autoPills]);
+  }, [config?.collections?.card3, defaults.card3, autoPills]);
 
   return {
     isEnabled,
-    mode,
     card1,
     card2,
     card3,

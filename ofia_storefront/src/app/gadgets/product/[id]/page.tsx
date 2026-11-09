@@ -6,6 +6,7 @@ import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import SwipeableImageGallery from "@/components/common/SwipeableImageGallery";
 import { useCart } from "@/context/CartContext";
 import {
   ShieldCheck,
@@ -107,52 +108,30 @@ export default function GadgetProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Gallery Column (7 cols) */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="relative aspect-16/10 rounded-3xl overflow-hidden bg-slate-50 border border-slate-200/90 flex items-center justify-center">
-              <img
-                src={product.images[selectedImage] || product.images[0]}
-                alt={product.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                <span className="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white text-slate-700 border border-slate-200 shadow-2xs">
-                  {meta?.brand}
-                </span>
-                {meta?.modelYear && (
-                  <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white">
-                    {meta.modelYear}
-                  </span>
-                )}
-              </div>
-              {meta?.warrantyYears && (
-                <div className="absolute bottom-4 right-4 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 backdrop-blur-xs shadow-2xs">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>{meta.warrantyYears}-Year Manufacturer Warranty</span>
+            <SwipeableImageGallery
+              images={product.images}
+              title={product.title}
+              selectedIndex={selectedImage}
+              onSelectIndex={setSelectedImage}
+              aspectRatioClass="aspect-16/10 rounded-3xl bg-slate-50 border border-slate-200/90"
+              thumbnailShapeClass="w-24 h-16 rounded-xl"
+              activeThumbnailClass="border-blue-600 ring-2 ring-blue-600/30"
+              inactiveThumbnailClass="border-slate-200 opacity-60 hover:opacity-100"
+              badges={
+                <div className="flex flex-wrap gap-2">
+                  {meta?.brand && (
+                    <span className="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white text-slate-700 border border-slate-200 shadow-2xs">
+                      {meta.brand}
+                    </span>
+                  )}
+                  {meta?.modelYear && (
+                    <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white">
+                      {meta.modelYear}
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
-
-            {/* Thumbnails */}
-            {product.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-3">
-                {product.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedImage(idx)}
-                    className={`relative aspect-16/10 rounded-xl overflow-hidden bg-slate-50 p-2 border-2 transition-all cursor-pointer ${
-                      selectedImage === idx
-                        ? "border-blue-600 ring-2 ring-blue-600/30"
-                        : "border-slate-200 opacity-60 hover:opacity-100"
-                    }`}
-                  >
-                    <img
-                      src={img}
-                      alt={`${product.title} preview ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
+              }
+            />
 
             {/* Description Card */}
             <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">

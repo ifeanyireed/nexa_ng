@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag, ShieldCheck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 
 export default function CartDrawer() {
   const { items, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, subtotal, totalCount } =
     useCart();
+  const { tenantSlug } = useStorefrontTenant();
 
   if (!isCartOpen) return null;
 
@@ -44,7 +46,9 @@ export default function CartDrawer() {
               <ShoppingBag className="w-12 h-12 stroke-1 mb-3 text-stone-300" />
               <p className="font-semibold text-zinc-800 text-base">Your bag is empty</p>
               <p className="text-xs text-stone-500 mt-1 max-w-xs">
-                Explore any of our 7 vertical templates and add items to experience tailored commerce.
+                {tenantSlug
+                  ? "Browse our catalog and add items to your shopping bag."
+                  : "Explore any of our storefront templates and add items to experience tailored commerce."}
               </p>
             </div>
           ) : (
@@ -154,7 +158,7 @@ export default function CartDrawer() {
             </div>
 
             <Link
-              href="/checkout"
+              href={tenantSlug ? `/checkout?tenant=${encodeURIComponent(tenantSlug)}` : "/checkout"}
               onClick={() => setIsCartOpen(false)}
               className="w-full py-3.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
             >

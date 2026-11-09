@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowUpRight, ChevronRight, ShoppingBag, Plus } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { Product } from "@/types/storefront";
 
 interface StorefrontCartRailProps {
@@ -11,6 +12,10 @@ interface StorefrontCartRailProps {
 
 export default function StorefrontCartRail({ sampleProducts = [] }: StorefrontCartRailProps) {
   const { items, totalCount, subtotal, setIsCartOpen, addToCart } = useCart();
+  const { tenantSlug } = useStorefrontTenant();
+  const checkoutHref = totalCount > 0
+    ? (tenantSlug ? `/checkout?tenant=${encodeURIComponent(tenantSlug)}` : "/checkout")
+    : "#";
 
   return (
     <aside className="w-full bg-[#EAE7DF] rounded-[28px] lg:rounded-[32px] p-3.5 sm:p-4.5 xl:p-5 flex flex-col justify-between shadow-xs h-full overflow-hidden">
@@ -114,7 +119,7 @@ export default function StorefrontCartRail({ sampleProducts = [] }: StorefrontCa
       {/* Bottom Sticky Pill Checkout Button matching moodboard */}
       <div className="pt-2.5 mt-2 border-t border-stone-300/60 shrink-0">
         <Link
-          href={totalCount > 0 ? "/checkout" : "#"}
+          href={checkoutHref}
           onClick={(e) => {
             if (totalCount === 0) {
               e.preventDefault();

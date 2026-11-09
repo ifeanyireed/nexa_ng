@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+import { extractSubdomainFromHost } from "@/lib/storefront-tenant";
 import { MOCK_STORES } from "@/data/mockStores";
 import {
   Shirt,
@@ -24,7 +27,18 @@ export const metadata: Metadata = {
   description: "Explore the 11 purpose-built storefront templates with tailored workflows and screens.",
 };
 
-export default function TemplatesDirectoryPage() {
+export default async function TemplatesDirectoryPage() {
+  const headerList = await headers();
+  const host = headerList.get("host");
+  const subdomain = extractSubdomainFromHost(host);
+  const headerTenant = headerList.get("x-tenant-slug");
+  const tenantSlug = (subdomain || headerTenant || "").toLowerCase().trim();
+
+  // Strict tenant branding: completely hide the templates directory page on tenant subdomains & custom domains
+  if (tenantSlug) {
+    notFound();
+  }
+
   const templates = [
     {
       vertical: "fashion",

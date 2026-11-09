@@ -6,6 +6,7 @@ import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import SwipeableImageGallery from "@/components/common/SwipeableImageGallery";
 import { useCart } from "@/context/CartContext";
 import {
   ShoppingBag,
@@ -95,38 +96,24 @@ export default function BeautyProductDetailPage() {
         {/* Product Hero Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Gallery (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="relative aspect-4/3 sm:aspect-16/11 rounded-3xl overflow-hidden bg-rose-50/50 border border-rose-100 shadow-sm">
-              <img
-                src={product.images[selectedImage] || product.images[0]}
-                alt={product.title}
-                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-              />
-              {meta?.routineStep && (
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-rose-800 shadow-sm">
-                  Step: {meta.routineStep}
-                </div>
-              )}
-            </div>
-
-            {/* Thumbnail Strip */}
-            {product.images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {product.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedImage(idx)}
-                    className={`relative w-20 h-20 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all ${
-                      selectedImage === idx
-                        ? "border-rose-600 ring-2 ring-rose-200 scale-95"
-                        : "border-transparent opacity-70 hover:opacity-100"
-                    }`}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="lg:col-span-7">
+            <SwipeableImageGallery
+              images={product.images}
+              title={product.title}
+              selectedIndex={selectedImage}
+              onSelectIndex={setSelectedImage}
+              aspectRatioClass="aspect-4/3 sm:aspect-16/11 bg-rose-50/50 border border-rose-100 shadow-sm"
+              thumbnailShapeClass="w-20 h-20 rounded-2xl"
+              activeThumbnailClass="border-rose-600 ring-2 ring-rose-200 scale-95"
+              inactiveThumbnailClass="border-transparent opacity-70 hover:opacity-100"
+              badges={
+                meta?.routineStep ? (
+                  <div className="bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-rose-800 shadow-sm">
+                    Step: {meta.routineStep}
+                  </div>
+                ) : null
+              }
+            />
           </div>
 
           {/* Details & Actions (5 cols) */}

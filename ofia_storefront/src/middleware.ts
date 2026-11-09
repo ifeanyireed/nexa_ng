@@ -93,6 +93,17 @@ export async function middleware(request: NextRequest) {
   rewriteUrl.searchParams.delete("store");
   rewriteUrl.searchParams.delete("slug");
 
+  // Strict tenant isolation: hide '/templates' page on merchant tenant workspaces
+  // Merchants on their own subdomains or custom domains must never expose the platform templates catalog.
+  if (pathname === "/templates" || pathname.startsWith("/templates/")) {
+    rewriteUrl.pathname = `/${vertical}/_not_found_templates`;
+    return NextResponse.rewrite(rewriteUrl, {
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
   // Case A: Root path "/" on a tenant subdomain, custom domain, or ?tenant= URL
   // Rewrites internally to the merchant's provisioned vertical (e.g. /cars or /pharmacy)
   // while keeping the browser address bar cleanly at "/" (e.g. https://neweratransports.ofia.ng/)
@@ -128,7 +139,7 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // Case B: Global commerce routes (e.g. /checkout, /order-confirmed, /order-tracking, /search, /templates)
+  // Case B: Global commerce routes (e.g. /checkout, /order-confirmed, /order-tracking, /search)
   // or vertical paths already matching standard taxonomy (e.g. /cars/listings, /pharmacy/prescription)
   if (isGlobalStorefrontRoute(pathname)) {
     const response = NextResponse.rewrite(rewriteUrl, {

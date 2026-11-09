@@ -28,6 +28,18 @@ export default function UnprovisionedStorefrontErrorView({
   slug,
 }: UnprovisionedStorefrontErrorViewProps) {
   const displaySlug = slug || error?.slug || "unknown";
+
+  const getPlatformRootUrl = (path: string = "") => {
+    if (typeof window === "undefined") return path || "/";
+    const host = window.location.host;
+    const cleanHost = host.split(":")[0].toLowerCase().trim();
+    const port = host.includes(":") ? `:${host.split(":")[1]}` : "";
+    if (cleanHost.endsWith(".localhost") || cleanHost === "localhost") {
+      return `http://localhost${port || ":3005"}${path}`;
+    }
+    const baseRoot = cleanHost.replace(/^www\./, "").replace(/^[a-z0-9_-]+\./, "");
+    return `https://${baseRoot || "ofia.ng"}${path}`;
+  };
   const title = error?.title || "Storefront Workspace Not Provisioned";
   const message =
     error?.message ||
@@ -57,12 +69,12 @@ export default function UnprovisionedStorefrontErrorView({
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/templates"
+          <a
+            href={getPlatformRootUrl("/templates")}
             className="text-xs font-medium text-zinc-400 hover:text-white transition-colors"
           >
             Templates Directory
-          </Link>
+          </a>
           <a
             href="http://localhost:3000"
             className="text-xs font-semibold px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors flex items-center gap-1.5"
@@ -124,29 +136,29 @@ export default function UnprovisionedStorefrontErrorView({
 
         {/* Action Conduit Grid */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full pt-4">
-          <Link
-            href="/templates"
+          <a
+            href={getPlatformRootUrl("/templates")}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-colors shadow-lg shadow-blue-600/20"
           >
             <Layers className="w-4 h-4" />
             <span>Explore 11 Verified Templates</span>
             <ArrowRight className="w-4 h-4 ml-1" />
-          </Link>
+          </a>
 
-          <Link
-            href="/?tenant=neweratransports"
+          <a
+            href={getPlatformRootUrl("?tenant=neweratransports")}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 font-bold text-sm transition-colors"
           >
             <Store className="w-4 h-4 text-emerald-400" />
             <span>Visit New Era Transports</span>
-          </Link>
+          </a>
 
-          <Link
-            href="/"
+          <a
+            href={getPlatformRootUrl("/")}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-zinc-900/50 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white font-medium text-sm transition-colors"
           >
             <span>Platform Overview</span>
-          </Link>
+          </a>
         </div>
       </main>
 

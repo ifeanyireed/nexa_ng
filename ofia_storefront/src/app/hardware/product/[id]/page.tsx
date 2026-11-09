@@ -6,6 +6,7 @@ import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import SwipeableImageGallery from "@/components/common/SwipeableImageGallery";
 import { useCart } from "@/context/CartContext";
 import {
   ShieldCheck,
@@ -95,44 +96,29 @@ export default function HardwareProductDetailPage() {
         {/* Product Showcase */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Gallery (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="relative aspect-4/3 sm:aspect-16/11 rounded-3xl overflow-hidden bg-white border border-stone-200 flex items-center justify-center shadow-xs">
-              <img
-                src={product.images[selectedImage] || product.images[0]}
-                alt={product.title}
-                className="w-full h-full object-cover"
-              />
-
-              <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-slate-900 text-white">
-                  {meta?.systemType}
-                </span>
-                {meta?.powerRating && (
-                  <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                    {meta.powerRating}
+          <div className="lg:col-span-7">
+            <SwipeableImageGallery
+              images={product.images}
+              title={product.title}
+              selectedIndex={selectedImage}
+              onSelectIndex={setSelectedImage}
+              aspectRatioClass="aspect-4/3 sm:aspect-16/11 bg-white border border-stone-200 shadow-xs"
+              thumbnailShapeClass="w-20 h-20 rounded-2xl"
+              activeThumbnailClass="border-slate-900 ring-2 ring-slate-300"
+              inactiveThumbnailClass="border-stone-200 opacity-70 hover:opacity-100"
+              badges={
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-slate-900 text-white">
+                    {meta?.systemType}
                   </span>
-                )}
-              </div>
-            </div>
-
-            {/* Thumbnail Strip */}
-            {product.images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {product.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedImage(idx)}
-                    className={`relative w-20 h-20 rounded-2xl overflow-hidden bg-white border-2 flex-shrink-0 p-2 transition-all ${
-                      selectedImage === idx
-                        ? "border-slate-900 ring-2 ring-slate-300"
-                        : "border-stone-200 opacity-70 hover:opacity-100"
-                    }`}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
+                  {meta?.powerRating && (
+                    <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                      {meta.powerRating}
+                    </span>
+                  )}
+                </div>
+              }
+            />
           </div>
 
           {/* Details & Engineering Options (5 cols) */}

@@ -67,9 +67,13 @@ export default function WorkforceOnboardingAdminPage() {
 
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
-  const handleCopyLink = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedToken(text);
+  const handleCopyLink = (token: string) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const url = `${origin}/careers/onboard/${token}`;
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+    }
+    setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
@@ -327,13 +331,11 @@ export default function WorkforceOnboardingAdminPage() {
 
                         <button
                           type="button"
-                          onClick={() =>
-                            handleCopyLink(`${window.location.origin}/careers/onboard/${pkt.token}`)
-                          }
+                          onClick={() => handleCopyLink(pkt.token)}
                           className="p-1.5 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-secondary hover:text-nexa-text-primary transition-colors"
                           title="Copy Portal Link"
                         >
-                          {copiedToken === `${window.location.origin}/careers/onboard/${pkt.token}` ? (
+                          {copiedToken === pkt.token ? (
                             <Check className="w-3.5 h-3.5 text-emerald-400" />
                           ) : (
                             <Copy className="w-3.5 h-3.5" />

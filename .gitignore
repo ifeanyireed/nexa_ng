@@ -82,6 +82,8 @@ background.jpeg
 AGENTS.md
 AGENT.md
 CLAUDE.md
+*recovery-codes*
+vercel-recovery-codes*.txt
 
 # Data import, trackers & tenant seed files
 *.xlsx

@@ -436,6 +436,346 @@ export function downloadQuotationPdf(
   }, 250);
 }
 
+export interface CoverLetterPrintData {
+  tenantName: string;
+  tenantDomain?: string;
+  tenantContact?: string;
+  tenantLogo?: string;
+  tenantFooter?: string;
+  date: string;
+  recipientName: string;
+  recipientTitle?: string;
+  companyName: string;
+  recipientAddress?: string;
+  reference: string;
+  salutation: string;
+  body: string;
+  signoff: string;
+  signatoryName: string;
+  signatoryTitle?: string;
+  signatoryDepartment?: string;
+  signatoryContact?: string;
+}
+
+/**
+ * Triggers an isolated print/PDF export dialog displaying the executive cover letter on official tenant letterhead.
+ * Includes official tenant letterhead banner on top and official corporate footer pinned at the bottom.
+ */
+export function downloadCoverLetterPdf(data: CoverLetterPrintData) {
+  if (typeof window === "undefined") return;
+
+  const tenantName = (data.tenantName || "Ofia Enterprise").trim();
+  const tenantDomain = (data.tenantDomain || "Official Commercial & Operations Suite").trim();
+  const tenantContact = data.tenantContact || "Victoria Island / Ikeja Central Depot, Lagos, Nigeria";
+  const tenantLogo = data.tenantLogo || "";
+  const tenantFooter = (
+    data.tenantFooter ||
+    "RC 1892019 • Tax ID: 22001923-0001 • Corporate HQ: Victoria Island, Lagos, Nigeria • Confidential & Proprietary Document"
+  ).trim();
+
+  // Format body text into HTML paragraphs
+  const paragraphs = data.body
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map(
+      (p) =>
+        `<p style="margin: 0 0 14px; font-size: 13px; line-height: 1.65; color: #1e293b; text-align: justify;">${escapeHtml(p).replace(/\n/g, "<br />")}</p>`
+    )
+    .join("");
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <title>Cover Letter - ${escapeHtml(data.reference || data.companyName)}</title>
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 14mm 18mm;
+          }
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          html, body {
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+            color: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.6;
+            height: 100%;
+          }
+          .letter-container {
+            width: 100%;
+            max-width: 100%;
+            min-height: 98vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
+          .letter-content {
+            flex: 1;
+          }
+          .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2.5px solid #1A56DB;
+            padding-bottom: 12px;
+            margin-bottom: 22px;
+          }
+          .brand-col {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+          }
+          .brand-logo {
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            padding: 4px;
+            background: #ffffff;
+          }
+          .brand-title {
+            font-size: 22px;
+            font-weight: 900;
+            color: #1A56DB;
+            text-transform: uppercase;
+            letter-spacing: -0.025em;
+            line-height: 1.15;
+          }
+          .brand-domain {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            margin-top: 2px;
+          }
+          .brand-contact {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 2px;
+          }
+          .header-badge {
+            text-align: right;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 800;
+            color: #64748b;
+          }
+          .date-row {
+            text-align: right;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 18px;
+          }
+          .recipient-block {
+            margin-bottom: 20px;
+            line-height: 1.45;
+          }
+          .recipient-to {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+          }
+          .recipient-name {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0f172a;
+          }
+          .recipient-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #334155;
+          }
+          .recipient-company {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1A56DB;
+            margin-top: 2px;
+          }
+          .recipient-address {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+          }
+          .subject-line {
+            font-size: 13px;
+            font-weight: 900;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            border-bottom: 1.5px solid #0f172a;
+            padding-bottom: 4px;
+            margin-bottom: 16px;
+            display: inline-block;
+          }
+          .salutation {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 14px;
+          }
+          .letter-body {
+            margin-bottom: 22px;
+          }
+          .closing-block {
+            margin-top: 22px;
+            page-break-inside: avoid;
+          }
+          .signoff-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 32px;
+          }
+          .signature-line {
+            border-bottom: 1px solid #94a3b8;
+            width: 220px;
+            margin-bottom: 8px;
+          }
+          .signatory-name {
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+          }
+          .signatory-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #475569;
+          }
+          .signatory-meta {
+            font-size: 10px;
+            color: #64748b;
+          }
+          .letter-footer {
+            margin-top: 30px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+            text-align: center;
+            font-size: 9px;
+            color: #94a3b8;
+            line-height: 1.45;
+            page-break-inside: avoid;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="letter-container">
+          <div class="letter-content">
+            <!-- TENANT LETTERHEAD HEADER -->
+            <div class="header-row">
+              <div class="brand-col">
+                ${
+                  tenantLogo
+                    ? `<img src="${escapeHtml(tenantLogo)}" alt="${escapeHtml(tenantName)}" class="brand-logo" onerror="this.style.display='none'" />`
+                    : ""
+                }
+                <div>
+                  <div class="brand-title">${escapeHtml(tenantName)}</div>
+                  <div class="brand-domain">${escapeHtml(tenantDomain)}</div>
+                  <div class="brand-contact">${escapeHtml(tenantContact)}</div>
+                </div>
+              </div>
+              <div class="header-badge">
+                <div>Official Executive</div>
+                <div>Transmittal Letter</div>
+              </div>
+            </div>
+
+            <!-- DATE -->
+            <div class="date-row">Date: ${escapeHtml(data.date)}</div>
+
+            <!-- RECIPIENT BLOCK -->
+            <div class="recipient-block">
+              <div class="recipient-to">Attention / Delivered To:</div>
+              <div class="recipient-name">${escapeHtml(data.recipientName || "The Managing Director")}</div>
+              ${data.recipientTitle ? `<div class="recipient-title">${escapeHtml(data.recipientTitle)}</div>` : ""}
+              <div class="recipient-company">${escapeHtml(data.companyName || "Client Organization")}</div>
+              ${data.recipientAddress ? `<div class="recipient-address">${escapeHtml(data.recipientAddress)}</div>` : ""}
+            </div>
+
+            <!-- REFERENCE -->
+            <div>
+              <div class="subject-line">RE: ${escapeHtml(data.reference)}</div>
+            </div>
+
+            <!-- SALUTATION -->
+            <div class="salutation">${escapeHtml(data.salutation || "Dear Sir/Madam,")}</div>
+
+            <!-- LETTER BODY -->
+            <div class="letter-body">
+              ${paragraphs}
+            </div>
+
+            <!-- CLOSING & SIGNATURE -->
+            <div class="closing-block">
+              <div class="signoff-text">${escapeHtml(data.signoff || "Yours faithfully,")}</div>
+              <div class="signature-line"></div>
+              <div class="signatory-name">${escapeHtml(data.signatoryName || tenantName)}</div>
+              ${data.signatoryTitle ? `<div class="signatory-title">${escapeHtml(data.signatoryTitle)}</div>` : ""}
+              ${data.signatoryDepartment ? `<div class="signatory-meta">${escapeHtml(data.signatoryDepartment)}</div>` : ""}
+              ${data.signatoryContact ? `<div class="signatory-meta">${escapeHtml(data.signatoryContact)}</div>` : ""}
+            </div>
+          </div>
+
+          <!-- TENANT LETTERHEAD FOOTER -->
+          <div class="letter-footer">
+            <div>${escapeHtml(tenantFooter)}</div>
+            <div style="margin-top: 3px; font-weight: 600;">Authorized Executive Letterhead · Page 1 of 1</div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.setAttribute("aria-hidden", "true");
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow?.document;
+  if (!doc) {
+    window.print();
+    return;
+  }
+
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  setTimeout(() => {
+    try {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } catch {
+      window.print();
+    } finally {
+      setTimeout(() => {
+        try {
+          document.body.removeChild(iframe);
+        } catch {}
+      }, 1500);
+    }
+  }, 250);
+}
+
 function escapeHtml(text?: string | null): string {
   if (!text) return "";
   return String(text)

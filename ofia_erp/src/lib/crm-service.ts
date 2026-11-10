@@ -197,9 +197,29 @@ export interface CrmQuotation {
   paymentTerms: string;
   notes?: string;
   createdBy: string;
+  coverLetter?: QuotationCoverLetter;
   sentAt?: string;
   acceptedAt?: string;
   createdAt: string;
+  updatedAt?: string;
+}
+
+export interface QuotationCoverLetter {
+  date?: string;
+  recipientName?: string;
+  recipientTitle?: string;
+  companyName?: string;
+  recipientAddress?: string;
+  reference?: string;
+  salutation?: string;
+  body?: string;
+  signoff?: string;
+  signatoryName?: string;
+  signatoryTitle?: string;
+  signatoryDepartment?: string;
+  signatoryContact?: string;
+  tenantFooterNote?: string;
+  templateKey?: string;
   updatedAt?: string;
 }
 

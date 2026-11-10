@@ -57,6 +57,9 @@ async function ensureCrmQuotationsTable(sql: any, tenantSlug: string) {
         await sql`ALTER TABLE crm_quotations ADD COLUMN IF NOT EXISTS column_titles JSONB DEFAULT '{}'::jsonb;`;
       } catch {}
       try {
+        await sql`ALTER TABLE crm_quotations ADD COLUMN IF NOT EXISTS cover_letter JSONB DEFAULT NULL;`;
+      } catch {}
+      try {
         await sql`CREATE INDEX IF NOT EXISTS idx_crm_quotes_tenant_created ON crm_quotations(LOWER(tenant_slug), created_at DESC);`;
       } catch {}
       try {
@@ -138,6 +141,7 @@ export async function GET(request: NextRequest) {
           vat_rate,
           line_items,
           COALESCE(column_titles, '{}'::jsonb) AS column_titles,
+          cover_letter,
           subtotal,
           discount_total,
           tax_total,
@@ -171,6 +175,7 @@ export async function GET(request: NextRequest) {
         vatRate: Number(r.vat_rate || 7.5),
         lineItems: Array.isArray(r.line_items) ? r.line_items : [],
         columnTitles: r.column_titles && typeof r.column_titles === "object" && Object.keys(r.column_titles).length > 0 ? r.column_titles : undefined,
+        coverLetter: r.cover_letter && typeof r.cover_letter === "object" ? r.cover_letter : undefined,
         subtotal: Number(r.subtotal || 0),
         discountTotal: Number(r.discount_total || 0),
         taxTotal: Number(r.tax_total || 0),
@@ -330,7 +335,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: "Quotation deleted" });
     }
 
-    // 3. CREATE QUOTATION (Standard QT-YYYY-XXXX format + Configurable VAT%)
+    // 3. UPDATE COVER LETTER
+    if (action === "UPDATE_COVER_LETTER") {
+      const { id, coverLetter } = body;
+      if (!id) {
+        return NextResponse.json({ success: false, error: "Missing quote id" }, { status: 400 });
+      }
+
+      const updatedRows = await sql`
+        UPDATE crm_quotations
+        SET cover_letter = ${coverLetter ? JSON.stringify(coverLetter) : null}::jsonb,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${id} AND LOWER(tenant_slug) = ${cleanSlug}
+        RETURNING *;
+      `;
+
+      return NextResponse.json({
+        success: true,
+        message: "Cover letter saved successfully",
+        quotation: updatedRows[0] || null,
+      });
+    }
+
+    // 4. CREATE QUOTATION (Standard QT-YYYY-XXXX format + Configurable VAT%)
     const year = new Date().getFullYear();
     const randNum = Math.floor(1000 + Math.random() * 9000);
     const quotationNumber = body.quotationNumber || `QT-${year}-${randNum}`;
@@ -358,18 +385,19 @@ export async function POST(request: NextRequest) {
     const paymentTerms = body.paymentTerms || "70% Mobilization Deposit, 30% upon Signoff";
     const notes = body.notes || "";
     const createdBy = body.createdBy || "Sales Representative";
+    const coverLetter = body.coverLetter && typeof body.coverLetter === "object" ? body.coverLetter : null;
 
     await sql`
       INSERT INTO crm_quotations (
         id, tenant_slug, tenant_id, quotation_number, title, deal_id, lead_id,
         client_name, company_name, client_email, client_phone, status, issue_date,
-        expiry_date, currency, vat_rate, line_items, column_titles, subtotal, discount_total,
+        expiry_date, currency, vat_rate, line_items, column_titles, cover_letter, subtotal, discount_total,
         tax_total, total_amount, payment_terms, notes, created_by
       ) VALUES (
         ${id}, ${cleanSlug}, ${cleanSlug}, ${quotationNumber}, ${title},
         ${dealId}, ${leadId}, ${clientName}, ${companyName}, ${clientEmail},
         ${clientPhone}, ${status}, ${issueDate}, ${expiryDate}, ${currency},
-        ${vatRate}, ${JSON.stringify(lineItems)}, ${JSON.stringify(columnTitles)}::jsonb, ${subtotal}, ${discountTotal},
+        ${vatRate}, ${JSON.stringify(lineItems)}, ${JSON.stringify(columnTitles)}::jsonb, ${coverLetter ? JSON.stringify(coverLetter) : null}::jsonb, ${subtotal}, ${discountTotal},
         ${taxTotal}, ${totalAmount}, ${paymentTerms}, ${notes}, ${createdBy}
       );
     `;

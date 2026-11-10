@@ -29,6 +29,7 @@ import {
   Palette,
   ZoomIn,
   WifiOff,
+  Tag,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -65,6 +66,50 @@ const AFRICAN_COLOR_PRESETS: Array<{ name: string; hex: string }> = [
 ];
 
 const SIZE_PRESETS = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "Bespoke Cut"];
+
+export interface CustomCategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface CustomCollectionItem {
+  id: string;
+  name: string;
+  description?: string;
+  season?: string;
+  images?: string[];
+}
+
+const DEFAULT_CATEGORIES: CustomCategoryItem[] = [
+  { id: "cat-1", name: "African Heritage", description: "Ceremonial textiles, hand-dyed damask, and heritage silks" },
+  { id: "cat-2", name: "Haute Couture", description: "Bespoke architectural suits and structured tunics" },
+  { id: "cat-3", name: "Suiting & Blazers", description: "Bespoke agbada suits, formal blazers and coats" },
+  { id: "cat-4", name: "Bridal & Bespoke", description: "Royal agbadas, festive two-pieces, and wedding attire" },
+  { id: "cat-5", name: "Resort Wear", description: "Breathable linen shirts, drawstring trousers, and resort slips" },
+  { id: "cat-6", name: "Accessories & Wraps", description: "Headwraps, stoles, caps and artisanal accents" },
+];
+
+const DEFAULT_COLLECTIONS: CustomCollectionItem[] = [
+  {
+    id: "col-vida",
+    name: "Vida Collection",
+    season: "Harmattan / Resort 2026",
+    description: "Artisanal resort silhouettes and bespoke linen tunics.",
+  },
+  {
+    id: "col-adetola",
+    name: "Adetola Collection",
+    season: "Harmattan / Resort 2026",
+    description: "Hand-embroidered ceremonial kaftans and agbada two-pieces.",
+  },
+  {
+    id: "col-royal",
+    name: "Royal Heritage Capsule",
+    season: "Capsule Drop 2026",
+    description: "Regal Aso-Oke, Brocade, and velvet statement outerwear.",
+  },
+];
 
 export default function VerticalCatalogPage() {
   const params = useParams();
@@ -110,6 +155,25 @@ export default function VerticalCatalogPage() {
   // African Fashion Matrix Studio States
   const [tenantAfricanPrints, setTenantAfricanPrints] = useState<FabricPrint[]>(AFRICAN_PRINT_PRESETS);
   const [tenantCategories, setTenantCategories] = useState<string[]>([]);
+  const [tenantCategoriesList, setTenantCategoriesList] = useState<CustomCategoryItem[]>(DEFAULT_CATEGORIES);
+  const [tenantCollectionsList, setTenantCollectionsList] = useState<CustomCollectionItem[]>(DEFAULT_COLLECTIONS);
+  const [formCollection, setFormCollection] = useState("Vida Collection");
+
+  // Category inline & modal edit states
+  const [newCategoryInput, setNewCategoryInput] = useState("");
+  const [editingCategory, setEditingCategory] = useState<CustomCategoryItem | null>(null);
+  const [isEditCategoryModalOpen, setIsEditCategoryModalOpen] = useState(false);
+  const [catEditName, setCatEditName] = useState("");
+  const [catEditDesc, setCatEditDesc] = useState("");
+
+  // Collection inline & modal edit states
+  const [newCollectionName, setNewCollectionName] = useState("");
+  const [newCollectionSeason, setNewCollectionSeason] = useState("");
+  const [editingCollection, setEditingCollection] = useState<CustomCollectionItem | null>(null);
+  const [isEditCollectionModalOpen, setIsEditCollectionModalOpen] = useState(false);
+  const [colEditName, setColEditName] = useState("");
+  const [colEditSeason, setColEditSeason] = useState("");
+  const [colEditDesc, setColEditDesc] = useState("");
   const [fashionPrints, setFashionPrints] = useState<FabricPrint[]>([
     AFRICAN_PRINT_PRESETS[0],
     AFRICAN_PRINT_PRESETS[1],
@@ -196,6 +260,171 @@ export default function VerticalCatalogPage() {
     } catch (err) {
       console.error("Failed to persist African prints:", err);
     }
+  };
+
+  const persistCategories = async (updated: CustomCategoryItem[]) => {
+    const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+    try {
+      await fetch(`/api/erp/shop/store-settings?tenant=${encodeURIComponent(slug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: slug,
+          vertical: verticalKey,
+          categories: updated,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to persist categories:", err);
+    }
+  };
+
+  const persistCollections = async (updated: CustomCollectionItem[]) => {
+    const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+    try {
+      await fetch(`/api/erp/shop/store-settings?tenant=${encodeURIComponent(slug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: slug,
+          vertical: verticalKey,
+          collectionsList: updated,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to persist collections:", err);
+    }
+  };
+
+  const handleAddCategory = async () => {
+    const name = newCategoryInput.trim();
+    if (!name) return;
+    if (tenantCategoriesList.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+      setFormCategory(name);
+      setNewCategoryInput("");
+      return;
+    }
+    const newCat: CustomCategoryItem = {
+      id: `cat-${Date.now()}`,
+      name,
+    };
+    const updated = [...tenantCategoriesList, newCat];
+    setTenantCategoriesList(updated);
+    setTenantCategories(updated.map((c) => c.name));
+    setFormCategory(name);
+    setNewCategoryInput("");
+    await persistCategories(updated);
+  };
+
+  const handleOpenEditCategory = (cat: CustomCategoryItem, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    setEditingCategory(cat);
+    setCatEditName(cat.name);
+    setCatEditDesc(cat.description || "");
+    setIsEditCategoryModalOpen(true);
+  };
+
+  const handleSaveEditCategory = async () => {
+    if (!editingCategory || !catEditName.trim()) return;
+    const oldName = editingCategory.name;
+    const newName = catEditName.trim();
+    const updated = tenantCategoriesList.map((c) =>
+      c.id === editingCategory.id ? { ...c, name: newName, description: catEditDesc.trim() } : c
+    );
+    setTenantCategoriesList(updated);
+    setTenantCategories(updated.map((c) => c.name));
+    if (formCategory.toLowerCase() === oldName.toLowerCase()) {
+      setFormCategory(newName);
+    }
+    setIsEditCategoryModalOpen(false);
+    setEditingCategory(null);
+    await persistCategories(updated);
+  };
+
+  const handleDeleteCategory = async (idOrName: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const updated = tenantCategoriesList.filter(
+      (c) => c.id !== idOrName && c.name.toLowerCase() !== idOrName.toLowerCase()
+    );
+    setTenantCategoriesList(updated);
+    setTenantCategories(updated.map((c) => c.name));
+    if (formCategory.toLowerCase() === idOrName.toLowerCase()) {
+      setFormCategory(updated[0]?.name || "General");
+    }
+    await persistCategories(updated);
+  };
+
+  const handleAddCollection = async () => {
+    const name = newCollectionName.trim();
+    if (!name) return;
+    if (tenantCollectionsList.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+      setFormCollection(name);
+      setNewCollectionName("");
+      setNewCollectionSeason("");
+      return;
+    }
+    const newCol: CustomCollectionItem = {
+      id: `col-${Date.now()}`,
+      name,
+      season: newCollectionSeason.trim() || undefined,
+    };
+    const updated = [...tenantCollectionsList, newCol];
+    setTenantCollectionsList(updated);
+    setFormCollection(name);
+    setNewCollectionName("");
+    setNewCollectionSeason("");
+    await persistCollections(updated);
+  };
+
+  const handleOpenEditCollection = (col: CustomCollectionItem, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    setEditingCollection(col);
+    setColEditName(col.name);
+    setColEditSeason(col.season || "");
+    setColEditDesc(col.description || "");
+    setIsEditCollectionModalOpen(true);
+  };
+
+  const handleSaveEditCollection = async () => {
+    if (!editingCollection || !colEditName.trim()) return;
+    const oldName = editingCollection.name;
+    const newName = colEditName.trim();
+    const updated = tenantCollectionsList.map((c) =>
+      c.id === editingCollection.id
+        ? { ...c, name: newName, season: colEditSeason.trim() || undefined, description: colEditDesc.trim() || undefined }
+        : c
+    );
+    setTenantCollectionsList(updated);
+    if (formCollection.toLowerCase() === oldName.toLowerCase()) {
+      setFormCollection(newName);
+    }
+    setIsEditCollectionModalOpen(false);
+    setEditingCollection(null);
+    await persistCollections(updated);
+  };
+
+  const handleDeleteCollection = async (idOrName: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const updated = tenantCollectionsList.filter(
+      (c) => c.id !== idOrName && c.name.toLowerCase() !== idOrName.toLowerCase()
+    );
+    setTenantCollectionsList(updated);
+    if (formCollection.toLowerCase() === idOrName.toLowerCase()) {
+      setFormCollection(updated[0]?.name || "General");
+    }
+    await persistCollections(updated);
   };
 
   const handleDeleteLibraryPrint = async (printName: string, e?: React.MouseEvent) => {
@@ -645,11 +874,18 @@ export default function VerticalCatalogPage() {
         .then((r) => r.json())
         .then((data) => {
           if (data?.config) {
-            if (Array.isArray(data.config.africanPrints)) {
+            if (Array.isArray(data.config.africanPrints) && data.config.africanPrints.length > 0) {
               setTenantAfricanPrints(data.config.africanPrints);
             }
-            if (Array.isArray(data.config.categories)) {
-              setTenantCategories(data.config.categories.map((c: any) => c.name || c));
+            if (Array.isArray(data.config.categories) && data.config.categories.length > 0) {
+              const mapped: CustomCategoryItem[] = data.config.categories.map((c: any, i: number) =>
+                typeof c === "string" ? { id: `cat-${i + 1}`, name: c } : c
+              );
+              setTenantCategoriesList(mapped);
+              setTenantCategories(mapped.map((m: any) => m.name));
+            }
+            if (Array.isArray(data.config.collectionsList) && data.config.collectionsList.length > 0) {
+              setTenantCollectionsList(data.config.collectionsList);
             }
           }
         })
@@ -661,7 +897,8 @@ export default function VerticalCatalogPage() {
     const initSku = `SKU-${verticalKey.toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-4)}`;
     setFormName("");
     setFormPrice(verticalKey === "fashion" ? "65000" : "");
-    setFormCategory(verticalKey === "fashion" ? "African Heritage" : "General");
+    setFormCategory(tenantCategoriesList[0]?.name || (verticalKey === "fashion" ? "African Heritage" : "General"));
+    setFormCollection(tenantCollectionsList[0]?.name || "Vida Collection");
     setFormStock("10");
     setFormSku(initSku);
     setFormImage("");
@@ -719,13 +956,18 @@ export default function VerticalCatalogPage() {
     const mergedAttributes = {
       ...formAttributes,
       images: imagesToSave,
+      collection: formCollection,
       ...(verticalKey === "fashion"
         ? {
             prints: fashionPrints,
             colors: fashionColors.map((c) => c.name).join(", "),
             sizes: fashionSizes.join(", "),
             material: formAttributes.material || "100% African Wax Cotton",
-            season: formAttributes.season || "Harmattan Capsule",
+            collection: formCollection,
+            season:
+              tenantCollectionsList.find(
+                (c) => c.name.toLowerCase() === formCollection.toLowerCase()
+              )?.season || formAttributes.season || "Harmattan Capsule",
           }
         : {}),
     };
@@ -781,7 +1023,8 @@ export default function VerticalCatalogPage() {
     setEditingProduct(product);
     setFormName(product.name);
     setFormPrice(String(product.price));
-    setFormCategory(product.category);
+    setFormCategory(product.category || tenantCategoriesList[0]?.name || "African Heritage");
+    setFormCollection(product.attributes?.collection || tenantCollectionsList[0]?.name || "Vida Collection");
     setFormStock(String(product.stock));
     setFormSku(product.sku || "");
     const initialImages = Array.isArray(product.images) && product.images.length > 0
@@ -1217,20 +1460,7 @@ export default function VerticalCatalogPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
-                Category
-              </label>
-              <input
-                type="text"
-                value={formCategory}
-                onChange={(e) => setFormCategory(e.target.value)}
-                placeholder="e.g. African Heritage, Haute Couture, Suiting"
-                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
-              />
-            </div>
-
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
                 Master SKU Prefix
               </label>
@@ -1240,6 +1470,95 @@ export default function VerticalCatalogPage() {
                 onChange={(e) => setFormSku(e.target.value)}
                 className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold font-mono"
               />
+            </div>
+
+            {/* Category Selection & Management */}
+            <div className="sm:col-span-2 space-y-2 p-3 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Apparel Category</span>
+                  <span className="text-[10px] text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-md font-mono font-bold">
+                    {formCategory || "None"}
+                  </span>
+                </label>
+                <span className="text-[10px] text-[var(--nexa-text-muted)]">Click chip to select active category</span>
+              </div>
+
+              {/* Category Chips with Select, Edit, Delete */}
+              <div className="flex flex-wrap gap-2">
+                {tenantCategoriesList.map((cat) => {
+                  const isSelected = (formCategory || "").toLowerCase() === cat.name.toLowerCase();
+                  return (
+                    <div
+                      key={cat.id || cat.name}
+                      className={`group relative flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 text-xs rounded-xl font-medium transition-all border ${
+                        isSelected
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                          : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-emerald-500/40"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setFormCategory(cat.name)}
+                        className="flex items-center gap-1.5 cursor-pointer outline-none font-semibold"
+                      >
+                        <span>{cat.name}</span>
+                        {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                      </button>
+
+                      <div className="flex items-center ml-1 border-l border-white/20 pl-1 gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenEditCategory(cat, e)}
+                          className={`p-1 rounded-md transition cursor-pointer ${
+                            isSelected ? "hover:bg-white/20 text-white" : "hover:bg-emerald-500/10 text-stone-400 hover:text-emerald-600"
+                          }`}
+                          title={`Edit category ${cat.name}`}
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteCategory(cat.id || cat.name, e)}
+                          className={`p-1 rounded-md transition cursor-pointer ${
+                            isSelected ? "hover:bg-red-500/30 text-white" : "hover:bg-red-50 text-stone-400 hover:text-red-600"
+                          }`}
+                          title={`Delete category ${cat.name}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add Category Inline */}
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="text"
+                  value={newCategoryInput}
+                  onChange={(e) => setNewCategoryInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddCategory();
+                    }
+                  }}
+                  placeholder="Add new category (e.g. Kaftans, Agbada Sets, Evening Gowns)..."
+                  className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-emerald-500 text-[var(--nexa-text-primary)]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCategory}
+                  disabled={!newCategoryInput.trim()}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Category</span>
+                </button>
+              </div>
             </div>
 
             <div className="sm:col-span-2">
@@ -1282,6 +1601,105 @@ export default function VerticalCatalogPage() {
                   />
                   <span>Enable SKU Matrix</span>
                 </label>
+              </div>
+
+              {/* 0. Designer Collection / Capsule Drop */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Collection / Seasonal Capsule</span>
+                    <span className="text-[10px] text-purple-600 bg-purple-500/10 px-1.5 py-0.5 rounded-md font-mono font-bold">
+                      {formCollection || "None"}
+                    </span>
+                  </label>
+                  <span className="text-[10px] text-[var(--nexa-text-muted)]">Assign this apparel piece to a designer capsule</span>
+                </div>
+
+                {/* Collection Chips with Select, Edit, Delete */}
+                <div className="flex flex-wrap gap-2">
+                  {tenantCollectionsList.map((col) => {
+                    const isSelected = (formCollection || "").toLowerCase() === col.name.toLowerCase();
+                    return (
+                      <div
+                        key={col.id || col.name}
+                        className={`group relative flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 text-xs rounded-xl font-medium transition-all border ${
+                          isSelected
+                            ? "bg-purple-600 text-white border-purple-600 shadow-xs"
+                            : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-purple-500/40"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setFormCollection(col.name)}
+                          className="flex items-center gap-1.5 cursor-pointer outline-none font-semibold"
+                        >
+                          <span>{col.name}</span>
+                          {col.season && (
+                            <span
+                              className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
+                                isSelected ? "bg-white/20 text-white" : "bg-stone-200 text-stone-600"
+                              }`}
+                            >
+                              {col.season}
+                            </span>
+                          )}
+                          {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                        </button>
+
+                        <div className="flex items-center ml-1 border-l border-white/20 pl-1 gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenEditCollection(col, e)}
+                            className={`p-1 rounded-md transition cursor-pointer ${
+                              isSelected ? "hover:bg-white/20 text-white" : "hover:bg-purple-500/10 text-stone-400 hover:text-purple-600"
+                            }`}
+                            title={`Edit collection ${col.name}`}
+                          >
+                            <Edit className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteCollection(col.id || col.name, e)}
+                            className={`p-1 rounded-md transition cursor-pointer ${
+                              isSelected ? "hover:bg-red-500/30 text-white" : "hover:bg-red-50 text-stone-400 hover:text-red-600"
+                            }`}
+                            title={`Delete collection ${col.name}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Add Collection Inline */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={newCollectionName}
+                    onChange={(e) => setNewCollectionName(e.target.value)}
+                    placeholder="Collection Name (e.g. Adetola Collection, Royal Heritage)..."
+                    className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-purple-500 text-[var(--nexa-text-primary)]"
+                  />
+                  <input
+                    type="text"
+                    value={newCollectionSeason}
+                    onChange={(e) => setNewCollectionSeason(e.target.value)}
+                    placeholder="Season (e.g. Harmattan / Resort 2026)..."
+                    className="w-full sm:w-48 px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-purple-500 text-[var(--nexa-text-primary)] font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCollection}
+                    disabled={!newCollectionName.trim()}
+                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Create Collection</span>
+                  </button>
+                </div>
               </div>
 
               {/* 1. African Fabric Prints */}
@@ -2145,6 +2563,117 @@ export default function VerticalCatalogPage() {
             </NexaButton>
             <NexaButton size="sm" variant="primary" onClick={handleSaveEditedPrint} className="bg-amber-600 text-white font-bold cursor-pointer">
               Save Print
+            </NexaButton>
+          </div>
+        </div>
+      </NexaModal>
+
+      {/* MODAL: EDIT CATEGORY */}
+      <NexaModal
+        isOpen={isEditCategoryModalOpen}
+        onClose={() => {
+          setIsEditCategoryModalOpen(false);
+          setEditingCategory(null);
+        }}
+        title="Edit Apparel Category"
+        subtitle="Rename or update taxonomy description for this fashion category."
+        maxWidth="md"
+      >
+        <div className="space-y-3 text-xs">
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+              Category Name *
+            </label>
+            <input
+              type="text"
+              value={catEditName}
+              onChange={(e) => setCatEditName(e.target.value)}
+              placeholder="e.g. African Heritage"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+              Description (Optional)
+            </label>
+            <textarea
+              rows={2}
+              value={catEditDesc}
+              onChange={(e) => setCatEditDesc(e.target.value)}
+              placeholder="Brief description of this apparel category..."
+              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none resize-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div className="pt-3 border-t border-[var(--nexa-border)] flex justify-end gap-2">
+            <NexaButton size="sm" variant="outline" onClick={() => setIsEditCategoryModalOpen(false)}>
+              Cancel
+            </NexaButton>
+            <NexaButton size="sm" variant="primary" onClick={handleSaveEditCategory} className="bg-emerald-600 text-white font-bold cursor-pointer">
+              Save Category
+            </NexaButton>
+          </div>
+        </div>
+      </NexaModal>
+
+      {/* MODAL: EDIT COLLECTION */}
+      <NexaModal
+        isOpen={isEditCollectionModalOpen}
+        onClose={() => {
+          setIsEditCollectionModalOpen(false);
+          setEditingCollection(null);
+        }}
+        title="Edit Designer Collection"
+        subtitle="Update capsule name, seasonal drop label, and editorial notes."
+        maxWidth="md"
+      >
+        <div className="space-y-3 text-xs">
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+              Collection Name *
+            </label>
+            <input
+              type="text"
+              value={colEditName}
+              onChange={(e) => setColEditName(e.target.value)}
+              placeholder="e.g. Vida Collection"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-purple-500"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+              Season / Capsule Drop Label
+            </label>
+            <input
+              type="text"
+              value={colEditSeason}
+              onChange={(e) => setColEditSeason(e.target.value)}
+              placeholder="e.g. Harmattan / Resort 2026"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] font-mono outline-none focus:border-purple-500"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+              Description (Optional)
+            </label>
+            <textarea
+              rows={2}
+              value={colEditDesc}
+              onChange={(e) => setColEditDesc(e.target.value)}
+              placeholder="Editorial story and design philosophy of this collection..."
+              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none resize-none focus:border-purple-500"
+            />
+          </div>
+
+          <div className="pt-3 border-t border-[var(--nexa-border)] flex justify-end gap-2">
+            <NexaButton size="sm" variant="outline" onClick={() => setIsEditCollectionModalOpen(false)}>
+              Cancel
+            </NexaButton>
+            <NexaButton size="sm" variant="primary" onClick={handleSaveEditCollection} className="bg-purple-600 text-white font-bold cursor-pointer">
+              Save Collection
             </NexaButton>
           </div>
         </div>

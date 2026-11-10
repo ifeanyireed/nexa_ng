@@ -15,6 +15,7 @@ import {
   Plus,
   ZoomIn,
   Trash2,
+  Wand2,
 } from "lucide-react";
 
 export interface MultiImageUploadInputProps {
@@ -49,6 +50,7 @@ export function MultiImageUploadInput({
   const [urlInput, setUrlInput] = useState("");
   const [previewModalUrl, setPreviewModalUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [processingWhiteBgIndex, setProcessingWhiteBgIndex] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -170,6 +172,48 @@ export function MultiImageUploadInput({
   const handleRemove = (index: number) => {
     const next = images.filter((_, i) => i !== index);
     onChange(next);
+  };
+
+  const handleMakeWhiteBackground = async (index: number) => {
+    const targetUrl = images[index];
+    if (!targetUrl) return;
+
+    setProcessingWhiteBgIndex(index);
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    try {
+      let resolvedTenant = tenantSlug || "";
+      if (!resolvedTenant && typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        resolvedTenant = params.get("tenant") || "";
+      }
+
+      const res = await fetch("/api/upload/white-background", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl: targetUrl,
+          tenantSlug: resolvedTenant,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Failed to convert background to pure white");
+      }
+
+      const updated = [...images];
+      updated[index] = data.url;
+      onChange(updated);
+      setUploadSuccess("Photo background converted to pure white studio backdrop!");
+      setTimeout(() => setUploadSuccess(null), 4000);
+    } catch (err: any) {
+      console.error("White background error:", err);
+      setUploadError(err.message || "Failed to convert photo background.");
+    } finally {
+      setProcessingWhiteBgIndex(null);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -388,6 +432,21 @@ export function MultiImageUploadInput({
                         <ZoomIn className="w-3.5 h-3.5" />
                       </button>
 
+                      {/* AI White Background */}
+                      <button
+                        type="button"
+                        onClick={() => handleMakeWhiteBackground(index)}
+                        disabled={processingWhiteBgIndex === index}
+                        className="p-1.5 rounded-lg bg-amber-500/80 hover:bg-amber-500 text-white transition-colors cursor-pointer disabled:opacity-50"
+                        title="AI White Studio Background (Click to replace photo background with pure white #FFFFFF)"
+                      >
+                        {processingWhiteBgIndex === index ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Wand2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+
                       {/* Move left */}
                       {index > 0 && (
                         <button
@@ -413,18 +472,41 @@ export function MultiImageUploadInput({
                       )}
                     </div>
 
-                    {/* Set as Cover button */}
-                    {!isCover && (
+                    <div className="flex flex-col items-center gap-1 w-full px-1">
+                      {/* Quick White Studio BG action button */}
                       <button
                         type="button"
-                        onClick={() => handleSetCover(index)}
-                        className="px-2 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
-                        title="Make this the primary cover image"
+                        onClick={() => handleMakeWhiteBackground(index)}
+                        disabled={processingWhiteBgIndex === index}
+                        className="w-full px-2 py-0.5 rounded-lg bg-white/25 hover:bg-white text-white hover:text-stone-900 text-[9px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                        title="Convert background to pure white"
                       >
-                        <Star className="w-2.5 h-2.5 fill-current" />
-                        <span>Set Cover</span>
+                        {processingWhiteBgIndex === index ? (
+                          <>
+                            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                            <span>Processing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className="w-2.5 h-2.5" />
+                            <span>White Studio BG</span>
+                          </>
+                        )}
                       </button>
-                    )}
+
+                      {/* Set as Cover button */}
+                      {!isCover && (
+                        <button
+                          type="button"
+                          onClick={() => handleSetCover(index)}
+                          className="w-full px-2 py-0.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-bold flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer"
+                          title="Make this the primary cover image"
+                        >
+                          <Star className="w-2.5 h-2.5 fill-current" />
+                          <span>Set Cover</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

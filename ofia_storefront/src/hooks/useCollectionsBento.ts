@@ -43,13 +43,38 @@ export function useCollectionsBento({
 
     // Resolve sliding images:
     let resolvedImages: string[] = [];
-    if (Array.isArray(c1?.images) && c1.images.length > 0) {
-      resolvedImages = c1.images.filter(Boolean);
-    } else if (Array.isArray(c1?.productIds) && c1.productIds.length > 0) {
-      const selectedProducts = products.filter((p) => c1.productIds.includes(p.id));
-      resolvedImages = selectedProducts
-        .map((p) => (p.images && p.images[0]) || (p as any).image || "")
-        .filter(Boolean);
+
+    // Check if a category is selected: if a category with product images is selected, Sliding Design Covers are bypassed
+    const cat1Filter = typeof c1?.category === "string" ? c1.category.trim().toLowerCase() : "";
+    if (cat1Filter) {
+      const matching = products.filter(
+        (p) => (p.category || "").toLowerCase() === cat1Filter
+      );
+      const catImages: string[] = [];
+      matching.forEach((p) => {
+        if (Array.isArray(p.images) && p.images.length > 0) {
+          p.images.forEach((img) => {
+            if (img && !catImages.includes(img)) catImages.push(img);
+          });
+        } else if ((p as any).image && !catImages.includes((p as any).image)) {
+          catImages.push((p as any).image);
+        }
+      });
+      if (catImages.length > 0) {
+        resolvedImages = catImages.slice(0, 8);
+      }
+    }
+
+    // If no category selected or category has no product images, use configured Sliding Design Covers or product IDs:
+    if (resolvedImages.length === 0) {
+      if (Array.isArray(c1?.images) && c1.images.length > 0) {
+        resolvedImages = c1.images.filter(Boolean);
+      } else if (Array.isArray(c1?.productIds) && c1.productIds.length > 0) {
+        const selectedProducts = products.filter((p) => c1.productIds.includes(p.id));
+        resolvedImages = selectedProducts
+          .map((p) => (p.images && p.images[0]) || (p as any).image || "")
+          .filter(Boolean);
+      }
     }
 
     if (resolvedImages.length === 0 && products.length > 0) {
@@ -88,13 +113,38 @@ export function useCollectionsBento({
 
     // Resolve sliding images:
     let resolvedImages: string[] = [];
-    if (Array.isArray(c2?.images) && c2.images.length > 0) {
-      resolvedImages = c2.images.filter(Boolean);
-    } else if (Array.isArray(c2?.productIds) && c2.productIds.length > 0) {
-      const selectedProducts = products.filter((p) => c2.productIds.includes(p.id));
-      resolvedImages = selectedProducts
-        .map((p) => (p.images && p.images[0]) || (p as any).image || "")
-        .filter(Boolean);
+
+    // Check if a category is selected: if a category with product images is selected, Sliding Design Covers are bypassed
+    const cat2Filter = typeof c2?.category === "string" ? c2.category.trim().toLowerCase() : "";
+    if (cat2Filter) {
+      const matching = products.filter(
+        (p) => (p.category || "").toLowerCase() === cat2Filter
+      );
+      const catImages: string[] = [];
+      matching.forEach((p) => {
+        if (Array.isArray(p.images) && p.images.length > 0) {
+          p.images.forEach((img) => {
+            if (img && !catImages.includes(img)) catImages.push(img);
+          });
+        } else if ((p as any).image && !catImages.includes((p as any).image)) {
+          catImages.push((p as any).image);
+        }
+      });
+      if (catImages.length > 0) {
+        resolvedImages = catImages.slice(0, 8);
+      }
+    }
+
+    // If no category selected or category has no product images, use configured Sliding Design Covers or product IDs:
+    if (resolvedImages.length === 0) {
+      if (Array.isArray(c2?.images) && c2.images.length > 0) {
+        resolvedImages = c2.images.filter(Boolean);
+      } else if (Array.isArray(c2?.productIds) && c2.productIds.length > 0) {
+        const selectedProducts = products.filter((p) => c2.productIds.includes(p.id));
+        resolvedImages = selectedProducts
+          .map((p) => (p.images && p.images[0]) || (p as any).image || "")
+          .filter(Boolean);
+      }
     }
 
     if (resolvedImages.length === 0 && products.length > 0) {

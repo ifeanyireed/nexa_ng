@@ -455,6 +455,8 @@ export interface CoverLetterPrintData {
   signatoryTitle?: string;
   signatoryDepartment?: string;
   signatoryContact?: string;
+  quotationNumber?: string;
+  documentBadge?: string;
 }
 
 /**
@@ -521,13 +523,32 @@ export function downloadCoverLetterPdf(data: CoverLetterPrintData) {
           .letter-content {
             flex: 1;
           }
-          .header-row {
+          .header-banner {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0b1e3d 0%, #164dbf 55%, #1a56db 100%);
+            padding: 16px 20px;
+            margin-bottom: 22px;
+            color: #ffffff;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .abstract-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+          }
+          .header-inner {
+            position: relative;
+            z-index: 2;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2.5px solid #1A56DB;
-            padding-bottom: 12px;
-            margin-bottom: 22px;
           }
           .brand-col {
             display: flex;
@@ -535,40 +556,53 @@ export function downloadCoverLetterPdf(data: CoverLetterPrintData) {
             gap: 14px;
           }
           .brand-logo {
-            width: 52px;
-            height: 52px;
+            width: 50px;
+            height: 50px;
             object-fit: contain;
             border-radius: 8px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.25);
             padding: 4px;
             background: #ffffff;
           }
           .brand-title {
-            font-size: 22px;
+            font-size: 21px;
             font-weight: 900;
-            color: #1A56DB;
+            color: #ffffff;
             text-transform: uppercase;
             letter-spacing: -0.025em;
             line-height: 1.15;
           }
           .brand-domain {
             font-size: 11px;
-            color: #64748b;
+            color: #dbeafe;
             font-weight: 600;
             margin-top: 2px;
           }
           .brand-contact {
             font-size: 10px;
-            color: #94a3b8;
+            color: #bfdbfe;
             margin-top: 2px;
           }
-          .header-badge {
+          .badge-col {
             text-align: right;
+          }
+          .header-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
             font-size: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 800;
-            color: #64748b;
+            letter-spacing: 0.08em;
+            font-weight: 900;
+            color: #ffffff;
+          }
+          .header-ref {
+            font-size: 10px;
+            font-family: monospace;
+            color: #dbeafe;
+            margin-top: 4px;
           }
           .date-row {
             text-align: right;
@@ -674,23 +708,54 @@ export function downloadCoverLetterPdf(data: CoverLetterPrintData) {
       <body>
         <div class="letter-container">
           <div class="letter-content">
-            <!-- TENANT LETTERHEAD HEADER -->
-            <div class="header-row">
-              <div class="brand-col">
-                ${
-                  tenantLogo
-                    ? `<img src="${escapeHtml(tenantLogo)}" alt="${escapeHtml(tenantName)}" class="brand-logo" onerror="this.style.display='none'" />`
-                    : ""
-                }
-                <div>
-                  <div class="brand-title">${escapeHtml(tenantName)}</div>
-                  <div class="brand-domain">${escapeHtml(tenantDomain)}</div>
-                  <div class="brand-contact">${escapeHtml(tenantContact)}</div>
+            <!-- TENANT LETTERHEAD HEADER WITH WHITE ABSTRACT DESIGN -->
+            <div class="header-banner">
+              <svg class="abstract-bg" viewBox="0 0 760 140" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="absWhiteFadePrint" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18" />
+                    <stop offset="60%" stop-color="#ffffff" stop-opacity="0.04" />
+                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+                  </linearGradient>
+                  <linearGradient id="absWaveFadePrint" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.09" />
+                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02" />
+                  </linearGradient>
+                </defs>
+                <path d="M260,-20 C420,40 500,-10 640,60 C720,100 750,50 780,20 L780,-20 Z" fill="url(#absWhiteFadePrint)" />
+                <path d="M-40,140 C140,80 320,130 520,70 C660,30 720,80 780,50 L780,140 Z" fill="url(#absWaveFadePrint)" />
+                <circle cx="710" cy="20" r="60" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1.2" />
+                <circle cx="710" cy="20" r="105" stroke="#ffffff" stroke-opacity="0.11" stroke-width="1" stroke-dasharray="3 3" />
+                <circle cx="710" cy="20" r="150" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1" />
+                <polygon points="480,-10 560,75 660,35 590,-20" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1" fill="#ffffff" fill-opacity="0.03" />
+                <polygon points="560,75 630,145 725,100 660,35" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1" fill="#ffffff" fill-opacity="0.02" />
+                <g fill="#ffffff" fill-opacity="0.25">
+                  <circle cx="340" cy="30" r="1.5" />
+                  <circle cx="360" cy="30" r="1.5" />
+                  <circle cx="380" cy="30" r="1.5" />
+                  <circle cx="350" cy="45" r="1.5" />
+                  <circle cx="370" cy="45" r="1.5" />
+                  <circle cx="390" cy="45" r="1.5" />
+                </g>
+                <line x1="0" y1="139" x2="760" y2="139" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1" />
+              </svg>
+              <div class="header-inner">
+                <div class="brand-col">
+                  ${
+                    tenantLogo
+                      ? `<img src="${escapeHtml(tenantLogo)}" alt="${escapeHtml(tenantName)}" class="brand-logo" onerror="this.style.display='none'" />`
+                      : ""
+                  }
+                  <div>
+                    <div class="brand-title">${escapeHtml(tenantName)}</div>
+                    <div class="brand-domain">${escapeHtml(tenantDomain)}</div>
+                    <div class="brand-contact">${escapeHtml(tenantContact)}</div>
+                  </div>
                 </div>
-              </div>
-              <div class="header-badge">
-                <div>Official Executive</div>
-                <div>Transmittal Letter</div>
+                <div class="badge-col">
+                  <div class="header-badge">${escapeHtml(data.documentBadge || "OFFICIAL TRANSMITTAL")}</div>
+                  ${data.quotationNumber ? `<div class="header-ref">Ref: ${escapeHtml(data.quotationNumber)}</div>` : ""}
+                </div>
               </div>
             </div>
 
@@ -733,7 +798,7 @@ export function downloadCoverLetterPdf(data: CoverLetterPrintData) {
           <!-- TENANT LETTERHEAD FOOTER -->
           <div class="letter-footer">
             <div>${escapeHtml(tenantFooter)}</div>
-            <div style="margin-top: 3px; font-weight: 600;">Authorized Executive Letterhead · Page 1 of 1</div>
+            <div style="margin-top: 3px; font-weight: 600;">Authorized Corporate Transmittal · Page 1 of 1</div>
           </div>
         </div>
       </body>

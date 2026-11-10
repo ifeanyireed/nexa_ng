@@ -269,6 +269,7 @@ export default function QuotationsPage() {
   const [coverTenantFooter, setCoverTenantFooter] = useState(
     "RC 1892019 • Tax ID: 22001923-0001 • Corporate HQ: Victoria Island, Lagos, Nigeria • Confidential & Proprietary Document"
   );
+  const [coverDocumentBadge, setCoverDocumentBadge] = useState("OFFICIAL TRANSMITTAL");
   const [activeTemplateKey, setActiveTemplateKey] = useState("commercial");
   const [isSavingCoverLetter, setIsSavingCoverLetter] = useState(false);
   const [copiedCoverLetter, setCopiedCoverLetter] = useState(false);
@@ -696,9 +697,11 @@ export default function QuotationsPage() {
       setCoverSignatoryDepartment(cl.signatoryDepartment || "Commercial & Key Accounts Directorate");
       setCoverSignatoryContact(cl.signatoryContact || (targetQuote.senderEmail ? `${targetQuote.senderEmail} | ${targetQuote.senderUrl || "www.ofia.ng"}` : ""));
       setCoverTenantFooter(cl.tenantFooterNote || "RC 1892019 • Tax ID: 22001923-0001 • Corporate HQ: Victoria Island, Lagos, Nigeria • Confidential & Proprietary Document");
+      setCoverDocumentBadge(cl.documentBadge || "OFFICIAL TRANSMITTAL");
       setActiveTemplateKey(cl.templateKey || "commercial");
     } else if (targetQuote) {
       const tpl = COVER_LETTER_TEMPLATES.commercial;
+      setCoverDocumentBadge("OFFICIAL TRANSMITTAL");
       setCoverRecipientName(targetQuote.clientName || "The Managing Director");
       setCoverRecipientTitle("Director of Procurement & Supply Chain");
       setCoverRecipientCompany(targetQuote.companyName || "Client Organization");
@@ -732,6 +735,7 @@ export default function QuotationsPage() {
       setCoverSignatoryDepartment("Commercial & Operations Directorate");
       setCoverSignatoryContact(`${senderEmail || "ops@ofia.ng"} | ${senderUrl || "www.ofia.ng"}`);
       setCoverTenantFooter("RC 1892019 • Tax ID: 22001923-0001 • Corporate HQ: Victoria Island, Lagos, Nigeria • Confidential & Proprietary Document");
+      setCoverDocumentBadge("OFFICIAL TRANSMITTAL");
       setActiveTemplateKey("commercial");
     }
 
@@ -779,6 +783,7 @@ export default function QuotationsPage() {
       signatoryDepartment: coverSignatoryDepartment,
       signatoryContact: coverSignatoryContact,
       tenantFooterNote: coverTenantFooter,
+      documentBadge: coverDocumentBadge,
       templateKey: activeTemplateKey,
       updatedAt: new Date().toISOString(),
     };
@@ -834,6 +839,8 @@ export default function QuotationsPage() {
       signatoryTitle: coverSignatoryTitle,
       signatoryDepartment: coverSignatoryDepartment,
       signatoryContact: coverSignatoryContact,
+      quotationNumber: coverLetterQuote?.quotationNumber || "",
+      documentBadge: coverDocumentBadge || "OFFICIAL TRANSMITTAL",
     });
   };
 
@@ -2220,6 +2227,40 @@ export default function QuotationsPage() {
                     </div>
                   </div>
 
+                  {/* DOCUMENT BADGE / TRANSMITTAL HEADER TITLE */}
+                  <div className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/60 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-[var(--nexa-text-primary)] uppercase tracking-wider flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Header Document Badge</span>
+                      </label>
+                      <span className="text-[10px] text-[var(--nexa-text-muted)]">Top-right header title</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={coverDocumentBadge}
+                      onChange={(e) => setCoverDocumentBadge(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                      placeholder="e.g. OFFICIAL TRANSMITTAL"
+                    />
+                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                      {["OFFICIAL TRANSMITTAL", "COMMERCIAL PROPOSAL", "OFFICIAL CORRESPONDENCE", "TENDER TRANSMITTAL"].map((b) => (
+                        <button
+                          key={b}
+                          type="button"
+                          onClick={() => setCoverDocumentBadge(b)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                            coverDocumentBadge === b
+                              ? "bg-[#1A56DB] text-white"
+                              : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border border-[var(--nexa-border)] hover:border-[#1A56DB]/50"
+                          }`}
+                        >
+                          {b}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* RECIPIENT PARTICULARS */}
                   <div className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/60 space-y-3">
                     <div className="text-[11px] font-bold text-[var(--nexa-text-primary)] uppercase tracking-wider flex items-center gap-1.5">
@@ -2383,28 +2424,86 @@ export default function QuotationsPage() {
                       className="bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-300/80 p-6 sm:p-8 min-h-[750px] flex flex-col justify-between select-text"
                     >
                       <div className="space-y-5">
-                        {/* TENANT LETTERHEAD HEADER */}
-                        <div className="border-b-2 border-[#1A56DB] pb-3.5">
-                          <div className="flex justify-between items-start gap-4">
-                            <div className="flex items-center gap-3">
+                        {/* TENANT LETTERHEAD HEADER WITH WHITE ABSTRACT DESIGN */}
+                        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#0B1E3D] via-[#164DBF] to-[#1A56DB] p-4 sm:p-5 text-white shadow-sm mb-4">
+                          {/* Abstract White Background Pattern */}
+                          <svg
+                            className="absolute inset-0 w-full h-full pointer-events-none select-none"
+                            viewBox="0 0 760 140"
+                            preserveAspectRatio="none"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <defs>
+                              <linearGradient id="absWhiteFadePreview" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
+                                <stop offset="60%" stopColor="#ffffff" stopOpacity="0.04" />
+                                <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                              </linearGradient>
+                              <linearGradient id="absWaveFadePreview" x1="0%" y1="100%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.09" />
+                                <stop offset="100%" stopColor="#ffffff" stopOpacity="0.02" />
+                              </linearGradient>
+                            </defs>
+                            <path
+                              d="M260,-20 C420,40 500,-10 640,60 C720,100 750,50 780,20 L780,-20 Z"
+                              fill="url(#absWhiteFadePreview)"
+                            />
+                            <path
+                              d="M-40,140 C140,80 320,130 520,70 C660,30 720,80 780,50 L780,140 Z"
+                              fill="url(#absWaveFadePreview)"
+                            />
+                            <circle cx="710" cy="20" r="60" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="1.2" />
+                            <circle cx="710" cy="20" r="105" stroke="#ffffff" strokeOpacity="0.11" strokeWidth="1" strokeDasharray="3 3" />
+                            <circle cx="710" cy="20" r="150" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="1" />
+                            <polygon
+                              points="480,-10 560,75 660,35 590,-20"
+                              stroke="#ffffff"
+                              strokeOpacity="0.12"
+                              strokeWidth="1"
+                              fill="#ffffff"
+                              fillOpacity="0.03"
+                            />
+                            <polygon
+                              points="560,75 630,145 725,100 660,35"
+                              stroke="#ffffff"
+                              strokeOpacity="0.09"
+                              strokeWidth="1"
+                              fill="#ffffff"
+                              fillOpacity="0.02"
+                            />
+                            <g fill="#ffffff" fillOpacity="0.25">
+                              <circle cx="340" cy="30" r="1.5" />
+                              <circle cx="360" cy="30" r="1.5" />
+                              <circle cx="380" cy="30" r="1.5" />
+                              <circle cx="350" cy="45" r="1.5" />
+                              <circle cx="370" cy="45" r="1.5" />
+                              <circle cx="390" cy="45" r="1.5" />
+                            </g>
+                            <line x1="0" y1="139" x2="760" y2="139" stroke="#ffffff" strokeOpacity="0.22" strokeWidth="1" />
+                          </svg>
+
+                          {/* Inner Header Row */}
+                          <div className="relative z-10 flex justify-between items-start gap-4">
+                            <div className="flex items-center gap-3.5">
                               {tenantDisplayLogo ? (
                                 <img
                                   src={tenantDisplayLogo}
                                   alt={tenantDisplayName}
-                                  className="w-12 h-12 object-contain rounded-xl p-1 bg-white border border-slate-200 shrink-0 shadow-xs"
+                                  className="w-12 h-12 object-contain rounded-xl p-1 bg-white border border-white/25 shrink-0 shadow-sm"
                                   onError={(e) => {
                                     (e.target as HTMLElement).style.display = "none";
                                   }}
                                 />
                               ) : null}
                               <div>
-                                <div className="text-xl font-black text-[#1A56DB] tracking-tight uppercase leading-tight">
+                                <div className="text-xl font-black text-white tracking-tight uppercase leading-tight drop-shadow-xs">
                                   {tenantDisplayName}
                                 </div>
-                                <div className="text-[11px] text-slate-600 font-semibold mt-0.5">
+                                <div className="text-[11px] text-blue-100 font-semibold mt-0.5">
                                   {coverLetterQuote?.senderUrl || coverLetterQuote?.columnTitles?.senderUrl || senderUrl || activeTenant?.domain || "Official Commercial & Operations Suite"}
                                 </div>
-                                <div className="text-[10px] text-slate-500 mt-0.5">
+                                <div className="text-[10px] text-blue-200/90 mt-0.5">
                                   {coverLetterQuote?.senderEmail || coverLetterQuote?.columnTitles?.senderEmail || senderEmail
                                     ? `Contact: ${coverLetterQuote?.senderEmail || coverLetterQuote?.columnTitles?.senderEmail || senderEmail}`
                                     : (activeTenant?.ownerEmail ? `Contact: ${activeTenant.ownerEmail}` : "Victoria Island / Ikeja Central Depot, Lagos, Nigeria")}
@@ -2412,10 +2511,10 @@ export default function QuotationsPage() {
                               </div>
                             </div>
                             <div className="text-right shrink-0">
-                              <span className="inline-block px-2.5 py-1 bg-slate-900 text-white rounded-md font-black text-[10px] uppercase tracking-wider">
-                                Executive Letterhead
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-md font-black text-[10px] uppercase tracking-wider shadow-xs">
+                                {coverDocumentBadge || "OFFICIAL TRANSMITTAL"}
                               </span>
-                              <div className="text-[10px] text-slate-400 font-mono mt-1">
+                              <div className="text-[10px] text-blue-100/90 font-mono font-medium mt-1.5">
                                 Ref: {coverLetterQuote?.quotationNumber || "QT-REF"}
                               </div>
                             </div>
@@ -2496,7 +2595,7 @@ export default function QuotationsPage() {
                       <div className="border-t border-slate-200 pt-3 mt-6 text-center text-[9px] text-slate-500 space-y-0.5">
                         <div>{coverTenantFooter}</div>
                         <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
-                          Authorized Corporate Transmittal Letterhead · Page 1 of 1
+                          Authorized Corporate Transmittal · Page 1 of 1
                         </div>
                       </div>
                     </div>

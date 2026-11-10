@@ -219,6 +219,7 @@ export interface QuotationCoverLetter {
   signatoryDepartment?: string;
   signatoryContact?: string;
   tenantFooterNote?: string;
+  documentBadge?: string;
   templateKey?: string;
   updatedAt?: string;
 }

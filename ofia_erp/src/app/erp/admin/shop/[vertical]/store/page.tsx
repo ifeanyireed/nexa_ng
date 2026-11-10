@@ -291,13 +291,13 @@ export default function VerticalStoreStudioPage() {
         }
 
         // Hydrate Collections List, Categories, African Prints
-        if (Array.isArray(cfg.collectionsList) && cfg.collectionsList.length > 0) {
+        if (Array.isArray(cfg.collectionsList)) {
           setCollectionsList(cfg.collectionsList);
         }
-        if (Array.isArray(cfg.categories) && cfg.categories.length > 0) {
+        if (Array.isArray(cfg.categories)) {
           setCategoriesList(cfg.categories);
         }
-        if (Array.isArray(cfg.africanPrints) && cfg.africanPrints.length > 0) {
+        if (Array.isArray(cfg.africanPrints)) {
           setAfricanPrintsList(cfg.africanPrints);
         }
 
@@ -444,21 +444,63 @@ export default function VerticalStoreStudioPage() {
     setIsCollectionModalOpen(true);
   };
 
-  const handleSaveCollectionModal = () => {
+  const [isUploadingPrintSwatch, setIsUploadingPrintSwatch] = useState(false);
+
+  const handleUploadPrintModalImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPrintSwatch(true);
+    try {
+      const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("tenantSlug", slug);
+      formData.append("folder", "fabric_swatches");
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data?.url) {
+        setPrintModalImage(data.url);
+      }
+    } catch (err) {
+      console.error("Print swatch upload failed:", err);
+    } finally {
+      setIsUploadingPrintSwatch(false);
+    }
+  };
+
+  const persistTaxonomyField = async (field: "africanPrints" | "categories" | "collectionsList", data: any[]) => {
+    const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+    try {
+      await fetch(`/api/erp/shop/store-settings?tenant=${encodeURIComponent(slug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: slug,
+          vertical: verticalKey,
+          [field]: data,
+        }),
+      });
+      setToastMessage("Taxonomy updated & saved live to database!");
+      setTimeout(() => setToastMessage(null), 3500);
+    } catch (err) {
+      console.error(`Auto-save error for ${field}:`, err);
+    }
+  };
+
+  const handleSaveCollectionModal = async () => {
     if (!colModalName.trim()) return;
+    let updated: CustomCollectionItem[];
     if (editingCollection) {
-      setCollectionsList((prev) =>
-        prev.map((c) =>
-          c.id === editingCollection.id
-            ? {
-                ...c,
-                name: colModalName.trim(),
-                description: colModalDesc.trim(),
-                season: colModalSeason.trim(),
-                images: colModalImages,
-              }
-            : c
-        )
+      updated = collectionsList.map((c) =>
+        c.id === editingCollection.id
+          ? {
+              ...c,
+              name: colModalName.trim(),
+              description: colModalDesc.trim(),
+              season: colModalSeason.trim(),
+              images: colModalImages,
+            }
+          : c
       );
     } else {
       const newCol: CustomCollectionItem = {
@@ -468,13 +510,17 @@ export default function VerticalStoreStudioPage() {
         season: colModalSeason.trim(),
         images: colModalImages.length > 0 ? colModalImages : [hero1Images[0] || "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80"],
       };
-      setCollectionsList((prev) => [...prev, newCol]);
+      updated = [...collectionsList, newCol];
     }
+    setCollectionsList(updated);
     setIsCollectionModalOpen(false);
+    await persistTaxonomyField("collectionsList", updated);
   };
 
-  const handleDeleteCollection = (id: string) => {
-    setCollectionsList((prev) => prev.filter((c) => c.id !== id));
+  const handleDeleteCollection = async (id: string) => {
+    const updated = collectionsList.filter((c) => c.id !== id);
+    setCollectionsList(updated);
+    await persistTaxonomyField("collectionsList", updated);
   };
 
   // CRUD for Categories
@@ -493,15 +539,14 @@ export default function VerticalStoreStudioPage() {
     setIsCategoryModalOpen(true);
   };
 
-  const handleSaveCategoryModal = () => {
+  const handleSaveCategoryModal = async () => {
     if (!catModalName.trim()) return;
+    let updated: CustomCategoryItem[];
     if (editingCategory) {
-      setCategoriesList((prev) =>
-        prev.map((c) =>
-          c.id === editingCategory.id
-            ? { ...c, name: catModalName.trim(), description: catModalDesc.trim(), image: catModalImage.trim() }
-            : c
-        )
+      updated = categoriesList.map((c) =>
+        c.id === editingCategory.id
+          ? { ...c, name: catModalName.trim(), description: catModalDesc.trim(), image: catModalImage.trim() }
+          : c
       );
     } else {
       const newCat: CustomCategoryItem = {
@@ -510,13 +555,17 @@ export default function VerticalStoreStudioPage() {
         description: catModalDesc.trim(),
         image: catModalImage.trim(),
       };
-      setCategoriesList((prev) => [...prev, newCat]);
+      updated = [...categoriesList, newCat];
     }
+    setCategoriesList(updated);
     setIsCategoryModalOpen(false);
+    await persistTaxonomyField("categories", updated);
   };
 
-  const handleDeleteCategory = (id: string) => {
-    setCategoriesList((prev) => prev.filter((c) => c.id !== id));
+  const handleDeleteCategory = async (id: string) => {
+    const updated = categoriesList.filter((c) => c.id !== id);
+    setCategoriesList(updated);
+    await persistTaxonomyField("categories", updated);
   };
 
   // CRUD for African Prints
@@ -535,19 +584,18 @@ export default function VerticalStoreStudioPage() {
     setIsPrintModalOpen(true);
   };
 
-  const handleSavePrintModal = () => {
+  const handleSavePrintModal = async () => {
     if (!printModalName.trim()) return;
     const finalImg =
       printModalImage.trim() ||
       "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80";
 
+    let updated: CustomAfricanPrintItem[];
     if (editingPrint) {
-      setAfricanPrintsList((prev) =>
-        prev.map((p) =>
-          p.id === editingPrint.id
-            ? { ...p, name: printModalName.trim(), image: finalImg, description: printModalDesc.trim() }
-            : p
-        )
+      updated = africanPrintsList.map((p) =>
+        p.id === editingPrint.id
+          ? { ...p, name: printModalName.trim(), image: finalImg, description: printModalDesc.trim() }
+          : p
       );
     } else {
       const newPrt: CustomAfricanPrintItem = {
@@ -556,13 +604,17 @@ export default function VerticalStoreStudioPage() {
         image: finalImg,
         description: printModalDesc.trim(),
       };
-      setAfricanPrintsList((prev) => [...prev, newPrt]);
+      updated = [...africanPrintsList, newPrt];
     }
+    setAfricanPrintsList(updated);
     setIsPrintModalOpen(false);
+    await persistTaxonomyField("africanPrints", updated);
   };
 
-  const handleDeletePrint = (id: string) => {
-    setAfricanPrintsList((prev) => prev.filter((p) => p.id !== id));
+  const handleDeletePrint = async (id: string) => {
+    const updated = africanPrintsList.filter((p) => p.id !== id);
+    setAfricanPrintsList(updated);
+    await persistTaxonomyField("africanPrints", updated);
   };
 
   // Save everything to Neon Database
@@ -1679,15 +1731,34 @@ export default function VerticalStoreStudioPage() {
 
           <div>
             <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
-              Swatch / Pattern Image URL
+              Swatch / Pattern Image
             </label>
-            <input
-              type="text"
-              value={printModalImage}
-              onChange={(e) => setPrintModalImage(e.target.value)}
-              placeholder="https://..."
-              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none font-mono text-[11px]"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={printModalImage}
+                onChange={(e) => setPrintModalImage(e.target.value)}
+                placeholder="https://... or upload from device"
+                className="flex-1 px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none font-mono text-[11px]"
+              />
+              <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] hover:border-amber-500 text-amber-600 font-bold text-xs cursor-pointer shrink-0">
+                <Upload className="w-3.5 h-3.5" />
+                <span>{isUploadingPrintSwatch ? "Uploading..." : "Upload Swatch"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={isUploadingPrintSwatch}
+                  onChange={handleUploadPrintModalImage}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            {printModalImage && (
+              <div className="mt-2 flex items-center gap-2">
+                <img src={printModalImage} alt="Preview" className="w-10 h-10 rounded-xl object-cover border border-[var(--nexa-border)]" />
+                <span className="text-[10px] text-[var(--nexa-text-secondary)]">Swatch Preview</span>
+              </div>
+            )}
           </div>
 
           <div>

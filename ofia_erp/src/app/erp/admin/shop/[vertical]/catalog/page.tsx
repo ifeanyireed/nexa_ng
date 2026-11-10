@@ -171,6 +171,119 @@ export default function VerticalCatalogPage() {
     }
   };
 
+  // African Print Library Management States
+  const [editingLibraryPrint, setEditingLibraryPrint] = useState<FabricPrint | null>(null);
+  const [isEditPrintModalOpen, setIsEditPrintModalOpen] = useState(false);
+  const [printEditName, setPrintEditName] = useState("");
+  const [printEditImage, setPrintEditImage] = useState("");
+  const [printEditDesc, setPrintEditDesc] = useState("");
+  const [isUploadingPrintEdit, setIsUploadingPrintEdit] = useState(false);
+  const [isManagePrintsModalOpen, setIsManagePrintsModalOpen] = useState(false);
+  const [saveCustomToLibrary, setSaveCustomToLibrary] = useState(true);
+
+  const persistTenantAfricanPrints = async (newPrints: FabricPrint[]) => {
+    const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+    try {
+      await fetch(`/api/erp/shop/store-settings?tenant=${encodeURIComponent(slug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: slug,
+          vertical: verticalKey,
+          africanPrints: newPrints,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to persist African prints:", err);
+    }
+  };
+
+  const handleDeleteLibraryPrint = async (printName: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const updated = tenantAfricanPrints.filter(
+      (p) => p.name.toLowerCase() !== printName.toLowerCase()
+    );
+    setTenantAfricanPrints(updated);
+    setFashionPrints((prev) => {
+      const next = prev.filter((p) => p.name.toLowerCase() !== printName.toLowerCase());
+      const numPrice = parseFloat(formPrice.replace(/[^0-9.]/g, "")) || 0;
+      const numStock = parseInt(formStock) || 0;
+      setFashionVariants((curVars) =>
+        generateVariantsFromSelections(next, fashionColors, fashionSizes, numPrice, numStock, formSku, curVars)
+      );
+      return next;
+    });
+    await persistTenantAfricanPrints(updated);
+  };
+
+  const handleOpenEditPrintModal = (print: FabricPrint, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    setEditingLibraryPrint(print);
+    setPrintEditName(print.name);
+    setPrintEditImage(print.image || "");
+    setPrintEditDesc(print.description || "");
+    setIsEditPrintModalOpen(true);
+  };
+
+  const handleUploadPrintEditSwatch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPrintEdit(true);
+    try {
+      const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("tenantSlug", slug);
+      formData.append("folder", "fabric_swatches");
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data?.url) {
+        setPrintEditImage(data.url);
+      }
+    } catch (err) {
+      console.error("Swatch upload failed:", err);
+    } finally {
+      setIsUploadingPrintEdit(false);
+    }
+  };
+
+  const handleSaveEditedPrint = async () => {
+    if (!editingLibraryPrint || !printEditName.trim()) return;
+    const updatedPrint: FabricPrint = {
+      name: printEditName.trim(),
+      image:
+        printEditImage.trim() ||
+        editingLibraryPrint.image ||
+        "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+      description: printEditDesc.trim() || editingLibraryPrint.description,
+    };
+    const updatedList = tenantAfricanPrints.map((p) =>
+      p.name.toLowerCase() === editingLibraryPrint.name.toLowerCase() ? updatedPrint : p
+    );
+    setTenantAfricanPrints(updatedList);
+    setFashionPrints((prev) =>
+      prev.map((p) =>
+        p.name.toLowerCase() === editingLibraryPrint.name.toLowerCase() ? updatedPrint : p
+      )
+    );
+    setFashionVariants((curVars) =>
+      curVars.map((v) =>
+        v.print?.toLowerCase() === editingLibraryPrint.name.toLowerCase()
+          ? { ...v, print: updatedPrint.name, printImage: updatedPrint.image }
+          : v
+      )
+    );
+    setIsEditPrintModalOpen(false);
+    setEditingLibraryPrint(null);
+    await persistTenantAfricanPrints(updatedList);
+  };
+
   const generateVariantsFromSelections = useCallback(
     (
       prints: FabricPrint[],
@@ -255,13 +368,19 @@ export default function VerticalCatalogPage() {
     });
   };
 
-  const addCustomPrint = () => {
+  const addCustomPrint = async () => {
     const trimmed = newCustomPrint.trim();
     if (!trimmed) return;
     const swatchImg = newCustomPrintImage || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80";
+    const newPrintObj: FabricPrint = {
+      name: trimmed,
+      image: swatchImg,
+      description: "Bespoke studio fabric print",
+    };
+
     setFashionPrints((prev) => {
       if (prev.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) return prev;
-      const next = [...prev, { name: trimmed, image: swatchImg, description: "Bespoke studio fabric print" }];
+      const next = [...prev, newPrintObj];
       const numPrice = parseFloat(formPrice.replace(/[^0-9.]/g, "")) || 0;
       const numStock = parseInt(formStock) || 0;
       setFashionVariants((curVars) =>
@@ -277,6 +396,15 @@ export default function VerticalCatalogPage() {
       );
       return next;
     });
+
+    if (saveCustomToLibrary) {
+      if (!tenantAfricanPrints.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) {
+        const updatedList = [...tenantAfricanPrints, newPrintObj];
+        setTenantAfricanPrints(updatedList);
+        await persistTenantAfricanPrints(updatedList);
+      }
+    }
+
     setNewCustomPrint("");
     setNewCustomPrintImage("");
   };
@@ -517,10 +645,10 @@ export default function VerticalCatalogPage() {
         .then((r) => r.json())
         .then((data) => {
           if (data?.config) {
-            if (Array.isArray(data.config.africanPrints) && data.config.africanPrints.length > 0) {
+            if (Array.isArray(data.config.africanPrints)) {
               setTenantAfricanPrints(data.config.africanPrints);
             }
-            if (Array.isArray(data.config.categories) && data.config.categories.length > 0) {
+            if (Array.isArray(data.config.categories)) {
               setTenantCategories(data.config.categories.map((c: any) => c.name || c));
             }
           }
@@ -1165,56 +1293,91 @@ export default function VerticalCatalogPage() {
                       {fashionPrints.length} selected
                     </span>
                   </label>
-                  <span className="text-[10px] text-[var(--nexa-text-muted)]">Click chip to toggle on/off</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsManagePrintsModalOpen(true)}
+                      className="text-[11px] font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 cursor-pointer hover:underline"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Manage Library</span>
+                    </button>
+                    <span className="text-[10px] text-[var(--nexa-text-muted)]">Click chip to toggle</span>
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {tenantAfricanPrints.map((print) => {
                     const isSelected = fashionPrints.some(
                       (p) => p.name.toLowerCase() === print.name.toLowerCase()
                     );
                     return (
-                      <button
-                        type="button"
+                      <div
                         key={print.name}
-                        onClick={() => togglePrint(print)}
-                        className={`px-2.5 py-1.5 text-xs rounded-xl font-medium transition-all flex items-center gap-2 cursor-pointer border ${
+                        className={`group relative flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 text-xs rounded-xl font-medium transition-all border ${
                           isSelected
                             ? "bg-amber-600 text-white border-amber-600 shadow-xs"
                             : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-amber-500/40"
                         }`}
-                        title={print.description}
                       >
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPreviewingSwatch(print);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
+                        <button
+                          type="button"
+                          onClick={() => togglePrint(print)}
+                          className="flex items-center gap-2 cursor-pointer outline-none"
+                        >
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
                               e.stopPropagation();
                               setPreviewingSwatch(print);
-                            }
-                          }}
-                          className="relative w-4 h-4 rounded-full overflow-hidden border border-white/40 shrink-0 shadow-xs cursor-zoom-in group/swatch hover:scale-125 transition-transform"
-                          title="Click circle to preview fabric swatch"
-                        >
-                          <img
-                            src={print.image}
-                            alt={print.name}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/35 opacity-0 group-hover/swatch:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                            <ZoomIn className="w-2.5 h-2.5 text-white" />
+                            }}
+                            className="relative w-4 h-4 rounded-full overflow-hidden border border-white/40 shrink-0 shadow-xs cursor-zoom-in hover:scale-125 transition-transform"
+                            title="Click circle to preview fabric swatch"
+                          >
+                            <img
+                              src={print.image}
+                              alt={print.name}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                              <ZoomIn className="w-2.5 h-2.5 text-white" />
+                            </div>
                           </div>
+                          <span>{print.name}</span>
+                          {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                        </button>
+
+                        <div className="flex items-center ml-1 border-l border-white/20 pl-1 gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenEditPrintModal(print, e)}
+                            className={`p-1 rounded-md transition cursor-pointer ${
+                              isSelected ? "hover:bg-white/20 text-white" : "hover:bg-amber-500/10 text-stone-400 hover:text-amber-600"
+                            }`}
+                            title={`Edit ${print.name}`}
+                          >
+                            <Edit className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteLibraryPrint(print.name, e)}
+                            className={`p-1 rounded-md transition cursor-pointer ${
+                              isSelected ? "hover:bg-red-500/30 text-white" : "hover:bg-red-50 text-stone-400 hover:text-red-600"
+                            }`}
+                            title={`Delete ${print.name} from library`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
                         </div>
-                        <span>{print.name}</span>
-                        {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
-                      </button>
+                      </div>
                     );
                   })}
+                  {tenantAfricanPrints.length === 0 && (
+                    <p className="text-xs text-[var(--nexa-text-muted)] italic">
+                      No prints in library yet. Add your custom fabric prints below.
+                    </p>
+                  )}
                 </div>
 
                 {/* Custom Print Input with Device Swatch Upload */}
@@ -1290,6 +1453,18 @@ export default function VerticalCatalogPage() {
                       + Add Print
                     </button>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-0.5">
+                  <label className="flex items-center gap-1.5 text-[11px] text-[var(--nexa-text-secondary)] cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={saveCustomToLibrary}
+                      onChange={(e) => setSaveCustomToLibrary(e.target.checked)}
+                      className="rounded accent-amber-600 cursor-pointer w-3.5 h-3.5"
+                    />
+                    <span>Save to store print library (available across all catalog products)</span>
+                  </label>
                 </div>
 
                 {fashionPrints.length > 0 && (
@@ -1821,6 +1996,159 @@ export default function VerticalCatalogPage() {
           </div>
         </div>
       )}
+      {/* MODAL: MANAGE AFRICAN PRINTS LIBRARY */}
+      <NexaModal
+        isOpen={isManagePrintsModalOpen}
+        onClose={() => setIsManagePrintsModalOpen(false)}
+        title="African Prints & Fabric Library"
+        subtitle="Manage textile swatches, prints, and custom fabric patterns available for all catalog designs."
+        maxWidth="3xl"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-[var(--nexa-border)]">
+            <span className="text-xs font-bold text-[var(--nexa-text-primary)]">
+              {tenantAfricanPrints.length} Prints in Library
+            </span>
+            <Link
+              href={`/erp/admin/shop/${verticalKey}/store`}
+              className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
+            >
+              <span>Full Store Studio Settings</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[60vh] overflow-y-auto p-1">
+            {tenantAfricanPrints.map((prt) => (
+              <div
+                key={prt.name}
+                className="p-2.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex flex-col justify-between space-y-2 group"
+              >
+                <div className="relative aspect-square rounded-xl overflow-hidden bg-stone-100 border border-[var(--nexa-border)]">
+                  <img src={prt.image} alt={prt.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                </div>
+                <div>
+                  <span className="font-bold text-xs text-[var(--nexa-text-primary)] block truncate">
+                    {prt.name}
+                  </span>
+                  {prt.description && (
+                    <p className="text-[10px] text-[var(--nexa-text-secondary)] line-clamp-1">
+                      {prt.description}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center justify-end gap-1 pt-1 border-t border-[var(--nexa-border)]">
+                  <button
+                    type="button"
+                    onClick={(e) => handleOpenEditPrintModal(prt, e)}
+                    className="p-1 rounded-lg hover:bg-stone-200 text-stone-600 transition cursor-pointer"
+                    title="Edit Print"
+                  >
+                    <Edit className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteLibraryPrint(prt.name, e)}
+                    className="p-1 rounded-lg hover:bg-red-100 text-red-500 transition cursor-pointer"
+                    title="Delete Print"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            ))}
+            {tenantAfricanPrints.length === 0 && (
+              <div className="col-span-full py-8 text-center text-xs text-[var(--nexa-text-muted)] italic">
+                No prints in library yet. Add your custom prints from the product matrix editor.
+              </div>
+            )}
+          </div>
+
+          <div className="pt-3 border-t border-[var(--nexa-border)] flex justify-end">
+            <NexaButton size="sm" variant="outline" onClick={() => setIsManagePrintsModalOpen(false)}>
+              Done
+            </NexaButton>
+          </div>
+        </div>
+      </NexaModal>
+
+      {/* MODAL: EDIT AFRICAN PRINT */}
+      <NexaModal
+        isOpen={isEditPrintModalOpen}
+        onClose={() => setIsEditPrintModalOpen(false)}
+        title="Edit Fabric Print"
+        subtitle="Update print details, upload a new textile swatch, and save live to your store library."
+        maxWidth="md"
+      >
+        <div className="space-y-3 text-xs">
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+              Print / Pattern Name
+            </label>
+            <input
+              type="text"
+              value={printEditName}
+              onChange={(e) => setPrintEditName(e.target.value)}
+              placeholder="e.g. Yoruba Indigo Adire"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+              Swatch / Pattern Image
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={printEditImage}
+                onChange={(e) => setPrintEditImage(e.target.value)}
+                placeholder="https://... or upload file"
+                className="flex-1 px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none font-mono text-[11px]"
+              />
+              <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] hover:border-amber-500 text-amber-600 font-bold text-xs cursor-pointer shrink-0">
+                <Upload className="w-3.5 h-3.5" />
+                <span>{isUploadingPrintEdit ? "Uploading..." : "Upload"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={isUploadingPrintEdit}
+                  onChange={handleUploadPrintEditSwatch}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            {printEditImage && (
+              <div className="mt-2 flex items-center gap-2">
+                <img src={printEditImage} alt="Preview" className="w-10 h-10 rounded-xl object-cover border border-[var(--nexa-border)]" />
+                <span className="text-[10px] text-[var(--nexa-text-secondary)]">Swatch Texture Preview</span>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+              Heritage Story / Description
+            </label>
+            <textarea
+              rows={2}
+              value={printEditDesc}
+              onChange={(e) => setPrintEditDesc(e.target.value)}
+              placeholder="e.g. Traditional resist-dyed Yoruba cotton fabric..."
+              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none resize-none focus:border-amber-500"
+            />
+          </div>
+
+          <div className="pt-3 border-t border-[var(--nexa-border)] flex justify-end gap-2">
+            <NexaButton size="sm" variant="outline" onClick={() => setIsEditPrintModalOpen(false)}>
+              Cancel
+            </NexaButton>
+            <NexaButton size="sm" variant="primary" onClick={handleSaveEditedPrint} className="bg-amber-600 text-white font-bold cursor-pointer">
+              Save Print
+            </NexaButton>
+          </div>
+        </div>
+      </NexaModal>
     </BusinessShell>
   );
 }

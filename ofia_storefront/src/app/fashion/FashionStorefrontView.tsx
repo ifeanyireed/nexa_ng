@@ -11,6 +11,7 @@ import { useCollectionsBento } from "@/hooks/useCollectionsBento";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import StorefrontValueBadges from "@/components/common/StorefrontValueBadges";
 import StorefrontFeatureBanner from "@/components/common/StorefrontFeatureBanner";
+import SwipeableProductCardImage from "@/components/common/SwipeableProductCardImage";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { ArrowRight, Shirt, Scissors, Shield, Ruler, Truck, RefreshCw, WifiOff } from "lucide-react";
@@ -211,96 +212,101 @@ export default function FashionStorefrontView() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {fashionProducts.map((product) => (
-              <div
-                key={product.id}
-                className="group bg-white rounded-3xl overflow-hidden border border-stone-200/80 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-              >
-                <div className="relative aspect-[4/5] bg-stone-100 overflow-hidden">
-                  <img
-                    src={product.images[0]}
-                    alt={product.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            {fashionProducts.map((product) => {
+              const productHref = `/fashion/product/${product.id}${tenantQuery}`;
+              return (
+                <div
+                  key={product.id}
+                  className="group bg-white rounded-3xl overflow-hidden border border-stone-200/80 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                >
+                  <SwipeableProductCardImage
+                    images={product.images}
+                    title={product.title}
+                    href={productHref}
+                    badges={
+                      <>
+                        {product.isNewDrop && (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-white shadow-sm uppercase tracking-wider">
+                            New Drop
+                          </span>
+                        )}
+                        {product.isFeatured && (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-zinc-900 text-white shadow-sm uppercase tracking-wider">
+                            Featured Piece
+                          </span>
+                        )}
+                      </>
+                    }
                   />
-                  <div className="absolute top-3.5 left-3.5 flex flex-col gap-1.5">
-                    {product.isNewDrop && (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-white shadow-sm uppercase tracking-wider">
-                        New Drop
-                      </span>
-                    )}
-                    {product.isFeatured && (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-zinc-900 text-white shadow-sm uppercase tracking-wider">
-                        Featured Piece
-                      </span>
-                    )}
-                  </div>
-                </div>
 
-                <div className="p-6 space-y-3.5">
-                  <div>
-                    <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                      {product.category}
-                    </span>
-                    <h3 className="font-bold text-lg sm:text-xl text-zinc-900 line-clamp-1 group-hover:text-amber-700 transition-colors mt-0.5">
-                      {product.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-stone-500 line-clamp-2 mt-1 font-light leading-relaxed">
-                      {product.subtitle || product.description}
-                    </p>
-                  </div>
-
-                  {product.fashionMeta ? (
-                    <div className="flex items-center justify-between pt-2.5 border-t border-stone-100">
-                      <div className="flex items-center gap-1.5">
-                        {product.fashionMeta.colors.map((c) => (
-                          <span
-                            key={c.name}
-                            className="w-4 h-4 rounded-full border border-stone-300 shadow-xs"
-                            style={{ backgroundColor: c.hex }}
-                            title={c.name}
-                          />
-                        ))}
-                      </div>
-                      <div className="text-xs font-mono text-stone-600 font-semibold">
-                        Sizes: {product.fashionMeta.sizes.join(", ")}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between pt-2.5 border-t border-stone-100">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-4 h-4 rounded-full border border-stone-300 shadow-xs bg-[#111111]" title="Obsidian Black" />
-                        <span className="w-4 h-4 rounded-full border border-stone-300 shadow-xs bg-[#D6C7B2]" title="Raw Sandstone" />
-                        <span className="w-4 h-4 rounded-full border border-stone-300 shadow-xs bg-[#1F4E3D]" title="Forest Emerald" />
-                      </div>
-                      <div className="text-xs font-mono text-stone-600 font-semibold">
-                        Sizes: XS, S, M, L, XL
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between pt-2.5">
+                  <div className="p-6 space-y-3.5">
                     <div>
-                      <span className="text-base sm:text-lg font-bold text-zinc-900">
-                        ₦{product.price.toLocaleString()}
+                      <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                        {product.category}
                       </span>
-                      {product.originalPrice && (
-                        <span className="text-xs sm:text-sm text-stone-400 line-through ml-2">
-                          ₦{product.originalPrice.toLocaleString()}
-                        </span>
-                      )}
+                      <Link href={productHref} className="block group-hover:text-amber-700 transition-colors">
+                        <h3 className="font-bold text-lg sm:text-xl text-zinc-900 line-clamp-1 mt-0.5">
+                          {product.title}
+                        </h3>
+                      </Link>
+                      <p className="text-xs sm:text-sm text-stone-500 line-clamp-2 mt-1 font-light leading-relaxed">
+                        {product.subtitle || product.description}
+                      </p>
                     </div>
 
-                    <Link
-                      href={`/checkout${tenantQuery}`}
-                      className="px-5 py-2.5 rounded-full bg-zinc-900 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold transition-colors flex items-center gap-2"
-                    >
-                      <span>Order Now</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
+                    {product.fashionMeta ? (
+                      <div className="flex items-center justify-between pt-2.5 border-t border-stone-100">
+                        <div className="flex items-center gap-1.5">
+                          {product.fashionMeta.colors.map((c) => (
+                            <span
+                              key={c.name}
+                              className="w-4 h-4 rounded-full border border-stone-300 shadow-xs"
+                              style={{ backgroundColor: c.hex }}
+                              title={c.name}
+                            />
+                          ))}
+                        </div>
+                        <div className="text-xs font-mono text-stone-600 font-semibold">
+                          Sizes: {product.fashionMeta.sizes.join(", ")}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between pt-2.5 border-t border-stone-100">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-4 h-4 rounded-full border border-stone-300 shadow-xs bg-[#111111]" title="Obsidian Black" />
+                          <span className="w-4 h-4 rounded-full border border-stone-300 shadow-xs bg-[#D6C7B2]" title="Raw Sandstone" />
+                          <span className="w-4 h-4 rounded-full border border-stone-300 shadow-xs bg-[#1F4E3D]" title="Forest Emerald" />
+                        </div>
+                        <div className="text-xs font-mono text-stone-600 font-semibold">
+                          Sizes: XS, S, M, L, XL
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-2.5">
+                      <div>
+                        <span className="text-base sm:text-lg font-bold text-zinc-900">
+                          ₦{product.price.toLocaleString()}
+                        </span>
+                        {product.originalPrice && (
+                          <span className="text-xs sm:text-sm text-stone-400 line-through ml-2">
+                            ₦{product.originalPrice.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+
+                      <Link
+                        href={productHref}
+                        className="px-5 py-2.5 rounded-full bg-zinc-900 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold transition-colors flex items-center gap-2"
+                      >
+                        <span>View Piece</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 

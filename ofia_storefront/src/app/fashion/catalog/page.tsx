@@ -6,6 +6,7 @@ import Link from "next/link";
 import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import SwipeableProductCardImage from "@/components/common/SwipeableProductCardImage";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { Filter, ArrowUpDown, ArrowRight, Check, WifiOff, Loader2 } from "lucide-react";
@@ -164,34 +165,36 @@ function FashionCatalogContent() {
         ) : (
           /* Product Cards Grid */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className="group bg-white rounded-3xl overflow-hidden border border-stone-200/80 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-            >
-              <div className="relative aspect-[4/5] bg-stone-100 overflow-hidden">
-                <img
-                  src={product.images[0]}
-                  alt={product.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute top-3 left-3 flex flex-col gap-1">
-                  {product.isNewDrop && (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-sm uppercase tracking-wider">
-                      New
-                    </span>
-                  )}
-                </div>
-              </div>
+            {filteredProducts.map((product) => {
+              const productHref = `/fashion/product/${product.id}${tenantQuery}`;
+              return (
+                <div
+                  key={product.id}
+                  className="group bg-white rounded-3xl overflow-hidden border border-stone-200/80 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                >
+                  <SwipeableProductCardImage
+                    images={product.images}
+                    title={product.title}
+                    href={productHref}
+                    badges={
+                      product.isNewDrop ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-sm uppercase tracking-wider">
+                          New
+                        </span>
+                      ) : null
+                    }
+                  />
 
-              <div className="p-5 space-y-3">
-                <div>
-                  <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
-                    {product.category}
-                  </span>
-                  <h3 className="font-bold text-base text-zinc-900 line-clamp-1 group-hover:text-amber-700 transition-colors">
-                    {product.title}
-                  </h3>
+                  <div className="p-5 space-y-3">
+                    <div>
+                      <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
+                        {product.category}
+                      </span>
+                      <Link href={productHref} className="block group-hover:text-amber-700 transition-colors">
+                        <h3 className="font-bold text-base text-zinc-900 line-clamp-1">
+                          {product.title}
+                        </h3>
+                      </Link>
                   <p className="text-xs text-stone-500 line-clamp-2 mt-1 font-light leading-relaxed">
                     {product.subtitle || product.description}
                   </p>
@@ -241,7 +244,8 @@ function FashionCatalogContent() {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </main>

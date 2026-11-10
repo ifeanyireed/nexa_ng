@@ -1054,10 +1054,10 @@ export function ErpAdminShell({
     if (pathname.startsWith("/erp/admin/workforce")) {
       return [
         { label: "Command Center", href: "/erp/admin/workforce", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
+        { label: "Talent Pools & Squads", href: "/erp/admin/workforce/departments", icon: <Building2 className="w-3.5 h-3.5" />, badge: "Squads" },
         { label: "Recruitment", href: "/erp/admin/workforce/recruitment", icon: <Briefcase className="w-3.5 h-3.5" />, badge: "Hire" },
         { label: "Staff Onboarding", href: "/erp/admin/workforce/onboarding", icon: <UserCheck className="w-3.5 h-3.5" />, badge: "Intake" },
         { label: "People & Directory", href: "/erp/admin/workforce/people", icon: <Users className="w-3.5 h-3.5" />, badge: "Profiles" },
-        { label: "Departments & Org", href: "/erp/admin/workforce/departments", icon: <Building2 className="w-3.5 h-3.5" />, badge: "Org" },
         { label: "Talent Academy", href: "/erp/admin/workforce/academy", icon: <GraduationCap className="w-3.5 h-3.5" />, badge: "LMS" },
         { label: "Work & Tasks", href: "/erp/admin/workforce/tasks", icon: <CheckSquare className="w-3.5 h-3.5" /> },
         { label: "Time & Attendance", href: "/erp/admin/workforce/attendance", icon: <Clock className="w-3.5 h-3.5" /> },
@@ -1074,7 +1074,7 @@ export function ErpAdminShell({
     if (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments")) {
       return [
         { label: "Staff Directory", href: "/erp/admin/users", icon: <Users className="w-3.5 h-3.5" /> },
-        { label: "Departments", href: "/erp/admin/departments", icon: <Building2 className="w-3.5 h-3.5" /> },
+        { label: "Divisions & Cost Centers", href: "/erp/admin/departments", icon: <Building2 className="w-3.5 h-3.5" /> },
         { label: "Mass Messaging", href: "/erp/admin/users/mass-messaging", icon: <Mail className="w-3.5 h-3.5" /> },
       ];
     }

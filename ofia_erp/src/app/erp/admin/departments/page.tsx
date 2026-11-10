@@ -402,8 +402,8 @@ function ERPDepartmentsContent() {
 
   return (
     <ErpAdminShell
-      title="Departmental Hierarchy & Cost Centers"
-      subtitle={`Corporate organizational divisions, budgetary cost centers, leadership lines, and staff headcount for ${displayTenantName}.`}
+      title="Corporate Divisions & Cost Centers"
+      subtitle={`Enterprise organizational divisions, budgetary cost centers, leadership lines, and staff headcount for ${displayTenantName}.`}
       activeModule="users"
       action={
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -439,7 +439,7 @@ function ERPDepartmentsContent() {
             leftIcon={<Plus className="w-3.5 h-3.5" />}
             className="bg-[#1A56DB] text-white rounded-full font-bold shadow-xs cursor-pointer"
           >
-            Add Department
+            Add Corporate Division
           </NexaButton>
         </div>
       }
@@ -457,7 +457,7 @@ function ERPDepartmentsContent() {
         <ErpStatGrid
           stats={[
             {
-              label: "Total Departments",
+              label: "Corporate Divisions",
               value: isLoadingDepartments ? "..." : `${departments.length} Divisions`,
               change: "100% Active",
               trend: "up",
@@ -491,16 +491,16 @@ function ERPDepartmentsContent() {
           ]}
         />
 
-        {/* DEPARTMENTS CARD CONTAINER — MATCHING /erp/hr TABLE CARD VERBATIM */}
+        {/* DIVISIONS CARD CONTAINER */}
         <NexaCard variant="glass" padding="lg" className="space-y-4 rounded-3xl">
           {/* Card Header & Controls */}
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-[var(--nexa-border)]">
             <div>
               <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
-                Organizational Divisions & Cost Center Roster
+                Corporate Divisions & Cost Center Roster
               </h3>
               <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium">
-                Complete departmental hierarchy, leadership allocations, and headcount audits
+                Administrative hierarchy, budgetary cost centers, and divisional leadership lines
               </p>
             </div>
 
@@ -571,7 +571,7 @@ function ERPDepartmentsContent() {
                 <thead>
                   <tr className="border-b border-[var(--nexa-border)] text-[var(--nexa-text-muted)]">
                     <th className="pb-3 px-3 font-bold uppercase tracking-wider">Division Name & Code</th>
-                    <th className="pb-3 px-3 font-bold uppercase tracking-wider">Department Lead</th>
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider">Divisional Lead</th>
                     <th className="pb-3 px-3 font-bold uppercase tracking-wider">Cost Center</th>
                     <th className="pb-3 px-3 font-bold uppercase tracking-wider">Budget Allocation</th>
                     <th className="pb-3 px-3 font-bold uppercase tracking-wider">Headcount</th>
@@ -641,14 +641,14 @@ function ERPDepartmentsContent() {
                             <button
                               onClick={() => handleOpenEditModal(d)}
                               className="p-1.5 rounded-full hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] hover:text-[#1A56DB] transition-colors cursor-pointer"
-                              title="Edit Department Details"
+                              title="Edit Division Details"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setDeletingDept(d)}
                               className="p-1.5 rounded-full hover:bg-red-500/10 text-[var(--nexa-text-muted)] hover:text-red-500 transition-colors cursor-pointer"
-                              title="Delete Department"
+                              title="Delete Division"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -689,14 +689,14 @@ function ERPDepartmentsContent() {
                           <button
                             onClick={() => handleOpenEditModal(d)}
                             className="p-1.5 rounded-full hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] hover:text-[#1A56DB] transition-colors cursor-pointer"
-                            title="Edit Department Details"
+                            title="Edit Division Details"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setDeletingDept(d)}
                             className="p-1.5 rounded-full hover:bg-red-500/10 text-[var(--nexa-text-muted)] hover:text-red-500 transition-colors cursor-pointer"
-                            title="Delete Department"
+                            title="Delete Division"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -707,7 +707,7 @@ function ERPDepartmentsContent() {
 
                       <div className="space-y-2 text-xs text-[var(--nexa-text-secondary)] font-mono pt-2 border-t border-[var(--nexa-border)]">
                         <div className="flex justify-between items-center">
-                          <span className="text-[var(--nexa-text-muted)]">Department Lead:</span>
+                          <span className="text-[var(--nexa-text-muted)]">Divisional Lead:</span>
                           <span className="font-bold text-[var(--nexa-text-primary)] truncate max-w-[170px]" title={d.head}>
                             {d.head}
                           </span>
@@ -773,10 +773,10 @@ function ERPDepartmentsContent() {
             <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
               <div>
                 <h2 className="text-base font-black text-[var(--nexa-text-primary)]">
-                  {editingDept ? "Edit Department Division" : "Add Department Division"}
+                  {editingDept ? "Edit Corporate Division" : "Add Corporate Division"}
                 </h2>
                 <p className="text-xs text-[var(--nexa-text-secondary)]">
-                  Configure organizational division and cost center for &apos;{displayTenantName}&apos;.
+                  Configure corporate division and financial cost center for &apos;{displayTenantName}&apos;.
                 </p>
               </div>
               <button
@@ -790,11 +790,11 @@ function ERPDepartmentsContent() {
             <form onSubmit={handleSaveDepartment} className="space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Dept Code *</label>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Division Code *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. DEPT-OPS"
+                    placeholder="e.g. DIV-OPS"
                     value={formCode}
                     onChange={(e) => setFormCode(e.target.value)}
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] font-mono text-[var(--nexa-text-primary)]"
@@ -813,7 +813,7 @@ function ERPDepartmentsContent() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Department Full Name *</label>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Division Full Name *</label>
                 <input
                   type="text"
                   required
@@ -826,14 +826,14 @@ function ERPDepartmentsContent() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Department Head</label>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Divisional Lead</label>
                   {potentialManagers.length > 0 ? (
                     <select
                       value={formHead}
                       onChange={(e) => setFormHead(e.target.value)}
                       className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
                     >
-                      <option value="">-- Select Department Lead --</option>
+                      <option value="">-- Select Divisional Lead --</option>
                       {potentialManagers.map((m) => (
                         <option key={m.id} value={m.name}>
                           {m.name} ({m.designation || m.role})
@@ -879,7 +879,7 @@ function ERPDepartmentsContent() {
                   disabled={isSaving}
                   className="bg-[#1A56DB] text-white rounded-full font-bold px-4 cursor-pointer"
                 >
-                  {isSaving ? "Saving..." : editingDept ? "Save Changes" : "Create Department"}
+                  {isSaving ? "Saving..." : editingDept ? "Save Changes" : "Create Division"}
                 </NexaButton>
               </div>
             </form>
@@ -906,7 +906,7 @@ function ERPDepartmentsContent() {
                   {viewingDept.name} — Staff Roster
                 </h2>
                 <p className="text-xs text-[var(--nexa-text-secondary)]">
-                  {departmentMembers.length} staff enrolled in this division • Head:{" "}
+                  {departmentMembers.length} staff enrolled in this division • Lead:{" "}
                   <span className="font-bold text-[var(--nexa-text-primary)]">{viewingDept.head}</span>
                 </p>
               </div>
@@ -936,7 +936,7 @@ function ERPDepartmentsContent() {
                 <div className="py-12 text-center text-xs text-[var(--nexa-text-muted)] bg-[var(--nexa-bg-base)] rounded-2xl border border-[var(--nexa-border)]">
                   {memberSearch
                     ? `No staff member matches "${memberSearch}".`
-                    : "No staff members are currently assigned to this department."}
+                    : "No staff members are currently assigned to this division."}
                 </div>
               ) : (
                 departmentMembers.map((m) => (
@@ -1011,7 +1011,7 @@ function ERPDepartmentsContent() {
             </div>
 
             <div className="text-center space-y-1">
-              <h3 className="text-base font-black text-[var(--nexa-text-primary)]">Delete Department?</h3>
+              <h3 className="text-base font-black text-[var(--nexa-text-primary)]">Delete Corporate Division?</h3>
               <p className="text-xs text-[var(--nexa-text-secondary)]">
                 Are you sure you want to delete{" "}
                 <span className="font-bold text-[var(--nexa-text-primary)]">{deletingDept.name}</span> (
@@ -1051,7 +1051,7 @@ export default function ERPDepartmentsPage() {
       fallback={
         <div className="p-8 text-center text-xs text-[var(--nexa-text-muted)]">
           <RefreshCw className="w-5 h-5 mx-auto animate-spin mb-2 text-[#1A56DB]" />
-          Loading departments...
+          Loading corporate divisions...
         </div>
       }
     >

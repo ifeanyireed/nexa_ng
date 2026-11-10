@@ -3386,7 +3386,7 @@ export default function CrmLeadsPage() {
                       placeholder="e.g. 10th November, 2026"
                     />
                     <NexaInput
-                      label="Attention (Contact Name)"
+                      label="Contact Name"
                       value={coverRecipientName}
                       onChange={(e) => setCoverRecipientName(e.target.value)}
                       placeholder="e.g. Engr. Tunde Adeleke"
@@ -3395,13 +3395,13 @@ export default function CrmLeadsPage() {
 
                   <div className="grid grid-cols-2 gap-2">
                     <NexaInput
-                      label="Recipient Title / Designation"
+                      label="Recipient Title"
                       value={coverRecipientTitle}
                       onChange={(e) => setCoverRecipientTitle(e.target.value)}
                       placeholder="e.g. Head of Procurement"
                     />
                     <NexaInput
-                      label="Company / Organization"
+                      label="Company"
                       value={coverRecipientCompany}
                       onChange={(e) => setCoverRecipientCompany(e.target.value)}
                       placeholder="e.g. Dangote Sugar Refinery Plc"
@@ -3531,179 +3531,182 @@ export default function CrmLeadsPage() {
                   {/* Pristine White A4 Paper Sheet */}
                   <div
                     id="lead-cover-letter-paper-area"
-                    className="bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-300/80 p-6 sm:p-8 min-h-[750px] flex flex-col justify-between select-text"
+                    className="bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-300/80 overflow-hidden min-h-[780px] flex flex-col justify-between select-text"
                   >
-                    <div className="space-y-5">
-                      {/* TENANT LETTERHEAD HEADER WITH WHITE ABSTRACT DESIGN */}
-                      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#0B1E3D] via-[#164DBF] to-[#1A56DB] p-4 sm:p-5 text-white shadow-sm mb-4">
-                        {/* Abstract White Background Pattern */}
-                        <svg
-                          className="absolute inset-0 w-full h-full pointer-events-none select-none"
-                          viewBox="0 0 760 140"
-                          preserveAspectRatio="none"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <defs>
-                            <linearGradient id="leadAbsWhiteFade" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
-                              <stop offset="60%" stopColor="#ffffff" stopOpacity="0.04" />
-                              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                            </linearGradient>
-                            <linearGradient id="leadAbsWaveFade" x1="0%" y1="100%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.09" />
-                              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.02" />
-                            </linearGradient>
-                          </defs>
-                          <path
-                            d="M260,-20 C420,40 500,-10 640,60 C720,100 750,50 780,20 L780,-20 Z"
-                            fill="url(#leadAbsWhiteFade)"
-                          />
-                          <path
-                            d="M-40,140 C140,80 320,130 520,70 C660,30 720,80 780,50 L780,140 Z"
-                            fill="url(#leadAbsWaveFade)"
-                          />
-                          <circle cx="710" cy="20" r="60" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="1.2" />
-                          <circle cx="710" cy="20" r="105" stroke="#ffffff" strokeOpacity="0.11" strokeWidth="1" strokeDasharray="3 3" />
-                          <circle cx="710" cy="20" r="150" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="1" />
-                          <polygon
-                            points="480,-10 560,75 660,35 590,-20"
-                            stroke="#ffffff"
-                            strokeOpacity="0.12"
-                            strokeWidth="1"
-                            fill="#ffffff"
-                            fillOpacity="0.03"
-                          />
-                          <polygon
-                            points="560,75 630,145 725,100 660,35"
-                            stroke="#ffffff"
-                            strokeOpacity="0.09"
-                            strokeWidth="1"
-                            fill="#ffffff"
-                            fillOpacity="0.02"
-                          />
-                          <g fill="#ffffff" fillOpacity="0.25">
-                            <circle cx="340" cy="30" r="1.5" />
-                            <circle cx="360" cy="30" r="1.5" />
-                            <circle cx="380" cy="30" r="1.5" />
-                            <circle cx="350" cy="45" r="1.5" />
-                            <circle cx="370" cy="45" r="1.5" />
-                            <circle cx="390" cy="45" r="1.5" />
-                          </g>
-                          <line x1="0" y1="139" x2="760" y2="139" stroke="#ffffff" strokeOpacity="0.22" strokeWidth="1" />
-                        </svg>
+                    {/* TENANT LETTERHEAD HEADER WITH WHITE ABSTRACT DESIGN - FULL WIDTH COVERING TOP */}
+                    <div className="relative overflow-hidden w-full bg-gradient-to-r from-[#0B1E3D] via-[#164DBF] to-[#1A56DB] px-6 sm:px-8 py-6 text-white shadow-xs border-b border-[#1A56DB]/40">
+                      {/* Abstract White Background Pattern */}
+                      <svg
+                        className="absolute inset-0 w-full h-full pointer-events-none select-none"
+                        viewBox="0 0 760 140"
+                        preserveAspectRatio="none"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <defs>
+                          <linearGradient id="leadAbsWhiteFade" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
+                            <stop offset="60%" stopColor="#ffffff" stopOpacity="0.04" />
+                            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                          </linearGradient>
+                          <linearGradient id="leadAbsWaveFade" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.09" />
+                            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.02" />
+                          </linearGradient>
+                        </defs>
+                        <path
+                          d="M260,-20 C420,40 500,-10 640,60 C720,100 750,50 780,20 L780,-20 Z"
+                          fill="url(#leadAbsWhiteFade)"
+                        />
+                        <path
+                          d="M-40,140 C140,80 320,130 520,70 C660,30 720,80 780,50 L780,140 Z"
+                          fill="url(#leadAbsWaveFade)"
+                        />
+                        <circle cx="710" cy="20" r="60" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="1.2" />
+                        <circle cx="710" cy="20" r="105" stroke="#ffffff" strokeOpacity="0.11" strokeWidth="1" strokeDasharray="3 3" />
+                        <circle cx="710" cy="20" r="150" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="1" />
+                        <polygon
+                          points="480,-10 560,75 660,35 590,-20"
+                          stroke="#ffffff"
+                          strokeOpacity="0.12"
+                          strokeWidth="1"
+                          fill="#ffffff"
+                          fillOpacity="0.03"
+                        />
+                        <polygon
+                          points="560,75 630,145 725,100 660,35"
+                          stroke="#ffffff"
+                          strokeOpacity="0.09"
+                          strokeWidth="1"
+                          fill="#ffffff"
+                          fillOpacity="0.02"
+                        />
+                        <g fill="#ffffff" fillOpacity="0.25">
+                          <circle cx="340" cy="30" r="1.5" />
+                          <circle cx="360" cy="30" r="1.5" />
+                          <circle cx="380" cy="30" r="1.5" />
+                          <circle cx="350" cy="45" r="1.5" />
+                          <circle cx="370" cy="45" r="1.5" />
+                          <circle cx="390" cy="45" r="1.5" />
+                        </g>
+                        <line x1="0" y1="139" x2="760" y2="139" stroke="#ffffff" strokeOpacity="0.22" strokeWidth="1" />
+                      </svg>
 
-                        {/* Inner Header Row */}
-                        <div className="relative z-10 flex justify-between items-start gap-4">
-                          <div className="flex items-center gap-3.5">
-                            {tenantDisplayLogo ? (
-                              <img
-                                src={tenantDisplayLogo}
-                                alt={tenantDisplayName}
-                                className="w-12 h-12 object-contain rounded-xl p-1 bg-white border border-white/25 shrink-0 shadow-sm"
-                                onError={(e) => {
-                                  (e.target as HTMLElement).style.display = "none";
-                                }}
-                              />
-                            ) : null}
-                            <div>
-                              <div className="text-xl font-black text-white tracking-tight uppercase leading-tight drop-shadow-xs">
-                                {tenantDisplayName}
-                              </div>
-                              <div className="text-[11px] text-blue-100 font-semibold mt-0.5">
-                                {activeTenant?.domain || "Official Commercial & Operations Suite"}
-                              </div>
-                              <div className="text-[10px] text-blue-200/90 mt-0.5">
-                                {activeTenant?.ownerEmail ? `Contact: ${activeTenant.ownerEmail}` : "Victoria Island / Ikeja Central Depot, Lagos, Nigeria"}
-                              </div>
+                      {/* Inner Header Row */}
+                      <div className="relative z-10 flex justify-between items-start gap-4">
+                        <div className="flex items-center gap-3.5">
+                          {tenantDisplayLogo ? (
+                            <img
+                              src={tenantDisplayLogo}
+                              alt={tenantDisplayName}
+                              className="w-12 h-12 object-contain rounded-xl p-1 bg-white border border-white/25 shrink-0 shadow-sm"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          ) : null}
+                          <div>
+                            <div className="text-xl font-black text-white tracking-tight uppercase leading-tight drop-shadow-xs">
+                              {tenantDisplayName}
                             </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-md font-black text-[10px] uppercase tracking-wider shadow-xs">
-                              {coverDocumentBadge || "OFFICIAL TRANSMITTAL"}
-                            </span>
-                            <div className="text-[10px] text-blue-100/90 font-mono font-medium mt-1.5">
-                              Ref: {coverLetterLead ? (coverLetterLead.id.startsWith("LED-") ? coverLetterLead.id : "LD-" + coverLetterLead.id.slice(-6).toUpperCase()) : "PROP-REF"}
+                            <div className="text-[11px] text-blue-100 font-semibold mt-0.5">
+                              {activeTenant?.domain || "Official Commercial & Operations Suite"}
+                            </div>
+                            <div className="text-[10px] text-blue-200/90 mt-0.5">
+                              {activeTenant?.ownerEmail ? `Contact: ${activeTenant.ownerEmail}` : "Victoria Island / Ikeja Central Depot, Lagos, Nigeria"}
                             </div>
                           </div>
                         </div>
-                      </div>
-
-                      {/* DATE ROW */}
-                      <div className="text-right text-xs font-semibold text-slate-600">
-                        Date: <span className="text-slate-900">{coverLetterDate}</span>
-                      </div>
-
-                      {/* RECIPIENT BLOCK: Attention (Contact Name) = Contact Name. Recipient Title/Designation = Recipient Title. Company/Organization = Company. */}
-                      <div className="space-y-0.5 text-xs">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Delivered / Addressed To:
-                        </div>
-                        <div className="font-extrabold text-sm text-slate-900">
-                          {coverRecipientName || "The Managing Director"}
-                        </div>
-                        {coverRecipientTitle && (
-                          <div className="text-slate-700 font-medium">{coverRecipientTitle}</div>
-                        )}
-                        <div className="font-bold text-xs text-[#1A56DB]">
-                          {coverRecipientCompany || "Client Organization"}
-                        </div>
-                        {coverRecipientAddress && (
-                          <div className="text-slate-500 text-[11px]">{coverRecipientAddress}</div>
-                        )}
-                      </div>
-
-                      {/* SUBJECT LINE */}
-                      <div className="pt-1">
-                        <div className="inline-block text-xs font-black text-slate-900 uppercase tracking-wide border-b-2 border-slate-900 pb-1">
-                          RE: {coverLetterReference}
-                        </div>
-                      </div>
-
-                      {/* SALUTATION */}
-                      <div className="text-xs font-bold text-slate-800">
-                        {coverLetterSalutation}
-                      </div>
-
-                      {/* LETTER BODY */}
-                      <div className="text-xs text-slate-800 leading-relaxed space-y-3 whitespace-pre-line text-justify font-normal">
-                        {coverLetterBody}
-                      </div>
-
-                      {/* CLOSING / SIGNATORY */}
-                      <div className="pt-3 space-y-2.5">
-                        <div className="text-xs font-semibold text-slate-700">
-                          {coverLetterSignoff}
-                        </div>
-                        <div className="border-b border-slate-400 w-44 h-7"></div>
-                        <div>
-                          <div className="text-xs font-black text-slate-900">
-                            {coverSignatoryName || tenantDisplayName}
+                        <div className="text-right shrink-0">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-md font-black text-[10px] uppercase tracking-wider shadow-xs">
+                            {coverDocumentBadge || "OFFICIAL TRANSMITTAL"}
+                          </span>
+                          <div className="text-[10px] text-blue-100/90 font-mono font-medium mt-1.5">
+                            Ref: {coverLetterLead ? (coverLetterLead.id.startsWith("LED-") ? coverLetterLead.id : "LD-" + coverLetterLead.id.slice(-6).toUpperCase()) : "PROP-REF"}
                           </div>
-                          {coverSignatoryTitle && (
-                            <div className="text-[11px] font-medium text-slate-700">
-                              {coverSignatoryTitle}
-                            </div>
-                          )}
-                          {coverSignatoryDepartment && (
-                            <div className="text-[10px] text-slate-500">
-                              {coverSignatoryDepartment}
-                            </div>
-                          )}
-                          {coverSignatoryContact && (
-                            <div className="text-[10px] text-slate-500 font-mono">
-                              {coverSignatoryContact}
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
 
-                    {/* TENANT LETTERHEAD FOOTER */}
-                    <div className="border-t border-slate-200 pt-3 mt-6 text-center text-[9px] text-slate-500 space-y-0.5">
-                      <div>{coverTenantFooter}</div>
-                      <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
-                        Authorized Corporate Transmittal · Page 1 of 1
+                    {/* LETTER BODY CONTENT & FOOTER WRAPPER */}
+                    <div className="p-6 sm:p-8 flex-1 flex flex-col justify-between space-y-6">
+                      <div className="space-y-5">
+                        {/* DATE ROW */}
+                        <div className="text-right text-xs font-semibold text-slate-600">
+                          Date: <span className="text-slate-900">{coverLetterDate}</span>
+                        </div>
+
+                        {/* RECIPIENT BLOCK: Attention (Contact Name) = Contact Name. Recipient Title/Designation = Recipient Title. Company/Organization = Company. */}
+                        <div className="space-y-0.5 text-xs">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Delivered / Addressed To:
+                          </div>
+                          <div className="font-extrabold text-sm text-slate-900">
+                            {coverRecipientName || "The Managing Director"}
+                          </div>
+                          {coverRecipientTitle && (
+                            <div className="text-slate-700 font-medium">{coverRecipientTitle}</div>
+                          )}
+                          <div className="font-bold text-xs text-[#1A56DB]">
+                            {coverRecipientCompany || "Client Organization"}
+                          </div>
+                          {coverRecipientAddress && (
+                            <div className="text-slate-500 text-[11px]">{coverRecipientAddress}</div>
+                          )}
+                        </div>
+
+                        {/* SUBJECT LINE */}
+                        <div className="pt-1">
+                          <div className="inline-block text-xs font-black text-slate-900 uppercase tracking-wide border-b-2 border-slate-900 pb-1">
+                            RE: {coverLetterReference}
+                          </div>
+                        </div>
+
+                        {/* SALUTATION */}
+                        <div className="text-xs font-bold text-slate-800">
+                          {coverLetterSalutation}
+                        </div>
+
+                        {/* LETTER BODY */}
+                        <div className="text-xs text-slate-800 leading-relaxed space-y-3 whitespace-pre-line text-justify font-normal">
+                          {coverLetterBody}
+                        </div>
+
+                        {/* CLOSING / SIGNATORY */}
+                        <div className="pt-3 space-y-2.5">
+                          <div className="text-xs font-semibold text-slate-700">
+                            {coverLetterSignoff}
+                          </div>
+                          <div className="border-b border-slate-400 w-44 h-7"></div>
+                          <div>
+                            <div className="text-xs font-black text-slate-900">
+                              {coverSignatoryName || tenantDisplayName}
+                            </div>
+                            {coverSignatoryTitle && (
+                              <div className="text-[11px] font-medium text-slate-700">
+                                {coverSignatoryTitle}
+                              </div>
+                            )}
+                            {coverSignatoryDepartment && (
+                              <div className="text-[10px] text-slate-500">
+                                {coverSignatoryDepartment}
+                              </div>
+                            )}
+                            {coverSignatoryContact && (
+                              <div className="text-[10px] text-slate-500 font-mono">
+                                {coverSignatoryContact}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* TENANT LETTERHEAD FOOTER */}
+                      <div className="border-t border-slate-200 pt-3 mt-6 text-center text-[9px] text-slate-500 space-y-0.5">
+                        <div>{coverTenantFooter}</div>
+                        <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                          Authorized Corporate Transmittal · Page 1 of 1
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -3769,9 +3772,11 @@ export default function CrmLeadsPage() {
             top: 0 !important;
             width: 100% !important;
             height: auto !important;
+            min-height: 100% !important;
             margin: 0 !important;
-            padding: 12mm 15mm !important;
+            padding: 0 !important;
             border: none !important;
+            border-radius: 0 !important;
             box-shadow: none !important;
             background: #ffffff !important;
             color: #0f172a !important;
@@ -3781,7 +3786,7 @@ export default function CrmLeadsPage() {
           }
           @page {
             size: A4 portrait;
-            margin: 10mm;
+            margin: 0;
           }
         }
       `}</style>

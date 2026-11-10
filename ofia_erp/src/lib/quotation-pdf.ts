@@ -495,7 +495,7 @@ export function downloadCoverLetterPdf(data: CoverLetterPrintData) {
         <style>
           @page {
             size: A4 portrait;
-            margin: 14mm 18mm;
+            margin: 0;
           }
           * {
             box-sizing: border-box;
@@ -510,29 +510,38 @@ export function downloadCoverLetterPdf(data: CoverLetterPrintData) {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             font-size: 13px;
             line-height: 1.6;
-            height: 100%;
+            min-height: 100%;
           }
           .letter-container {
             width: 100%;
             max-width: 100%;
-            min-height: 98vh;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
+          .header-banner {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            border-radius: 0;
+            background: linear-gradient(135deg, #0b1e3d 0%, #164dbf 55%, #1a56db 100%);
+            padding: 22px 24mm 18px 24mm;
+            margin: 0;
+            border-bottom: 1.5px solid rgba(26, 86, 219, 0.4);
+            color: #ffffff;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .letter-body-wrapper {
+            padding: 18px 24mm 20mm 24mm;
+            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
           }
           .letter-content {
             flex: 1;
-          }
-          .header-banner {
-            position: relative;
-            overflow: hidden;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #0b1e3d 0%, #164dbf 55%, #1a56db 100%);
-            padding: 16px 20px;
-            margin-bottom: 22px;
-            color: #ffffff;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
           }
           .abstract-bg {
             position: absolute;
@@ -707,98 +716,101 @@ export function downloadCoverLetterPdf(data: CoverLetterPrintData) {
       </head>
       <body>
         <div class="letter-container">
-          <div class="letter-content">
-            <!-- TENANT LETTERHEAD HEADER WITH WHITE ABSTRACT DESIGN -->
-            <div class="header-banner">
-              <svg class="abstract-bg" viewBox="0 0 760 140" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="absWhiteFadePrint" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18" />
-                    <stop offset="60%" stop-color="#ffffff" stop-opacity="0.04" />
-                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient id="absWaveFadePrint" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.09" />
-                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02" />
-                  </linearGradient>
-                </defs>
-                <path d="M260,-20 C420,40 500,-10 640,60 C720,100 750,50 780,20 L780,-20 Z" fill="url(#absWhiteFadePrint)" />
-                <path d="M-40,140 C140,80 320,130 520,70 C660,30 720,80 780,50 L780,140 Z" fill="url(#absWaveFadePrint)" />
-                <circle cx="710" cy="20" r="60" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1.2" />
-                <circle cx="710" cy="20" r="105" stroke="#ffffff" stroke-opacity="0.11" stroke-width="1" stroke-dasharray="3 3" />
-                <circle cx="710" cy="20" r="150" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1" />
-                <polygon points="480,-10 560,75 660,35 590,-20" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1" fill="#ffffff" fill-opacity="0.03" />
-                <polygon points="560,75 630,145 725,100 660,35" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1" fill="#ffffff" fill-opacity="0.02" />
-                <g fill="#ffffff" fill-opacity="0.25">
-                  <circle cx="340" cy="30" r="1.5" />
-                  <circle cx="360" cy="30" r="1.5" />
-                  <circle cx="380" cy="30" r="1.5" />
-                  <circle cx="350" cy="45" r="1.5" />
-                  <circle cx="370" cy="45" r="1.5" />
-                  <circle cx="390" cy="45" r="1.5" />
-                </g>
-                <line x1="0" y1="139" x2="760" y2="139" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1" />
-              </svg>
-              <div class="header-inner">
-                <div class="brand-col">
-                  ${
-                    tenantLogo
-                      ? `<img src="${escapeHtml(tenantLogo)}" alt="${escapeHtml(tenantName)}" class="brand-logo" onerror="this.style.display='none'" />`
-                      : ""
-                  }
-                  <div>
-                    <div class="brand-title">${escapeHtml(tenantName)}</div>
-                    <div class="brand-domain">${escapeHtml(tenantDomain)}</div>
-                    <div class="brand-contact">${escapeHtml(tenantContact)}</div>
-                  </div>
-                </div>
-                <div class="badge-col">
-                  <div class="header-badge">${escapeHtml(data.documentBadge || "OFFICIAL TRANSMITTAL")}</div>
-                  ${data.quotationNumber ? `<div class="header-ref">Ref: ${escapeHtml(data.quotationNumber)}</div>` : ""}
+          <!-- TENANT LETTERHEAD HEADER WITH WHITE ABSTRACT DESIGN - FULL WIDTH TOP BLEED -->
+          <div class="header-banner">
+            <svg class="abstract-bg" viewBox="0 0 760 140" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="absWhiteFadePrint" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18" />
+                  <stop offset="60%" stop-color="#ffffff" stop-opacity="0.04" />
+                  <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+                </linearGradient>
+                <linearGradient id="absWaveFadePrint" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0.09" />
+                  <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02" />
+                </linearGradient>
+              </defs>
+              <path d="M260,-20 C420,40 500,-10 640,60 C720,100 750,50 780,20 L780,-20 Z" fill="url(#absWhiteFadePrint)" />
+              <path d="M-40,140 C140,80 320,130 520,70 C660,30 720,80 780,50 L780,140 Z" fill="url(#absWaveFadePrint)" />
+              <circle cx="710" cy="20" r="60" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1.2" />
+              <circle cx="710" cy="20" r="105" stroke="#ffffff" stroke-opacity="0.11" stroke-width="1" stroke-dasharray="3 3" />
+              <circle cx="710" cy="20" r="150" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1" />
+              <polygon points="480,-10 560,75 660,35 590,-20" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1" fill="#ffffff" fill-opacity="0.03" />
+              <polygon points="560,75 630,145 725,100 660,35" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1" fill="#ffffff" fill-opacity="0.02" />
+              <g fill="#ffffff" fill-opacity="0.25">
+                <circle cx="340" cy="30" r="1.5" />
+                <circle cx="360" cy="30" r="1.5" />
+                <circle cx="380" cy="30" r="1.5" />
+                <circle cx="350" cy="45" r="1.5" />
+                <circle cx="370" cy="45" r="1.5" />
+                <circle cx="390" cy="45" r="1.5" />
+              </g>
+              <line x1="0" y1="139" x2="760" y2="139" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1" />
+            </svg>
+            <div class="header-inner">
+              <div class="brand-col">
+                ${
+                  tenantLogo
+                    ? `<img src="${escapeHtml(tenantLogo)}" alt="${escapeHtml(tenantName)}" class="brand-logo" onerror="this.style.display='none'" />`
+                    : ""
+                }
+                <div>
+                  <div class="brand-title">${escapeHtml(tenantName)}</div>
+                  <div class="brand-domain">${escapeHtml(tenantDomain)}</div>
+                  <div class="brand-contact">${escapeHtml(tenantContact)}</div>
                 </div>
               </div>
-            </div>
-
-            <!-- DATE -->
-            <div class="date-row">Date: ${escapeHtml(data.date)}</div>
-
-            <!-- RECIPIENT BLOCK -->
-            <div class="recipient-block">
-              <div class="recipient-to">Attention / Delivered To:</div>
-              <div class="recipient-name">${escapeHtml(data.recipientName || "The Managing Director")}</div>
-              ${data.recipientTitle ? `<div class="recipient-title">${escapeHtml(data.recipientTitle)}</div>` : ""}
-              <div class="recipient-company">${escapeHtml(data.companyName || "Client Organization")}</div>
-              ${data.recipientAddress ? `<div class="recipient-address">${escapeHtml(data.recipientAddress)}</div>` : ""}
-            </div>
-
-            <!-- REFERENCE -->
-            <div>
-              <div class="subject-line">RE: ${escapeHtml(data.reference)}</div>
-            </div>
-
-            <!-- SALUTATION -->
-            <div class="salutation">${escapeHtml(data.salutation || "Dear Sir/Madam,")}</div>
-
-            <!-- LETTER BODY -->
-            <div class="letter-body">
-              ${paragraphs}
-            </div>
-
-            <!-- CLOSING & SIGNATURE -->
-            <div class="closing-block">
-              <div class="signoff-text">${escapeHtml(data.signoff || "Yours faithfully,")}</div>
-              <div class="signature-line"></div>
-              <div class="signatory-name">${escapeHtml(data.signatoryName || tenantName)}</div>
-              ${data.signatoryTitle ? `<div class="signatory-title">${escapeHtml(data.signatoryTitle)}</div>` : ""}
-              ${data.signatoryDepartment ? `<div class="signatory-meta">${escapeHtml(data.signatoryDepartment)}</div>` : ""}
-              ${data.signatoryContact ? `<div class="signatory-meta">${escapeHtml(data.signatoryContact)}</div>` : ""}
+              <div class="badge-col">
+                <div class="header-badge">${escapeHtml(data.documentBadge || "OFFICIAL TRANSMITTAL")}</div>
+                ${data.quotationNumber ? `<div class="header-ref">Ref: ${escapeHtml(data.quotationNumber)}</div>` : ""}
+              </div>
             </div>
           </div>
 
-          <!-- TENANT LETTERHEAD FOOTER -->
-          <div class="letter-footer">
-            <div>${escapeHtml(tenantFooter)}</div>
-            <div style="margin-top: 3px; font-weight: 600;">Authorized Corporate Transmittal · Page 1 of 1</div>
+          <!-- LETTER BODY CONTENT & FOOTER CONTAINER -->
+          <div class="letter-body-wrapper">
+            <div class="letter-content">
+              <!-- DATE -->
+              <div class="date-row">Date: ${escapeHtml(data.date)}</div>
+
+              <!-- RECIPIENT BLOCK -->
+              <div class="recipient-block">
+                <div class="recipient-to">Attention / Delivered To:</div>
+                <div class="recipient-name">${escapeHtml(data.recipientName || "The Managing Director")}</div>
+                ${data.recipientTitle ? `<div class="recipient-title">${escapeHtml(data.recipientTitle)}</div>` : ""}
+                <div class="recipient-company">${escapeHtml(data.companyName || "Client Organization")}</div>
+                ${data.recipientAddress ? `<div class="recipient-address">${escapeHtml(data.recipientAddress)}</div>` : ""}
+              </div>
+
+              <!-- REFERENCE -->
+              <div>
+                <div class="subject-line">RE: ${escapeHtml(data.reference)}</div>
+              </div>
+
+              <!-- SALUTATION -->
+              <div class="salutation">${escapeHtml(data.salutation || "Dear Sir/Madam,")}</div>
+
+              <!-- LETTER BODY -->
+              <div class="letter-body">
+                ${paragraphs}
+              </div>
+
+              <!-- CLOSING & SIGNATURE -->
+              <div class="closing-block">
+                <div class="signoff-text">${escapeHtml(data.signoff || "Yours faithfully,")}</div>
+                <div class="signature-line"></div>
+                <div class="signatory-name">${escapeHtml(data.signatoryName || tenantName)}</div>
+                ${data.signatoryTitle ? `<div class="signatory-title">${escapeHtml(data.signatoryTitle)}</div>` : ""}
+                ${data.signatoryDepartment ? `<div class="signatory-meta">${escapeHtml(data.signatoryDepartment)}</div>` : ""}
+                ${data.signatoryContact ? `<div class="signatory-meta">${escapeHtml(data.signatoryContact)}</div>` : ""}
+              </div>
+            </div>
+
+            <!-- TENANT LETTERHEAD FOOTER -->
+            <div class="letter-footer">
+              <div>${escapeHtml(tenantFooter)}</div>
+              <div style="margin-top: 3px; font-weight: 600;">Authorized Corporate Transmittal · Page 1 of 1</div>
+            </div>
           </div>
         </div>
       </body>

@@ -703,7 +703,7 @@ export default function QuotationsPage() {
       const tpl = COVER_LETTER_TEMPLATES.commercial;
       setCoverDocumentBadge("OFFICIAL TRANSMITTAL");
       setCoverRecipientName(targetQuote.clientName || "The Managing Director");
-      setCoverRecipientTitle("Director of Procurement & Supply Chain");
+      setCoverRecipientTitle("");
       setCoverRecipientCompany(targetQuote.companyName || "Client Organization");
       setCoverRecipientAddress("Victoria Island / Commercial District, Lagos, Nigeria");
       setCoverLetterReference(tpl.reference(targetQuote));
@@ -718,7 +718,7 @@ export default function QuotationsPage() {
       setActiveTemplateKey("commercial");
     } else {
       setCoverRecipientName("The Managing Director / Procurement Committee");
-      setCoverRecipientTitle("Director of Procurement");
+      setCoverRecipientTitle("");
       setCoverRecipientCompany("Client Organization");
       setCoverRecipientAddress("Victoria Island, Lagos, Nigeria");
       setCoverLetterReference("COMMERCIAL PROPOSAL & TARIFF SCHEDULE (QT-REF)");

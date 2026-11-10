@@ -53,9 +53,12 @@ export interface CrmLead {
   convertedDealId?: string;
   dealStage?: CrmDeal["stage"];
   convertedAt?: string;
+  coverLetter?: QuotationCoverLetter;
   createdAt: string;
   updatedAt?: string;
 }
+
+export type LeadCoverLetter = QuotationCoverLetter;
 
 export interface CrmAccount {
   id: string;

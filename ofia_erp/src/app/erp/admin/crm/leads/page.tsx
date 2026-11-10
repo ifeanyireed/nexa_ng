@@ -34,6 +34,12 @@ import {
   Download,
   Star,
   Award,
+  Printer,
+  FileText,
+  PenTool,
+  BookmarkCheck,
+  Save,
+  User,
 } from "lucide-react";
 import { IconBrandLinkedin } from "@tabler/icons-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
@@ -44,11 +50,102 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
 import { Pagination } from "@/components/nexa/Pagination";
-import { CrmLead, CrmCall, CrmDeal } from "@/lib/crm-service";
+import { CrmLead, CrmCall, CrmDeal, QuotationCoverLetter } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 import { useActiveTenant } from "@/lib/tenant-context";
 import { filterSalesClosers } from "@/lib/access-control";
 import { PhoneCandidate, isPhoneMissingOrInvalid } from "@/lib/crm-phone-enricher";
+import { downloadCoverLetterPdf } from "@/lib/quotation-pdf";
+
+interface LeadCoverLetterTemplate {
+  name: string;
+  tag: string;
+  reference: (lead: Partial<CrmLead>) => string;
+  salutation: (lead: Partial<CrmLead>) => string;
+  body: (lead: Partial<CrmLead>, tenantName: string) => string;
+  signoff: string;
+  signatoryTitle: string;
+}
+
+const LEAD_COVER_LETTER_TEMPLATES: Record<string, LeadCoverLetterTemplate> = {
+  commercial: {
+    name: "Corporate Commercial Proposal",
+    tag: "Standard B2B",
+    reference: (lead) =>
+      `COMMERCIAL PROPOSAL & PARTNERSHIP OFFER FOR ${lead.companyName ? lead.companyName.toUpperCase() : "PROSPECTIVE CLIENT"}`,
+    salutation: (lead) =>
+      lead.contactName ? `Dear ${lead.contactName},` : "Dear Sir/Madam,",
+    body: (lead, tenant) =>
+      `We have the pleasure of submitting herewith our formal commercial proposal and strategic partnership offer for ${lead.companyName || "your esteemed organization"}.\n\n` +
+      `At ${tenant}, we specialize in delivering industry-leading solutions, operational excellence, and measurable value across all engagements. Having reviewed your operational requirements, our team has crafted a tailored commercial structure designed to optimize efficiency while ensuring the highest service quality.\n\n` +
+      `Our proposal encompasses dedicated project management, transparent milestone governance, and agile resource deployment to guarantee seamless execution from day one.\n\n` +
+      `We remain fully prepared to deploy resources and commence immediate engagement upon your approval. Please do not hesitate to contact our executive desk should you require any clarifications or scope modifications.\n\n` +
+      `Thank you for considering ${tenant} as your trusted corporate partner. We look forward to establishing a mutually rewarding commercial relationship.`,
+    signoff: "Yours faithfully,",
+    signatoryTitle: "Commercial Director / Key Accounts Lead",
+  },
+  logistics: {
+    name: "Logistics, Haulage & Fleet",
+    tag: "Freight & Transport",
+    reference: (lead) =>
+      `FREIGHT HAULAGE & FLEET LOGISTICS PROPOSAL - ${lead.companyName ? lead.companyName.toUpperCase() : "LOGISTICS PARTNER"}`,
+    salutation: (lead) =>
+      lead.contactName ? `Dear ${lead.contactName},` : "Dear Sir/Madam,",
+    body: (lead, tenant) =>
+      `We write to officially present our freight haulage, distribution logistics, and fleet operational capabilities for ${lead.companyName || "your organization"}.\n\n` +
+      `${tenant} operates a robust, digitally-tracked fleet adhering to rigorous safety standards, comprehensive transit cargo insurance, and on-time dispatch SLAs. Every transit mission is supervised by our 24/7 central control dispatch tower to ensure seamless route transit and cargo integrity.\n\n` +
+      `Our operational framework is structured to provide dedicated vehicle allocation, rapid turnaround times, and competitive corporate tariffs tailored to your supply chain volume.\n\n` +
+      `We assure ${lead.companyName || "your organization"} of prompt loading, dedicated fleet allocation, and immediate turnaround upon formal agreement.\n\n` +
+      `We look forward to an opportunity to partner with your supply chain and distribution division.`,
+    signoff: "Yours faithfully,",
+    signatoryTitle: "Head of Fleet Operations & Haulage Logistics",
+  },
+  procurement: {
+    name: "Enterprise Supply & Procurement",
+    tag: "Material Supply",
+    reference: (lead) =>
+      `FORMAL PROPOSAL FOR PROCUREMENT AND MATERIAL SUPPLY - ${lead.companyName ? lead.companyName.toUpperCase() : "CLIENT"}`,
+    salutation: (lead) =>
+      lead.contactName ? `Dear ${lead.contactName},` : "Dear Procurement Committee,",
+    body: (lead, tenant) =>
+      `We are pleased to submit our formal commercial proposal regarding corporate supply and procurement services for ${lead.companyName || "your organization"}.\n\n` +
+      `All items and materials supplied by ${tenant} are sourced directly from certified original equipment manufacturers (OEMs) and adhere strictly to standard regulatory guidelines, statutory quality certifications, and manufacturer warranties. Our established distribution network ensures dependable delivery timelines directly to your designated operational sites.\n\n` +
+      `We provide competitive volume pricing schedules, flexible payment settlement terms, and dedicated account management to streamline your procurement cycle and reduce total landed costs.\n\n` +
+      `We appreciate your interest and remain at your disposal for technical reviews or commercial discussions.`,
+    signoff: "Warm regards,",
+    signatoryTitle: "Head of Corporate Procurement & Supplies",
+  },
+  retainer: {
+    name: "Retainer & Service Level Agreement",
+    tag: "SLA & Retainer",
+    reference: (lead) =>
+      `CORPORATE SERVICE RETAINER & SLA PROPOSAL FOR ${lead.companyName ? lead.companyName.toUpperCase() : "ENTERPRISE CLIENT"}`,
+    salutation: (lead) =>
+      lead.contactName ? `Dear ${lead.contactName},` : "Dear Sir/Madam,",
+    body: (lead, tenant) =>
+      `We are pleased to present our enterprise service retainer and ongoing support proposal tailored specifically to the operational goals of ${lead.companyName || "your esteemed organization"}.\n\n` +
+      `Under this proposed engagement, ${tenant} provides dedicated key account support, priority turnaround times, preventive service routines, and guaranteed service level benchmarks to ensure peak operational reliability and minimize downtime.\n\n` +
+      `Our dedicated governance team provides periodic performance dashboards, SLA reviews, and continuous improvement recommendations to ensure your operations achieve sustained competitive advantages.\n\n` +
+      `We value the strategic relationship between our organizations and look forward to solidifying our long-term partnership.`,
+    signoff: "Respectfully yours,",
+    signatoryTitle: "Managing Director / Principal Consultant",
+  },
+  transmittal: {
+    name: "Executive Transmittal Letter",
+    tag: "Short Form",
+    reference: (lead) =>
+      `OFFICIAL PROPOSAL TRANSMITTAL - ${lead.companyName ? lead.companyName.toUpperCase() : "CLIENT"}`,
+    salutation: (lead) =>
+      lead.contactName ? `Dear ${lead.contactName},` : "Dear Sir/Madam,",
+    body: (lead, tenant) =>
+      `Please find enclosed our formal business proposal and capability brief for the review of ${lead.companyName || "your organization"}.\n\n` +
+      `The enclosed materials outline our corporate overview, technical methodology, delivery commitments, and commercial terms formulated specifically to address your operational priorities.\n\n` +
+      `We welcome the opportunity to discuss this proposal in detail with your management team at your earliest convenience.\n\n` +
+      `Thank you for considering ${tenant} as your corporate partner. We look forward to hearing from you.`,
+    signoff: "Yours sincerely,",
+    signatoryTitle: "Commercial Accounts Lead",
+  },
+};
 
 export default function CrmLeadsPage() {
   const { activeTenant } = useActiveTenant();
@@ -116,6 +213,277 @@ export default function CrmLeadsPage() {
   const [enrichErrorMessage, setEnrichErrorMessage] = useState<string>("");
   const [isApplyingPhone, setIsApplyingPhone] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
+
+  const tenantDisplayName =
+    activeTenant?.name ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("nexa_tenant_name") || localStorage.getItem("tenant_name")
+      : null) ||
+    "ReedBreed Logistics Hub";
+
+  const tenantDisplayLogo =
+    activeTenant?.logo ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("nexa_tenant_logo") || localStorage.getItem("tenant_logo")
+      : null) ||
+    "";
+
+  // Cover Letter Generator States (Tied to Lead)
+  const [isCoverLetterModalOpen, setIsCoverLetterModalOpen] = useState(false);
+  const [coverLetterLead, setCoverLetterLead] = useState<CrmLead | null>(null);
+  const [coverLetterDate, setCoverLetterDate] = useState("");
+  const [coverRecipientName, setCoverRecipientName] = useState("");
+  const [coverRecipientTitle, setCoverRecipientTitle] = useState("");
+  const [coverRecipientCompany, setCoverRecipientCompany] = useState("");
+  const [coverRecipientAddress, setCoverRecipientAddress] = useState("");
+  const [coverLetterReference, setCoverLetterReference] = useState("");
+  const [coverLetterSalutation, setCoverLetterSalutation] = useState("");
+  const [coverLetterBody, setCoverLetterBody] = useState("");
+  const [coverLetterSignoff, setCoverLetterSignoff] = useState("Yours faithfully,");
+  const [coverSignatoryName, setCoverSignatoryName] = useState("");
+  const [coverSignatoryTitle, setCoverSignatoryTitle] = useState("");
+  const [coverSignatoryDepartment, setCoverSignatoryDepartment] = useState("");
+  const [coverSignatoryContact, setCoverSignatoryContact] = useState("");
+  const [coverTenantFooter, setCoverTenantFooter] = useState(
+    "RC 1892019 • Tax ID: 22001923-0001 • Corporate HQ: Victoria Island, Lagos, Nigeria • Confidential & Proprietary Document"
+  );
+  const [coverDocumentBadge, setCoverDocumentBadge] = useState("OFFICIAL TRANSMITTAL");
+  const [activeTemplateKey, setActiveTemplateKey] = useState("commercial");
+  const [isSavingCoverLetter, setIsSavingCoverLetter] = useState(false);
+  const [copiedCoverLetter, setCopiedCoverLetter] = useState(false);
+
+  const handleOpenCoverLetter = (targetLead?: CrmLead | null) => {
+    const lead = targetLead || (leads.length > 0 ? leads[0] : null);
+    setCoverLetterLead(lead);
+
+    const today = new Date();
+    const day = today.getDate();
+    const suffix = ["th", "st", "nd", "rd"][(day % 10 > 3 || Math.floor((day % 100) / 10) === 1) ? 0 : day % 10];
+    const monthName = today.toLocaleDateString("en-US", { month: "long" });
+    const year = today.getFullYear();
+    const formattedDate = `${day}${suffix} ${monthName}, ${year}`;
+
+    setCoverLetterDate(formattedDate);
+
+    if (lead?.coverLetter) {
+      const cl = lead.coverLetter;
+      setCoverLetterDate(cl.date || formattedDate);
+      setCoverRecipientName(cl.recipientName || lead.contactName || (lead as any).name || "The Managing Director");
+      setCoverRecipientTitle(cl.recipientTitle || lead.contactTitle || "");
+      setCoverRecipientCompany(cl.companyName || lead.companyName || (lead as any).company || "");
+      setCoverRecipientAddress(cl.recipientAddress || lead.location || "Victoria Island / Commercial District, Lagos, Nigeria");
+      setCoverLetterReference(cl.reference || `COMMERCIAL PROPOSAL FOR ${(lead.companyName || (lead as any).company || "").toUpperCase()}`);
+      setCoverLetterSalutation(cl.salutation || (lead.contactName ? `Dear ${lead.contactName},` : "Dear Sir/Madam,"));
+      setCoverLetterBody(cl.body || "");
+      setCoverLetterSignoff(cl.signoff || "Yours faithfully,");
+      setCoverSignatoryName(cl.signatoryName || lead.assignedRep || activeTenant?.ownerName || tenantDisplayName);
+      setCoverSignatoryTitle(cl.signatoryTitle || "Commercial Director / Key Accounts Lead");
+      setCoverSignatoryDepartment(cl.signatoryDepartment || "Commercial & Strategic Key Accounts Directorate");
+      setCoverSignatoryContact(cl.signatoryContact || (activeTenant?.ownerEmail ? `${activeTenant.ownerEmail} | ${activeTenant?.domain || "www.ofia.ng"}` : "+234 800 000 0000 | ops@ofia.ng"));
+      setCoverTenantFooter(cl.tenantFooterNote || "RC 1892019 • Tax ID: 22001923-0001 • Corporate HQ: Victoria Island, Lagos, Nigeria • Confidential & Proprietary Document");
+      setCoverDocumentBadge(cl.documentBadge || "OFFICIAL TRANSMITTAL");
+      setActiveTemplateKey(cl.templateKey || "commercial");
+    } else if (lead) {
+      const tpl = LEAD_COVER_LETTER_TEMPLATES.commercial;
+      setCoverRecipientName(lead.contactName || (lead as any).name || "The Managing Director");
+      setCoverRecipientTitle(lead.contactTitle || "");
+      setCoverRecipientCompany(lead.companyName || (lead as any).company || "Client Organization");
+      setCoverRecipientAddress(lead.location || "Victoria Island / Commercial District, Lagos, Nigeria");
+      setCoverLetterReference(tpl.reference(lead));
+      setCoverLetterSalutation(tpl.salutation(lead));
+      setCoverLetterBody(tpl.body(lead, tenantDisplayName));
+      setCoverLetterSignoff(tpl.signoff);
+      setCoverSignatoryName(lead.assignedRep || activeTenant?.ownerName || tenantDisplayName);
+      setCoverSignatoryTitle(tpl.signatoryTitle);
+      setCoverSignatoryDepartment("Commercial & Strategic Key Accounts Directorate");
+      setCoverSignatoryContact(activeTenant?.ownerEmail ? `${activeTenant.ownerEmail} | ${activeTenant?.domain || "www.ofia.ng"}` : "+234 800 000 0000 | ops@ofia.ng");
+      setCoverTenantFooter("RC 1892019 • Tax ID: 22001923-0001 • Corporate HQ: Victoria Island, Lagos, Nigeria • Confidential & Proprietary Document");
+      setCoverDocumentBadge("OFFICIAL TRANSMITTAL");
+      setActiveTemplateKey("commercial");
+    } else {
+      setCoverRecipientName("The Managing Director / Procurement Committee");
+      setCoverRecipientTitle("");
+      setCoverRecipientCompany("Client Organization");
+      setCoverRecipientAddress("Victoria Island, Lagos, Nigeria");
+      setCoverLetterReference("COMMERCIAL PROPOSAL & STRATEGIC PARTNERSHIP BRIEF");
+      setCoverLetterSalutation("Dear Sir/Madam,");
+      setCoverLetterBody(
+        `We have the pleasure of submitting herewith our formal commercial proposal and strategic partnership offer.\n\n` +
+        `At ${tenantDisplayName}, we specialize in delivering industry-leading solutions, operational excellence, and measurable value across all engagements. Having reviewed your operational requirements, our team has crafted a tailored commercial structure designed to optimize efficiency while ensuring the highest service quality.\n\n` +
+        `Our proposal encompasses dedicated project management, transparent milestone governance, and agile resource deployment to guarantee seamless execution from day one.\n\n` +
+        `We remain fully prepared to deploy resources and commence immediate engagement upon your approval. Please do not hesitate to contact our executive desk should you require any clarifications or scope modifications.\n\n` +
+        `Thank you for considering ${tenantDisplayName} as your trusted corporate partner. We look forward to establishing a mutually rewarding commercial relationship.`
+      );
+      setCoverLetterSignoff("Yours faithfully,");
+      setCoverSignatoryName(tenantDisplayName);
+      setCoverSignatoryTitle("Commercial Director");
+      setCoverSignatoryDepartment("Commercial & Operations Directorate");
+      setCoverSignatoryContact(activeTenant?.ownerEmail ? `${activeTenant.ownerEmail} | ${activeTenant?.domain || "www.ofia.ng"}` : "+234 800 000 0000 | ops@ofia.ng");
+      setCoverTenantFooter("RC 1892019 • Tax ID: 22001923-0001 • Corporate HQ: Victoria Island, Lagos, Nigeria • Confidential & Proprietary Document");
+      setCoverDocumentBadge("OFFICIAL TRANSMITTAL");
+      setActiveTemplateKey("commercial");
+    }
+
+    setIsCoverLetterModalOpen(true);
+  };
+
+  const handleApplyCoverLetterTemplate = (tplKey: string) => {
+    setActiveTemplateKey(tplKey);
+    const tpl = LEAD_COVER_LETTER_TEMPLATES[tplKey];
+    if (!tpl) return;
+    const l = coverLetterLead || {};
+    setCoverLetterReference(tpl.reference(l));
+    setCoverLetterSalutation(tpl.salutation(l));
+    setCoverLetterBody(tpl.body(l, tenantDisplayName));
+    setCoverLetterSignoff(tpl.signoff);
+    setCoverSignatoryTitle(tpl.signatoryTitle);
+  };
+
+  const handleSwitchCoverLetterLead = (leadId: string) => {
+    const l = leads.find((item) => item.id === leadId) || null;
+    if (l) {
+      handleOpenCoverLetter(l);
+    }
+  };
+
+  const handleSaveCoverLetter = async () => {
+    if (!coverLetterLead) {
+      alert("Please select a lead to save this cover letter.");
+      return;
+    }
+
+    setIsSavingCoverLetter(true);
+    const coverLetterPayload: QuotationCoverLetter = {
+      date: coverLetterDate,
+      recipientName: coverRecipientName,
+      recipientTitle: coverRecipientTitle,
+      companyName: coverRecipientCompany,
+      recipientAddress: coverRecipientAddress,
+      reference: coverLetterReference,
+      salutation: coverLetterSalutation,
+      body: coverLetterBody,
+      signoff: coverLetterSignoff,
+      signatoryName: coverSignatoryName,
+      signatoryTitle: coverSignatoryTitle,
+      signatoryDepartment: coverSignatoryDepartment,
+      signatoryContact: coverSignatoryContact,
+      tenantFooterNote: coverTenantFooter,
+      documentBadge: coverDocumentBadge,
+      templateKey: activeTemplateKey,
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      const res = await crmFetch("/api/erp/crm/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "UPDATE_COVER_LETTER",
+          id: coverLetterLead.id,
+          coverLetter: coverLetterPayload,
+          contactTitle: coverRecipientTitle || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data?.success) {
+        setLeads((prev) =>
+          prev.map((l) =>
+            l.id === coverLetterLead.id
+              ? {
+                  ...l,
+                  contactName: coverRecipientName || l.contactName,
+                  contactTitle: coverRecipientTitle || l.contactTitle,
+                  companyName: coverRecipientCompany || l.companyName,
+                  location: coverRecipientAddress || l.location,
+                  coverLetter: coverLetterPayload,
+                }
+              : l
+          )
+        );
+        setCoverLetterLead((prev) =>
+          prev
+            ? {
+                ...prev,
+                contactName: coverRecipientName || prev.contactName,
+                contactTitle: coverRecipientTitle || prev.contactTitle,
+                companyName: coverRecipientCompany || prev.companyName,
+                location: coverRecipientAddress || prev.location,
+                coverLetter: coverLetterPayload,
+              }
+            : null
+        );
+        alert("Cover letter saved successfully to this lead!");
+      } else {
+        throw new Error(data?.error || "Failed to save cover letter");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to save cover letter");
+    } finally {
+      setIsSavingCoverLetter(false);
+    }
+  };
+
+  const handlePrintCoverLetter = () => {
+    downloadCoverLetterPdf({
+      tenantName: tenantDisplayName,
+      tenantDomain: (activeTenant?.domain || "Official Commercial & Operations Suite").trim(),
+      tenantContact: (activeTenant?.ownerEmail ? `Contact: ${activeTenant.ownerEmail}` : "Victoria Island / Ikeja Central Depot, Lagos, Nigeria").trim(),
+      tenantLogo: tenantDisplayLogo,
+      tenantFooter: coverTenantFooter,
+      date: coverLetterDate,
+      recipientName: coverRecipientName,
+      recipientTitle: coverRecipientTitle,
+      companyName: coverRecipientCompany,
+      recipientAddress: coverRecipientAddress,
+      reference: coverLetterReference,
+      salutation: coverLetterSalutation,
+      body: coverLetterBody,
+      signoff: coverLetterSignoff,
+      signatoryName: coverSignatoryName,
+      signatoryTitle: coverSignatoryTitle,
+      signatoryDepartment: coverSignatoryDepartment,
+      signatoryContact: coverSignatoryContact,
+      quotationNumber: coverLetterLead ? (coverLetterLead.id.startsWith("LED-") ? coverLetterLead.id : "LD-" + coverLetterLead.id.slice(-6).toUpperCase()) : "PROP-REF",
+      documentBadge: coverDocumentBadge || "OFFICIAL TRANSMITTAL",
+    });
+  };
+
+  const handleCopyCoverLetterText = () => {
+    const fullText = [
+      tenantDisplayName.toUpperCase(),
+      activeTenant?.domain || "Official Commercial & Operations Suite",
+      activeTenant?.ownerEmail ? `Contact: ${activeTenant.ownerEmail}` : "",
+      "----------------------------------------",
+      `Date: ${coverLetterDate}`,
+      "",
+      "Delivered / Addressed To:",
+      coverRecipientName,
+      coverRecipientTitle ? `${coverRecipientTitle}` : "",
+      coverRecipientCompany,
+      coverRecipientAddress ? `${coverRecipientAddress}` : "",
+      "",
+      `RE: ${coverLetterReference}`,
+      "",
+      coverLetterSalutation,
+      "",
+      coverLetterBody,
+      "",
+      coverLetterSignoff,
+      "",
+      coverSignatoryName,
+      coverSignatoryTitle ? `${coverSignatoryTitle}` : "",
+      coverSignatoryDepartment ? `${coverSignatoryDepartment}` : "",
+      coverSignatoryContact ? `${coverSignatoryContact}` : "",
+      "----------------------------------------",
+      coverTenantFooter,
+    ]
+      .filter((line) => line !== undefined && line !== null)
+      .join("\n");
+
+    navigator.clipboard.writeText(fullText);
+    setCopiedCoverLetter(true);
+    setTimeout(() => setCopiedCoverLetter(false), 2500);
+  };
 
   const getLeadCalls = (lead: CrmLead | null): CrmCall[] => {
     if (!lead || !Array.isArray(calls) || calls.length === 0) return [];
@@ -1502,6 +1870,15 @@ export default function CrmLeadsPage() {
             Extract Leads with AI
           </NexaButton>
           <NexaButton
+            variant="secondary"
+            className="gap-2 text-xs"
+            onClick={() => handleOpenCoverLetter(null)}
+            title="Generate executive proposal cover letter on official tenant letterhead"
+          >
+            <Mail className="w-3.5 h-3.5 text-blue-500" />
+            Cover Letter
+          </NexaButton>
+          <NexaButton
             variant="primary"
             className="gap-2 text-xs"
             onClick={() => setIsAddModalOpen(true)}
@@ -1993,6 +2370,14 @@ export default function CrmLeadsPage() {
                           title={`Edit ${lead.companyName}`}
                         >
                           <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCoverLetter(lead)}
+                          className="p-1.5 rounded-lg border border-[var(--nexa-border)] hover:bg-[#1A56DB]/10 text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] transition-colors cursor-pointer"
+                          title={`Generate Proposal Cover Letter for ${lead.companyName}`}
+                        >
+                          <Mail className="w-3.5 h-3.5 text-blue-500" />
                         </button>
                         {(() => {
                           const call = getLeadCallInfo(lead);
@@ -2880,6 +3265,526 @@ export default function CrmLeadsPage() {
           </div>
         )}
       </NexaModal>
+
+      {/* MODAL: COVER LETTER GENERATOR TIED TO LEAD */}
+      {isCoverLetterModalOpen && (
+        <NexaModal
+          isOpen={isCoverLetterModalOpen}
+          onClose={() => setIsCoverLetterModalOpen(false)}
+          maxWidth="5xl"
+          title={
+            <div className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-[#1A56DB]" />
+              <span className="font-black text-base">Cover Letter Generator</span>
+              {coverLetterLead && (
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
+                  {coverLetterLead.companyName || (coverLetterLead as any).company || "Lead"}
+                </span>
+              )}
+            </div>
+          }
+          subtitle="Draft, customize and export official proposal cover letters tied to this prospect with live tenant letterhead and corporate footer."
+        >
+          <div className="space-y-6 max-h-[82vh] overflow-y-auto pr-1 p-1">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* LEFT: EDITING CONTROLS */}
+              <div className="lg:col-span-5 space-y-4">
+                {/* PROSPECT / LEAD SELECTOR */}
+                <div>
+                  <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                    Linked Lead (Prospect)
+                  </label>
+                  <select
+                    value={coverLetterLead?.id || ""}
+                    onChange={(e) => handleSwitchCoverLetterLead(e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-medium text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                  >
+                    {leads.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.companyName || (l as any).company || "Company"} — {l.contactName || (l as any).name || "Contact"} {l.contactTitle ? `(${l.contactTitle})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* PRE-BUILT PROPOSAL TEMPLATES */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Pre-Built Proposal Templates</span>
+                    </label>
+                    <span className="text-[10px] text-[var(--nexa-text-muted)]">Click to apply</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {Object.entries(LEAD_COVER_LETTER_TEMPLATES).map(([key, tpl]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => handleApplyCoverLetterTemplate(key)}
+                        className={`p-2 rounded-lg border text-left text-xs font-semibold transition-all cursor-pointer flex flex-col justify-between ${
+                          activeTemplateKey === key
+                            ? "bg-[#1A56DB]/10 border-[#1A56DB] text-[#1A56DB]"
+                            : "bg-[var(--nexa-bg-surface)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:border-[var(--nexa-border)]/80"
+                        }`}
+                      >
+                        <span className="truncate">{tpl.name}</span>
+                        <span className="text-[9px] font-mono text-[var(--nexa-text-muted)] mt-0.5">
+                          {tpl.tag}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* DOCUMENT BADGE / TRANSMITTAL HEADER TITLE */}
+                <div className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/60 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-[var(--nexa-text-primary)] uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Header Document Badge</span>
+                    </label>
+                    <span className="text-[10px] text-[var(--nexa-text-muted)]">Top-right header title</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={coverDocumentBadge}
+                    onChange={(e) => setCoverDocumentBadge(e.target.value)}
+                    className="w-full px-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                    placeholder="e.g. OFFICIAL TRANSMITTAL"
+                  />
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    {["OFFICIAL TRANSMITTAL", "COMMERCIAL PROPOSAL", "OFFICIAL CORRESPONDENCE", "TENDER TRANSMITTAL"].map((b) => (
+                      <button
+                        key={b}
+                        type="button"
+                        onClick={() => setCoverDocumentBadge(b)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                          coverDocumentBadge === b
+                            ? "bg-[#1A56DB] text-white"
+                            : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border border-[var(--nexa-border)] hover:border-[#1A56DB]/50"
+                        }`}
+                      >
+                        {b}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* RECIPIENT PARTICULARS (Contact Name, Title, Company) */}
+                <div className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/60 space-y-3">
+                  <div className="text-[11px] font-bold text-[var(--nexa-text-primary)] uppercase tracking-wider flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Recipient Particulars</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <NexaInput
+                      label="Date"
+                      value={coverLetterDate}
+                      onChange={(e) => setCoverLetterDate(e.target.value)}
+                      placeholder="e.g. 10th November, 2026"
+                    />
+                    <NexaInput
+                      label="Attention (Contact Name)"
+                      value={coverRecipientName}
+                      onChange={(e) => setCoverRecipientName(e.target.value)}
+                      placeholder="e.g. Engr. Tunde Adeleke"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <NexaInput
+                      label="Recipient Title / Designation"
+                      value={coverRecipientTitle}
+                      onChange={(e) => setCoverRecipientTitle(e.target.value)}
+                      placeholder="e.g. Head of Procurement"
+                    />
+                    <NexaInput
+                      label="Company / Organization"
+                      value={coverRecipientCompany}
+                      onChange={(e) => setCoverRecipientCompany(e.target.value)}
+                      placeholder="e.g. Dangote Sugar Refinery Plc"
+                    />
+                  </div>
+
+                  <NexaInput
+                    label="Delivery Address / City"
+                    value={coverRecipientAddress}
+                    onChange={(e) => setCoverRecipientAddress(e.target.value)}
+                    placeholder="e.g. Victoria Island / Commercial District, Lagos"
+                    leftIcon={<MapPin className="w-3.5 h-3.5 text-[var(--nexa-text-muted)]" />}
+                  />
+                </div>
+
+                {/* LETTER CONTENT */}
+                <div className="space-y-3">
+                  <NexaInput
+                    label="Reference / Subject Line"
+                    value={coverLetterReference}
+                    onChange={(e) => setCoverLetterReference(e.target.value)}
+                    placeholder="e.g. COMMERCIAL PROPOSAL & PARTNERSHIP OFFER"
+                  />
+
+                  <NexaInput
+                    label="Salutation"
+                    value={coverLetterSalutation}
+                    onChange={(e) => setCoverLetterSalutation(e.target.value)}
+                    placeholder="e.g. Dear Sir/Madam,"
+                  />
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                        Letter Body Paragraphs
+                      </label>
+                      <span className="text-[10px] text-[var(--nexa-text-muted)]">
+                        Separate paragraphs with blank lines
+                      </span>
+                    </div>
+                    <textarea
+                      value={coverLetterBody}
+                      onChange={(e) => setCoverLetterBody(e.target.value)}
+                      rows={8}
+                      className="w-full p-3 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-normal text-[var(--nexa-text-primary)] focus:border-[#1A56DB] outline-none leading-relaxed"
+                      placeholder="Enter the body paragraphs of your cover letter..."
+                    />
+                  </div>
+                </div>
+
+                {/* SIGNATORY BLOCK */}
+                <div className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/60 space-y-3">
+                  <div className="text-[11px] font-bold text-[var(--nexa-text-primary)] uppercase tracking-wider flex items-center gap-1.5">
+                    <PenTool className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Signatory & Sign-off Details</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <NexaInput
+                      label="Sign-off Closing"
+                      value={coverLetterSignoff}
+                      onChange={(e) => setCoverLetterSignoff(e.target.value)}
+                      placeholder="e.g. Yours faithfully,"
+                    />
+                    <NexaInput
+                      label="Signatory Name"
+                      value={coverSignatoryName}
+                      onChange={(e) => setCoverSignatoryName(e.target.value)}
+                      placeholder="e.g. Authorized Sales Representative"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <NexaInput
+                      label="Signatory Title"
+                      value={coverSignatoryTitle}
+                      onChange={(e) => setCoverSignatoryTitle(e.target.value)}
+                      placeholder="e.g. Commercial Director"
+                    />
+                    <NexaInput
+                      label="Signatory Department"
+                      value={coverSignatoryDepartment}
+                      onChange={(e) => setCoverSignatoryDepartment(e.target.value)}
+                      placeholder="e.g. Strategic Key Accounts"
+                    />
+                  </div>
+
+                  <NexaInput
+                    label="Contact Details / Email / Phone"
+                    value={coverSignatoryContact}
+                    onChange={(e) => setCoverSignatoryContact(e.target.value)}
+                    placeholder="e.g. +234 800 000 0000 | ops@ofia.ng"
+                  />
+                </div>
+
+                {/* TENANT FOOTER CUSTOMIZATION */}
+                <div>
+                  <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                    Letterhead Footer (RC, TIN, Legal & Confidentiality Notes)
+                  </label>
+                  <input
+                    type="text"
+                    value={coverTenantFooter}
+                    onChange={(e) => setCoverTenantFooter(e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs text-[var(--nexa-text-primary)] focus:border-[#1A56DB] outline-none"
+                    placeholder="e.g. RC 1892019 • Tax ID: 22001923-0001 • Victoria Island, Lagos"
+                  />
+                  <p className="text-[10px] text-[var(--nexa-text-muted)] mt-1">
+                    Appears on the bottom footer of the paper letterhead in print and PDF.
+                  </p>
+                </div>
+              </div>
+
+              {/* RIGHT: LIVE A4 LETTERHEAD PAPER PREVIEW */}
+              <div className="lg:col-span-7">
+                <div className="sticky top-0 bg-slate-100/80 dark:bg-slate-900/80 p-3 sm:p-4 rounded-2xl border border-[var(--nexa-border)] space-y-3">
+                  <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)] font-medium">
+                    <div className="flex items-center gap-1.5 font-bold text-[var(--nexa-text-primary)]">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Live Letterhead Paper Preview</span>
+                    </div>
+                    <div className="text-[10px] uppercase font-mono tracking-wider bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-[var(--nexa-border)]">
+                      A4 Letterhead Standard
+                    </div>
+                  </div>
+
+                  {/* Pristine White A4 Paper Sheet */}
+                  <div
+                    id="lead-cover-letter-paper-area"
+                    className="bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-300/80 p-6 sm:p-8 min-h-[750px] flex flex-col justify-between select-text"
+                  >
+                    <div className="space-y-5">
+                      {/* TENANT LETTERHEAD HEADER WITH WHITE ABSTRACT DESIGN */}
+                      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#0B1E3D] via-[#164DBF] to-[#1A56DB] p-4 sm:p-5 text-white shadow-sm mb-4">
+                        {/* Abstract White Background Pattern */}
+                        <svg
+                          className="absolute inset-0 w-full h-full pointer-events-none select-none"
+                          viewBox="0 0 760 140"
+                          preserveAspectRatio="none"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <defs>
+                            <linearGradient id="leadAbsWhiteFade" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
+                              <stop offset="60%" stopColor="#ffffff" stopOpacity="0.04" />
+                              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                            </linearGradient>
+                            <linearGradient id="leadAbsWaveFade" x1="0%" y1="100%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.09" />
+                              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.02" />
+                            </linearGradient>
+                          </defs>
+                          <path
+                            d="M260,-20 C420,40 500,-10 640,60 C720,100 750,50 780,20 L780,-20 Z"
+                            fill="url(#leadAbsWhiteFade)"
+                          />
+                          <path
+                            d="M-40,140 C140,80 320,130 520,70 C660,30 720,80 780,50 L780,140 Z"
+                            fill="url(#leadAbsWaveFade)"
+                          />
+                          <circle cx="710" cy="20" r="60" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="1.2" />
+                          <circle cx="710" cy="20" r="105" stroke="#ffffff" strokeOpacity="0.11" strokeWidth="1" strokeDasharray="3 3" />
+                          <circle cx="710" cy="20" r="150" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="1" />
+                          <polygon
+                            points="480,-10 560,75 660,35 590,-20"
+                            stroke="#ffffff"
+                            strokeOpacity="0.12"
+                            strokeWidth="1"
+                            fill="#ffffff"
+                            fillOpacity="0.03"
+                          />
+                          <polygon
+                            points="560,75 630,145 725,100 660,35"
+                            stroke="#ffffff"
+                            strokeOpacity="0.09"
+                            strokeWidth="1"
+                            fill="#ffffff"
+                            fillOpacity="0.02"
+                          />
+                          <g fill="#ffffff" fillOpacity="0.25">
+                            <circle cx="340" cy="30" r="1.5" />
+                            <circle cx="360" cy="30" r="1.5" />
+                            <circle cx="380" cy="30" r="1.5" />
+                            <circle cx="350" cy="45" r="1.5" />
+                            <circle cx="370" cy="45" r="1.5" />
+                            <circle cx="390" cy="45" r="1.5" />
+                          </g>
+                          <line x1="0" y1="139" x2="760" y2="139" stroke="#ffffff" strokeOpacity="0.22" strokeWidth="1" />
+                        </svg>
+
+                        {/* Inner Header Row */}
+                        <div className="relative z-10 flex justify-between items-start gap-4">
+                          <div className="flex items-center gap-3.5">
+                            {tenantDisplayLogo ? (
+                              <img
+                                src={tenantDisplayLogo}
+                                alt={tenantDisplayName}
+                                className="w-12 h-12 object-contain rounded-xl p-1 bg-white border border-white/25 shrink-0 shadow-sm"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = "none";
+                                }}
+                              />
+                            ) : null}
+                            <div>
+                              <div className="text-xl font-black text-white tracking-tight uppercase leading-tight drop-shadow-xs">
+                                {tenantDisplayName}
+                              </div>
+                              <div className="text-[11px] text-blue-100 font-semibold mt-0.5">
+                                {activeTenant?.domain || "Official Commercial & Operations Suite"}
+                              </div>
+                              <div className="text-[10px] text-blue-200/90 mt-0.5">
+                                {activeTenant?.ownerEmail ? `Contact: ${activeTenant.ownerEmail}` : "Victoria Island / Ikeja Central Depot, Lagos, Nigeria"}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-md font-black text-[10px] uppercase tracking-wider shadow-xs">
+                              {coverDocumentBadge || "OFFICIAL TRANSMITTAL"}
+                            </span>
+                            <div className="text-[10px] text-blue-100/90 font-mono font-medium mt-1.5">
+                              Ref: {coverLetterLead ? (coverLetterLead.id.startsWith("LED-") ? coverLetterLead.id : "LD-" + coverLetterLead.id.slice(-6).toUpperCase()) : "PROP-REF"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* DATE ROW */}
+                      <div className="text-right text-xs font-semibold text-slate-600">
+                        Date: <span className="text-slate-900">{coverLetterDate}</span>
+                      </div>
+
+                      {/* RECIPIENT BLOCK: Attention (Contact Name) = Contact Name. Recipient Title/Designation = Recipient Title. Company/Organization = Company. */}
+                      <div className="space-y-0.5 text-xs">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Delivered / Addressed To:
+                        </div>
+                        <div className="font-extrabold text-sm text-slate-900">
+                          {coverRecipientName || "The Managing Director"}
+                        </div>
+                        {coverRecipientTitle && (
+                          <div className="text-slate-700 font-medium">{coverRecipientTitle}</div>
+                        )}
+                        <div className="font-bold text-xs text-[#1A56DB]">
+                          {coverRecipientCompany || "Client Organization"}
+                        </div>
+                        {coverRecipientAddress && (
+                          <div className="text-slate-500 text-[11px]">{coverRecipientAddress}</div>
+                        )}
+                      </div>
+
+                      {/* SUBJECT LINE */}
+                      <div className="pt-1">
+                        <div className="inline-block text-xs font-black text-slate-900 uppercase tracking-wide border-b-2 border-slate-900 pb-1">
+                          RE: {coverLetterReference}
+                        </div>
+                      </div>
+
+                      {/* SALUTATION */}
+                      <div className="text-xs font-bold text-slate-800">
+                        {coverLetterSalutation}
+                      </div>
+
+                      {/* LETTER BODY */}
+                      <div className="text-xs text-slate-800 leading-relaxed space-y-3 whitespace-pre-line text-justify font-normal">
+                        {coverLetterBody}
+                      </div>
+
+                      {/* CLOSING / SIGNATORY */}
+                      <div className="pt-3 space-y-2.5">
+                        <div className="text-xs font-semibold text-slate-700">
+                          {coverLetterSignoff}
+                        </div>
+                        <div className="border-b border-slate-400 w-44 h-7"></div>
+                        <div>
+                          <div className="text-xs font-black text-slate-900">
+                            {coverSignatoryName || tenantDisplayName}
+                          </div>
+                          {coverSignatoryTitle && (
+                            <div className="text-[11px] font-medium text-slate-700">
+                              {coverSignatoryTitle}
+                            </div>
+                          )}
+                          {coverSignatoryDepartment && (
+                            <div className="text-[10px] text-slate-500">
+                              {coverSignatoryDepartment}
+                            </div>
+                          )}
+                          {coverSignatoryContact && (
+                            <div className="text-[10px] text-slate-500 font-mono">
+                              {coverSignatoryContact}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* TENANT LETTERHEAD FOOTER */}
+                    <div className="border-t border-slate-200 pt-3 mt-6 text-center text-[9px] text-slate-500 space-y-0.5">
+                      <div>{coverTenantFooter}</div>
+                      <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                        Authorized Corporate Transmittal · Page 1 of 1
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ACTION FOOTER */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-[var(--nexa-border)]">
+              <div className="text-xs text-[var(--nexa-text-muted)] flex items-center gap-1.5">
+                <BookmarkCheck className="w-4 h-4 text-emerald-500" />
+                <span>
+                  Official Letterhead: <strong className="text-[var(--nexa-text-primary)]">{tenantDisplayName}</strong>
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <NexaButton
+                  variant="secondary"
+                  onClick={handleCopyCoverLetterText}
+                  title="Copy full cover letter text to clipboard"
+                >
+                  <Copy className="w-3.5 h-3.5 mr-1.5" />
+                  {copiedCoverLetter ? "Copied!" : "Copy Text"}
+                </NexaButton>
+                <NexaButton
+                  variant="secondary"
+                  onClick={handleSaveCoverLetter}
+                  disabled={isSavingCoverLetter || !coverLetterLead}
+                  title="Save this cover letter to the database linked to this lead"
+                >
+                  <Save className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
+                  {isSavingCoverLetter ? "Saving..." : "Save to Lead"}
+                </NexaButton>
+                <NexaButton
+                  variant="primary"
+                  onClick={handlePrintCoverLetter}
+                  title="Print isolated cover letter or export to PDF"
+                >
+                  <Printer className="w-3.5 h-3.5 mr-1.5" />
+                  Print / Export PDF
+                </NexaButton>
+                <NexaButton variant="secondary" onClick={() => setIsCoverLetterModalOpen(false)}>
+                  Close
+                </NexaButton>
+              </div>
+            </div>
+          </div>
+        </NexaModal>
+      )}
+
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #lead-cover-letter-paper-area,
+          #lead-cover-letter-paper-area * {
+            visibility: visible !important;
+          }
+          #lead-cover-letter-paper-area {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 12mm 15mm !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            z-index: 999999 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          @page {
+            size: A4 portrait;
+            margin: 10mm;
+          }
+        }
+      `}</style>
     </ErpAdminShell>
   );
 }

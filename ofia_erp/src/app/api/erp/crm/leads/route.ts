@@ -45,6 +45,8 @@ async function ensureCrmLeadsTable(sql: any) {
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(255) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_deal_id VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_at TIMESTAMPTZ;`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS contact_title VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS cover_letter JSONB DEFAULT NULL;`;
   try {
     await sql`ALTER TABLE crm_leads ALTER COLUMN company_name DROP NOT NULL;`;
   } catch {}
@@ -224,6 +226,8 @@ export async function GET(request: NextRequest) {
         COALESCE(l.buying_signals::text, '[]') AS buying_signals,
         COALESCE(l.value, '') AS value,
         COALESCE(l.notes, '') AS notes,
+        COALESCE(l.contact_title, '') AS contact_title,
+        l.cover_letter,
         COALESCE(l.converted_deal_id, '') AS converted_deal_id,
         (
           SELECT d.stage
@@ -311,6 +315,8 @@ export async function GET(request: NextRequest) {
       status: r.status,
       owner: r.owner || r.assigned_rep,
       assignedRep: r.assigned_rep || r.owner,
+      contactTitle: r.contact_title || "",
+      coverLetter: r.cover_letter || null,
       value: r.value,
       notes: r.notes,
       linkedinUrl: r.linkedin_url || "",
@@ -372,6 +378,27 @@ export async function POST(request: NextRequest) {
 
     const sql = await getTenantSql(tenantSlug);
     await ensureCrmLeadsTable(sql);
+
+    if (body.action === "UPDATE_COVER_LETTER") {
+      const { id, coverLetter } = body;
+      if (!id) {
+        return NextResponse.json({ success: false, error: "Lead ID is required" }, { status: 400 });
+      }
+      const [updated] = await sql`
+        UPDATE crm_leads
+        SET cover_letter = ${coverLetter ? JSON.stringify(coverLetter) : null},
+            updated_at = NOW()
+        WHERE id = ${id} AND LOWER(tenant_slug) = ${tenantSlug}
+        RETURNING *;
+      `;
+      return NextResponse.json({
+        success: true,
+        lead: {
+          id: updated?.id || id,
+          coverLetter: updated?.cover_letter || coverLetter,
+        },
+      });
+    }
 
     const leadId = body.id || `LED-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const name = (body.name || body.contactName || "Prospect").trim();
@@ -587,6 +614,27 @@ export async function PATCH(request: NextRequest) {
     const sql = await getTenantSql(tenantSlug);
     await ensureCrmLeadsTable(sql);
 
+    if (body.action === "UPDATE_COVER_LETTER") {
+      const { id, coverLetter } = body;
+      if (!id) {
+        return NextResponse.json({ success: false, error: "Lead ID is required" }, { status: 400 });
+      }
+      const [updated] = await sql`
+        UPDATE crm_leads
+        SET cover_letter = ${coverLetter ? JSON.stringify(coverLetter) : null},
+            updated_at = NOW()
+        WHERE id = ${id} AND LOWER(tenant_slug) = ${tenantSlug}
+        RETURNING *;
+      `;
+      return NextResponse.json({
+        success: true,
+        lead: {
+          id: updated?.id || id,
+          coverLetter: updated?.cover_letter || coverLetter,
+        },
+      });
+    }
+
     // Fetch existing lead
     const [existingLead] = await sql`
       SELECT id, 
@@ -667,6 +715,9 @@ export async function PATCH(request: NextRequest) {
     const linkedinUrl = body.linkedinUrl !== undefined || body.linkedin_url !== undefined
       ? String(body.linkedinUrl ?? body.linkedin_url).trim()
       : (existingLead.linkedin_url || "");
+    const contactTitle = body.contactTitle !== undefined
+      ? String(body.contactTitle).trim()
+      : (existingLead.contact_title || "");
     const score = body.score !== undefined || body.icpFitScore !== undefined
       ? Number(body.score ?? body.icpFitScore)
       : undefined;
@@ -688,6 +739,8 @@ export async function PATCH(request: NextRequest) {
         owner = ${owner},
         notes = ${notes},
         linkedin_url = ${linkedinUrl},
+        ${body.contactTitle !== undefined ? sql`contact_title = ${contactTitle},` : sql``}
+        ${body.coverLetter !== undefined ? sql`cover_letter = ${body.coverLetter ? JSON.stringify(body.coverLetter) : null},` : sql``}
         ${score !== undefined ? sql`score = ${score}, icp_fit_score = ${score},` : sql``}
         ${value !== undefined ? sql`value = ${value},` : sql``}
         ${convertedDealId !== undefined ? sql`converted_deal_id = ${convertedDealId}, converted_at = NOW(),` : sql``}
@@ -703,6 +756,7 @@ export async function PATCH(request: NextRequest) {
         tenantSlug: updated.tenant_slug,
         name: updated.name || updated.contact_name || name,
         contactName: updated.contact_name || updated.name || name,
+        contactTitle: updated.contact_title || "",
         company: updated.company || updated.company_name || company,
         companyName: updated.company_name || updated.company || company,
         email: updated.email || updated.contact_email || "",
@@ -714,6 +768,7 @@ export async function PATCH(request: NextRequest) {
         assignedRep: updated.assigned_rep,
         owner: updated.owner,
         notes: updated.notes,
+        coverLetter: updated.cover_letter,
         score: Number(updated.score || updated.icp_fit_score) || 75,
         icpFitScore: Number(updated.icp_fit_score || updated.score) || 75,
         value: updated.value,

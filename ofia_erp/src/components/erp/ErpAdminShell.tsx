@@ -1218,6 +1218,7 @@ export function ErpAdminShell({
         { label: "Appraisal Cycles", href: "/erp/hr/cycle", icon: <Calendar className="w-3.5 h-3.5" /> },
         { label: "Reports & Ranking", href: "/erp/hr/reports", icon: <BarChart3 className="w-3.5 h-3.5" /> },
         { label: "Team Quests", href: "/erp/hr/quests", icon: <Trophy className="w-3.5 h-3.5" /> },
+        { label: "Awards & Voting", href: "/erp/hr/awards", icon: <Award className="w-3.5 h-3.5" />, badge: "Annual" },
       ];
     }
 
@@ -1246,6 +1247,7 @@ export function ErpAdminShell({
       tabs.push(
         { label: "Performance Reviews", href: "/erp/employee/reviews", icon: <Activity className="w-3.5 h-3.5" /> },
         { label: "My Team Quests", href: "/erp/employee/quests", icon: <Trophy className="w-3.5 h-3.5" /> },
+        { label: "Awards & Voting", href: "/erp/employee/awards", icon: <Award className="w-3.5 h-3.5" />, badge: "Vote" },
         { label: "My Profile & Growth", href: "/erp/employee/profile", icon: <Users className="w-3.5 h-3.5" /> },
       );
 

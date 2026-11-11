@@ -209,6 +209,28 @@ func registerRoutes() {
 	registerRoute("/shop/bookings", handlers.HandleShopBookings)
 	registerRoute("/api/v1/erp/shop/orders", handlers.HandleShopOrders)
 	registerRoute("/api/v1/erp/shop/bookings", handlers.HandleShopBookings)
+
+	// 7. Employee Awards & Recognition Voting Engine
+	registerRoute("/awards/events", handlers.HandleAwardEvents)
+	registerRoute("/awards/categories", handlers.HandleAwardCategories)
+	registerRoute("/awards/nominees", handlers.HandleAwardNominees)
+	registerRoute("/awards/candidates", handlers.HandleAwardStaffCandidates)
+	registerRoute("/awards/vote", handlers.HandleAwardVote)
+	registerRoute("/awards/turnout", handlers.HandleAwardTurnout)
+	registerRoute("/awards/finalize", handlers.HandleAwardFinalize)
+	registerRoute("/awards/publish", handlers.HandleAwardPublish)
+	registerRoute("/awards/hall-of-fame", handlers.HandleAwardHallOfFame)
+
+	// Prefix aliases for /api/v1/erp/awards/*
+	registerRoute("/api/v1/erp/awards/events", handlers.HandleAwardEvents)
+	registerRoute("/api/v1/erp/awards/categories", handlers.HandleAwardCategories)
+	registerRoute("/api/v1/erp/awards/nominees", handlers.HandleAwardNominees)
+	registerRoute("/api/v1/erp/awards/candidates", handlers.HandleAwardStaffCandidates)
+	registerRoute("/api/v1/erp/awards/vote", handlers.HandleAwardVote)
+	registerRoute("/api/v1/erp/awards/turnout", handlers.HandleAwardTurnout)
+	registerRoute("/api/v1/erp/awards/finalize", handlers.HandleAwardFinalize)
+	registerRoute("/api/v1/erp/awards/publish", handlers.HandleAwardPublish)
+	registerRoute("/api/v1/erp/awards/hall-of-fame", handlers.HandleAwardHallOfFame)
 }
 
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {

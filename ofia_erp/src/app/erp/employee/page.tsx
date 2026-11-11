@@ -17,6 +17,7 @@ import {
   UserCheck,
   Star,
   Award,
+  Trophy,
   CheckCircle2,
   ArrowRight,
   Store,
@@ -216,6 +217,35 @@ export default function EmployeeDashboard() {
             >
               <UserCheck className="w-3.5 h-3.5 text-blue-500" />
               <span>View Profile</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* 2026 Annual Employee Awards & Recognition Banner */}
+        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 rounded-3xl p-5 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm border border-amber-400/30">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shrink-0">
+              <Trophy className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-base font-extrabold tracking-tight">2026 End-of-Year Awards: Voting is Live!</h4>
+                <span className="bg-white/20 text-white border border-white/30 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+                  Annual Awards
+                </span>
+              </div>
+              <p className="text-xs text-amber-50/90 mt-1 max-w-xl leading-relaxed">
+                Celebrate your peers across 6 award categories. Submit your sealed ballot before voting closes on December 15.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            <Link
+              href="/erp/employee/awards"
+              className="px-4 py-2.5 bg-white text-amber-800 font-extrabold rounded-xl text-xs hover:bg-amber-50 transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+            >
+              <span>Cast Your Vote</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>

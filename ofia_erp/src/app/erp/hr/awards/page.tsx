@@ -269,34 +269,34 @@ export default function HRAwardsPage() {
         )}
 
         {/* Event Header Banner */}
-        <NexaCard className="p-6 overflow-hidden relative border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent">
+        <NexaCard variant="glass" padding="lg" className="rounded-3xl border border-[var(--nexa-border)] bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <NexaBadge variant="warning" className="px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider">
+                <NexaBadge variant="amber" className="rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider">
                   {activeEvent?.awardYear || 2026} Annual Awards
                 </NexaBadge>
                 <NexaBadge
-                  variant={activeEvent?.status === "ACTIVE" ? "success" : "info"}
-                  className="px-2 py-0.5 text-xs"
+                  variant={activeEvent?.status === "ACTIVE" ? "green" : "brand"}
+                  className="rounded-full px-2.5 py-0.5 text-xs font-bold"
                 >
                   {activeEvent?.status === "ACTIVE" ? "Voting Live" : activeEvent?.status}
                 </NexaBadge>
-                <NexaBadge variant="outline" className="text-xs">
+                <NexaBadge variant="secondary" className="rounded-full text-xs font-medium">
                   🔒 Cryptographic Anonymity Enforced
                 </NexaBadge>
               </div>
-              <h2 className="text-xl font-bold tracking-tight text-foreground">
+              <h2 className="text-xl font-black tracking-tight text-[var(--nexa-text-primary)]">
                 {activeEvent?.title || "2026 End-of-Year Excellence Awards"}
               </h2>
-              <p className="text-sm text-muted-foreground max-w-2xl">
+              <p className="text-xs text-[var(--nexa-text-muted)] max-w-2xl font-medium">
                 {activeEvent?.description}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <div className="text-right hidden sm:block">
-                <div className="text-xs text-muted-foreground">Voting Period</div>
-                <div className="text-sm font-semibold text-foreground">
+                <div className="text-[11px] text-[var(--nexa-text-muted)] font-medium">Voting Period</div>
+                <div className="text-xs font-bold text-[var(--nexa-text-primary)]">
                   {new Date(activeEvent?.startDate || "").toLocaleDateString(undefined, { month: "short", day: "numeric" })} -{" "}
                   {new Date(activeEvent?.endDate || "").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                 </div>
@@ -308,53 +308,28 @@ export default function HRAwardsPage() {
         {/* Top KPI Stat Grid */}
         <ErpStatGrid stats={statCards} />
 
-        {/* Tab Navigation */}
-        <div className="border-b border-border/60">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setActiveTab("CATEGORIES")}
-              className={`pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                activeTab === "CATEGORIES"
-                  ? "border-amber-500 text-amber-500"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Award className="w-4 h-4" />
-              Categories & Nominees ({activeEvent?.categories?.length || 0})
-            </button>
-            <button
-              onClick={() => setActiveTab("TURNOUT")}
-              className={`pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                activeTab === "TURNOUT"
-                  ? "border-amber-500 text-amber-500"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Turnout & Analytics
-            </button>
-            <button
-              onClick={() => setActiveTab("VAULT")}
-              className={`pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                activeTab === "VAULT"
-                  ? "border-amber-500 text-amber-500"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Lock className="w-4 h-4" />
-              Tally Vault & Finalization
-            </button>
-            <button
-              onClick={() => setActiveTab("HALL_OF_FAME")}
-              className={`pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                activeTab === "HALL_OF_FAME"
-                  ? "border-amber-500 text-amber-500"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Trophy className="w-4 h-4" />
-              Hall of Fame Archive ({hallOfFame.length})
-            </button>
+        {/* Tab Navigation — Rounded Pills Matching Quests System */}
+        <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+            {[
+              { id: "CATEGORIES", label: `Categories & Nominees (${activeEvent?.categories?.length || 0})`, icon: <Award className="w-3.5 h-3.5" /> },
+              { id: "TURNOUT", label: "Turnout & Analytics", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+              { id: "VAULT", label: "Tally Vault & Finalization", icon: <Lock className="w-3.5 h-3.5" /> },
+              { id: "HALL_OF_FAME", label: `Hall of Fame Archive (${hallOfFame.length})`, icon: <Trophy className="w-3.5 h-3.5" /> },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === tab.id
+                    ? "bg-[#1A56DB] text-white shadow-md shadow-[#1A56DB]/20"
+                    : "text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-base)] border border-transparent hover:border-[var(--nexa-border)]"
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -363,8 +338,8 @@ export default function HRAwardsPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-semibold text-foreground">Award Categories</h3>
-                <p className="text-xs text-muted-foreground">
+                <h3 className="text-sm font-extrabold text-[var(--nexa-text-primary)]">Award Categories</h3>
+                <p className="text-xs text-[var(--nexa-text-muted)] font-medium">
                   Review nominees curated from the staff directory. Self-voting is automatically restricted.
                 </p>
               </div>
@@ -372,7 +347,7 @@ export default function HRAwardsPage() {
                 variant="primary"
                 size="sm"
                 onClick={handleOpenCreateCategory}
-                className="bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-1.5 shadow-sm"
+                className="bg-[#1A56DB] hover:bg-[#1A56DB]/90 text-white rounded-full flex items-center gap-1.5 shadow-sm font-bold"
               >
                 <Plus className="w-4 h-4" />
                 Add Category
@@ -381,27 +356,32 @@ export default function HRAwardsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {activeEvent?.categories?.map((cat, idx) => (
-                <NexaCard key={cat.id} className="p-5 border border-border/60 hover:border-amber-500/30 transition-all flex flex-col justify-between">
+                <NexaCard
+                  key={cat.id}
+                  variant="glass"
+                  padding="md"
+                  className="rounded-3xl hover:border-[#1A56DB]/40 transition-all flex flex-col justify-between"
+                >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-sm shrink-0">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-black text-sm shrink-0 border border-amber-500/20">
                           #{idx + 1}
                         </div>
                         <div>
-                          <h4 className="text-base font-semibold text-foreground">{cat.name}</h4>
-                          <span className="text-xs text-muted-foreground">Max {cat.maxWinners} Winner</span>
+                          <h4 className="text-sm font-bold text-[var(--nexa-text-primary)]">{cat.name}</h4>
+                          <span className="text-[11px] text-[var(--nexa-text-muted)] font-medium">Max {cat.maxWinners} Winner</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <NexaBadge variant="outline" className="text-xs font-medium">
+                        <NexaBadge variant="secondary" className="rounded-full text-[11px] font-bold">
                           {cat.nominees?.length || 0} Nominees
                         </NexaBadge>
                         <button
                           type="button"
                           title="Edit Category"
                           onClick={() => handleOpenEditCategory(cat)}
-                          className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                          className="p-1.5 rounded-full text-[var(--nexa-text-muted)] hover:text-blue-500 hover:bg-blue-500/10 transition-colors cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
@@ -409,26 +389,26 @@ export default function HRAwardsPage() {
                           type="button"
                           title="Delete Category"
                           onClick={() => handleDeleteCategory(cat)}
-                          className="p-1 rounded text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                          className="p-1.5 rounded-full text-[var(--nexa-text-muted)] hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
 
-                    <p className="text-xs text-muted-foreground leading-relaxed">
+                    <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
                       {cat.description}
                     </p>
 
-                    <div className="pt-2 border-t border-border/40">
-                      <div className="text-[11px] font-semibold text-foreground/80 mb-2 uppercase tracking-wider">
+                    <div className="pt-3 border-t border-[var(--nexa-border)]">
+                      <div className="text-[10px] font-bold text-[var(--nexa-text-muted)] mb-2 uppercase tracking-wider">
                         Curated Nominees:
                       </div>
                       <div className="space-y-2">
                         {cat.nominees?.map((nom) => (
                           <div
                             key={nom.id}
-                            className="flex items-center justify-between p-2 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors group"
+                            className="flex items-center justify-between p-2.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[#1A56DB]/30 transition-colors group"
                           >
                             <div className="flex items-center gap-2.5">
                               <NexaAvatar
@@ -437,19 +417,19 @@ export default function HRAwardsPage() {
                                 size="sm"
                               />
                               <div>
-                                <div className="text-xs font-medium text-foreground">{nom.employeeName}</div>
-                                <div className="text-[10px] text-muted-foreground">{nom.department} • {nom.designation}</div>
+                                <div className="text-xs font-bold text-[var(--nexa-text-primary)]">{nom.employeeName}</div>
+                                <div className="text-[10px] text-[var(--nexa-text-muted)] font-medium">{nom.department} • {nom.designation}</div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] px-2 py-0.5 rounded bg-background border border-border text-muted-foreground">
+                              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-muted)] font-medium">
                                 Pitch on file
                               </span>
                               <button
                                 type="button"
                                 title="Remove Nominee"
                                 onClick={() => handleDeleteNominee(nom, cat.name)}
-                                className="p-1 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
+                                className="p-1 text-[var(--nexa-text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -460,8 +440,8 @@ export default function HRAwardsPage() {
                     </div>
                   </div>
 
-                  <div className="pt-4 mt-4 border-t border-border/40 flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
+                  <div className="pt-4 mt-4 border-t border-[var(--nexa-border)] flex items-center justify-between">
+                    <span className="text-[11px] text-[var(--nexa-text-muted)] font-medium">
                       Eligibility: All active employees
                     </span>
                     <NexaButton
@@ -471,7 +451,7 @@ export default function HRAwardsPage() {
                         setSelectedCategory(cat);
                         setIsNomineeModalOpen(true);
                       }}
-                      className="text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                      className="text-xs text-[#1A56DB] hover:text-[#1A56DB]/90 hover:bg-blue-500/10 rounded-full font-bold"
                     >
                       <Plus className="w-3.5 h-3.5 mr-1" />
                       Add Nominee
@@ -487,63 +467,69 @@ export default function HRAwardsPage() {
         {activeTab === "TURNOUT" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <NexaCard className="p-5 border border-border/60">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground font-medium uppercase">Total Participation</span>
-                  <Percent className="w-4 h-4 text-emerald-500" />
+              <NexaCard variant="glass" padding="md" className="rounded-3xl flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] text-[var(--nexa-text-muted)] font-bold uppercase tracking-wider">Total Participation</span>
+                    <Percent className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+                    {(turnoutStats?.turnoutPercentage || 75).toFixed(1)}%
+                  </div>
+                  <div className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full h-2 mt-3 overflow-hidden">
+                    <div
+                      className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${turnoutStats?.turnoutPercentage || 75}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-foreground">
-                  {(turnoutStats?.turnoutPercentage || 75).toFixed(1)}%
-                </div>
-                <div className="w-full bg-muted rounded-full h-2 mt-3 overflow-hidden">
-                  <div
-                    className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${turnoutStats?.turnoutPercentage || 75}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium mt-3">
                   {turnoutStats?.totalBallotsCast || 36} of {turnoutStats?.totalEligibleStaff || 48} staff have completed their ballot.
                 </p>
               </NexaCard>
 
-              <NexaCard className="p-5 border border-border/60">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground font-medium uppercase">Ballot Sealing Integrity</span>
-                  <ShieldCheck className="w-4 h-4 text-blue-500" />
+              <NexaCard variant="glass" padding="md" className="rounded-3xl flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] text-[var(--nexa-text-muted)] font-bold uppercase tracking-wider">Ballot Sealing Integrity</span>
+                    <ShieldCheck className="w-4 h-4 text-blue-500" />
+                  </div>
+                  <div className="text-2xl font-black text-[var(--nexa-text-primary)]">100% Sealed</div>
                 </div>
-                <div className="text-2xl font-bold text-foreground">100% Sealed</div>
-                <p className="text-xs text-muted-foreground mt-3">
-                  All ballots are assigned a SHA-256 confirmation hash upon submission. Individual voting selections remain cryptographically decoupled.
+                <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium mt-3 leading-relaxed">
+                  All ballots are assigned a SHA-256 confirmation hash upon submission. Individual selections remain cryptographically decoupled.
                 </p>
               </NexaCard>
 
-              <NexaCard className="p-5 border border-border/60">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground font-medium uppercase">Self-Voting Block Rate</span>
-                  <UserCheck className="w-4 h-4 text-purple-500" />
+              <NexaCard variant="glass" padding="md" className="rounded-3xl flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] text-[var(--nexa-text-muted)] font-bold uppercase tracking-wider">Self-Voting Block Rate</span>
+                    <UserCheck className="w-4 h-4 text-purple-500" />
+                  </div>
+                  <div className="text-2xl font-black text-[var(--nexa-text-primary)]">Enforced</div>
                 </div>
-                <div className="text-2xl font-bold text-foreground">Enforced</div>
-                <p className="text-xs text-muted-foreground mt-3">
+                <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium mt-3 leading-relaxed">
                   Nominees cannot vote for themselves in categories where they are shortlisted. Zero conflicts recorded.
                 </p>
               </NexaCard>
             </div>
 
             {/* Department Leaderboard */}
-            <NexaCard className="p-5 border border-border/60">
-              <h4 className="text-sm font-semibold text-foreground mb-4">Department Turnout Leaderboard</h4>
+            <NexaCard variant="glass" padding="md" className="rounded-3xl space-y-4">
+              <h4 className="text-sm font-extrabold text-[var(--nexa-text-primary)]">Department Turnout Leaderboard</h4>
               <div className="space-y-4">
                 {turnoutStats?.departmentTurnout?.map((dept) => (
                   <div key={dept.department} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-foreground">{dept.department}</span>
-                      <span className="text-muted-foreground">
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <span className="text-[var(--nexa-text-primary)]">{dept.department}</span>
+                      <span className="text-[var(--nexa-text-muted)]">
                         {dept.votedCount} / {dept.totalStaff} staff ({dept.percentage.toFixed(0)}%)
                       </span>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                        className="bg-[#1A56DB] h-2 rounded-full transition-all duration-500"
                         style={{ width: `${dept.percentage}%` }}
                       />
                     </div>
@@ -557,12 +543,12 @@ export default function HRAwardsPage() {
         {/* TAB 3: TALLY VAULT & FINALIZATION */}
         {activeTab === "VAULT" && (
           <div className="space-y-5">
-            <NexaCard className="p-5 border border-amber-500/30 bg-amber-500/5">
+            <NexaCard variant="glass" padding="md" className="rounded-3xl border border-amber-500/30 bg-amber-500/5">
               <div className="flex items-start gap-3.5">
                 <ShieldCheck className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h4 className="text-sm font-semibold text-foreground">Secure Tally Vault</h4>
-                  <p className="text-xs text-muted-foreground">
+                  <h4 className="text-sm font-extrabold text-[var(--nexa-text-primary)]">Secure Tally Vault</h4>
+                  <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
                     Standings are encrypted in the vault. Once voting is closed, finalize results to inspect rank 1 winners before publishing to the Employee Portal and Hall of Fame.
                   </p>
                 </div>
@@ -571,13 +557,13 @@ export default function HRAwardsPage() {
 
             <div className="space-y-4">
               {activeEvent?.categories?.map((cat) => (
-                <NexaCard key={cat.id} className="p-5 border border-border/60">
-                  <div className="flex items-center justify-between mb-3">
+                <NexaCard key={cat.id} variant="glass" padding="md" className="rounded-3xl">
+                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-[var(--nexa-border)]">
                     <div className="flex items-center gap-2">
                       <Trophy className="w-4 h-4 text-amber-500" />
-                      <h4 className="text-sm font-semibold text-foreground">{cat.name}</h4>
+                      <h4 className="text-sm font-bold text-[var(--nexa-text-primary)]">{cat.name}</h4>
                     </div>
-                    <NexaBadge variant="outline" className="text-xs">
+                    <NexaBadge variant="secondary" className="rounded-full text-[10px] font-bold">
                       1 Winner Target
                     </NexaBadge>
                   </div>
@@ -586,10 +572,10 @@ export default function HRAwardsPage() {
                     {cat.nominees?.map((nom, idx) => (
                       <div
                         key={nom.id}
-                        className={`p-3 rounded-xl border transition-all ${
+                        className={`p-3.5 rounded-2xl border transition-all ${
                           idx === 0
                             ? "border-amber-500/40 bg-amber-500/10 shadow-sm"
-                            : "border-border/60 bg-muted/30"
+                            : "border-[var(--nexa-border)] bg-[var(--nexa-bg-base)]"
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
@@ -599,18 +585,18 @@ export default function HRAwardsPage() {
                             size="md"
                           />
                           <div>
-                            <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                            <div className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
                               {nom.employeeName}
                               {idx === 0 && (
-                                <NexaBadge variant="warning" className="px-1.5 py-0 text-[10px]">
+                                <NexaBadge variant="amber" className="rounded-full px-2 py-0 text-[10px] font-bold">
                                   Rank 1
                                 </NexaBadge>
                               )}
                             </div>
-                            <div className="text-[11px] text-muted-foreground">{nom.department}</div>
+                            <div className="text-[11px] text-[var(--nexa-text-muted)] font-medium">{nom.department}</div>
                           </div>
                         </div>
-                        <p className="text-[11px] text-muted-foreground mt-2 line-clamp-2 italic">
+                        <p className="text-[11px] text-[var(--nexa-text-secondary)] mt-2 line-clamp-2 italic font-medium">
                           "{nom.nominationPitch}"
                         </p>
                       </div>
@@ -627,8 +613,8 @@ export default function HRAwardsPage() {
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-semibold text-foreground">Awards Hall of Fame</h3>
-                <p className="text-xs text-muted-foreground">
+                <h3 className="text-sm font-extrabold text-[var(--nexa-text-primary)]">Awards Hall of Fame</h3>
+                <p className="text-xs text-[var(--nexa-text-muted)] font-medium">
                   Permanent record of official award recipients across past celebration years.
                 </p>
               </div>
@@ -636,19 +622,19 @@ export default function HRAwardsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {hallOfFame.map((win) => (
-                <NexaCard key={win.id} className="p-5 border border-border/60 flex flex-col justify-between relative overflow-hidden">
+                <NexaCard key={win.id} variant="glass" padding="md" className="rounded-3xl hover:border-amber-500/40 transition-all flex flex-col justify-between relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full pointer-events-none" />
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <NexaBadge variant="warning" className="text-xs font-bold">
+                      <NexaBadge variant="amber" className="rounded-full text-xs font-bold">
                         {win.awardYear} Winner
                       </NexaBadge>
-                      <span className="text-[11px] font-mono text-muted-foreground">
+                      <span className="text-[10px] font-mono text-[var(--nexa-text-muted)]">
                         {win.certificateNumber}
                       </span>
                     </div>
 
-                    <div className="text-sm font-bold text-foreground">
+                    <div className="text-sm font-extrabold text-[var(--nexa-text-primary)]">
                       {win.categoryName}
                     </div>
 
@@ -659,20 +645,20 @@ export default function HRAwardsPage() {
                         size="lg"
                       />
                       <div>
-                        <div className="text-sm font-semibold text-foreground">{win.employeeName}</div>
-                        <div className="text-xs text-muted-foreground">{win.department}</div>
-                        <div className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">{win.designation}</div>
+                        <div className="text-xs font-bold text-[var(--nexa-text-primary)]">{win.employeeName}</div>
+                        <div className="text-[11px] text-[var(--nexa-text-muted)] font-medium">{win.department}</div>
+                        <div className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">{win.designation}</div>
                       </div>
                     </div>
 
-                    <p className="text-xs text-muted-foreground italic border-l-2 border-amber-500/40 pl-2.5 mt-2">
+                    <p className="text-xs text-[var(--nexa-text-secondary)] italic border-l-2 border-amber-500/40 pl-2.5 mt-2">
                       "{win.citation}"
                     </p>
                   </div>
 
-                  <div className="pt-3 mt-4 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="pt-3 mt-4 border-t border-[var(--nexa-border)] flex items-center justify-between text-[11px] text-[var(--nexa-text-muted)] font-medium">
                     <span>{win.totalVotesReceived} votes recorded</span>
-                    <span className="text-emerald-500 font-medium">✓ Certified</span>
+                    <span className="text-emerald-500 font-bold">✓ Certified</span>
                   </div>
                 </NexaCard>
               ))}
@@ -683,16 +669,16 @@ export default function HRAwardsPage() {
 
       {/* MODAL: ADD NOMINEE */}
       {isNomineeModalOpen && selectedCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-background border border-border rounded-2xl w-full max-w-lg shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in">
+          <div className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
               <div>
-                <h3 className="text-base font-bold text-foreground">Add Nominee</h3>
-                <p className="text-xs text-muted-foreground">Category: {selectedCategory.name}</p>
+                <h3 className="text-sm font-extrabold text-[var(--nexa-text-primary)]">Add Nominee</h3>
+                <p className="text-xs text-[var(--nexa-text-muted)] font-medium">Category: {selectedCategory.name}</p>
               </div>
               <button
                 onClick={() => setIsNomineeModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] p-1 rounded-full cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -700,36 +686,36 @@ export default function HRAwardsPage() {
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-foreground">Search Staff Directory</label>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Search Staff Directory</label>
                 <div className="relative mt-1">
-                  <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5" />
+                  <Search className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3 top-2.5" />
                   <input
                     type="text"
                     placeholder="Search by employee name or department..."
                     value={staffSearchQuery}
                     onChange={(e) => setStaffSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
               </div>
 
               {/* Staff Candidate List */}
-              <div className="max-h-48 overflow-y-auto space-y-1.5 border border-border/60 rounded-lg p-2">
+              <div className="max-h-48 overflow-y-auto space-y-1.5 border border-[var(--nexa-border)] rounded-2xl p-2 bg-[var(--nexa-bg-base)]">
                 {staffCandidates.slice(0, 8).map((cand) => (
                   <div
                     key={cand.id}
                     onClick={() => setSelectedStaffId(cand.id)}
-                    className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-colors ${
                       selectedStaffId === cand.id
                         ? "bg-amber-500/15 border border-amber-500/40"
-                        : "hover:bg-muted/50"
+                        : "hover:bg-[var(--nexa-bg-surface)] border border-transparent"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <NexaAvatar src={resolveAvatarUrl(cand.avatar)} name={cand.name} size="sm" />
                       <div>
-                        <div className="text-xs font-medium text-foreground">{cand.name}</div>
-                        <div className="text-[10px] text-muted-foreground">{cand.department} • {cand.designation}</div>
+                        <div className="text-xs font-bold text-[var(--nexa-text-primary)]">{cand.name}</div>
+                        <div className="text-[10px] text-[var(--nexa-text-muted)] font-medium">{cand.department} • {cand.designation}</div>
                       </div>
                     </div>
                     {selectedStaffId === cand.id && (
@@ -740,22 +726,23 @@ export default function HRAwardsPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground">Nomination Statement / Citation</label>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Nomination Statement / Citation</label>
                 <textarea
                   placeholder="Explain why this employee deserves to be shortlisted..."
                   value={nominationPitch}
                   onChange={(e) => setNominationPitch(e.target.value)}
                   rows={3}
-                  className="w-full mt-1 p-2.5 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full mt-1 p-2.5 text-xs rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--nexa-border)]">
               <NexaButton
                 variant="outline"
                 size="sm"
                 onClick={() => setIsNomineeModalOpen(false)}
+                className="rounded-full"
               >
                 Cancel
               </NexaButton>
@@ -794,7 +781,7 @@ export default function HRAwardsPage() {
                     setTimeout(() => setActionSuccessMsg(null), 4000);
                   }
                 }}
-                className="bg-amber-600 hover:bg-amber-700 text-white"
+                className="bg-[#1A56DB] hover:bg-[#1A56DB]/90 text-white rounded-full font-bold shadow-sm"
               >
                 Save Nominee
               </NexaButton>
@@ -805,22 +792,22 @@ export default function HRAwardsPage() {
 
       {/* ADD CATEGORY MODAL */}
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--nexa-border)]">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center font-bold">
                   <Award className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-foreground">Add Award Category</h3>
-                  <p className="text-xs text-muted-foreground">Define a new voting category for the current awards cycle.</p>
+                  <h3 className="text-sm font-extrabold text-[var(--nexa-text-primary)]">Add Award Category</h3>
+                  <p className="text-xs text-[var(--nexa-text-muted)] font-medium">Define a new voting category for the current awards cycle.</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCategoryModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground p-1 rounded-md"
+                className="text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] p-1 rounded-full cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -828,7 +815,7 @@ export default function HRAwardsPage() {
 
             <form onSubmit={handleSubmitCreateCategory} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
                   Category Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -837,50 +824,51 @@ export default function HRAwardsPage() {
                   placeholder="e.g. Innovator of the Year"
                   value={categoryFormData.name}
                   onChange={(e) => setCategoryFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">Description</label>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">Description</label>
                 <textarea
                   placeholder="Brief description of this recognition award..."
                   value={categoryFormData.description}
                   onChange={(e) => setCategoryFormData(prev => ({ ...prev, description: e.target.value }))}
                   rows={2}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">Evaluation Criteria</label>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">Evaluation Criteria</label>
                 <textarea
                   placeholder="What accomplishments or qualities should voters consider?"
                   value={categoryFormData.criteria}
                   onChange={(e) => setCategoryFormData(prev => ({ ...prev, criteria: e.target.value }))}
                   rows={2}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">Max Winners Allowed</label>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">Max Winners Allowed</label>
                 <input
                   type="number"
                   min={1}
                   max={5}
                   value={categoryFormData.maxWinners}
                   onChange={(e) => setCategoryFormData(prev => ({ ...prev, maxWinners: parseInt(e.target.value) || 1 }))}
-                  className="w-24 px-3 py-2 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-24 px-3 py-2 text-xs rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] focus:outline-none focus:border-amber-500 transition-colors font-bold"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--nexa-border)]">
                 <NexaButton
                   variant="outline"
                   size="sm"
                   type="button"
                   onClick={() => setIsCategoryModalOpen(false)}
+                  className="rounded-full"
                 >
                   Cancel
                 </NexaButton>
@@ -889,7 +877,7 @@ export default function HRAwardsPage() {
                   size="sm"
                   type="submit"
                   disabled={!categoryFormData.name.trim()}
-                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                  className="bg-[#1A56DB] hover:bg-[#1A56DB]/90 text-white rounded-full font-bold shadow-sm"
                 >
                   Create Category
                 </NexaButton>
@@ -901,16 +889,16 @@ export default function HRAwardsPage() {
 
       {/* EDIT CATEGORY MODAL */}
       {isEditCategoryModalOpen && editingCategory && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--nexa-border)]">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-500 flex items-center justify-center font-bold">
                   <Edit3 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-foreground">Edit Award Category</h3>
-                  <p className="text-xs text-muted-foreground">Update details and rules for this award.</p>
+                  <h3 className="text-sm font-extrabold text-[var(--nexa-text-primary)]">Edit Award Category</h3>
+                  <p className="text-xs text-[var(--nexa-text-muted)] font-medium">Update details and rules for this award.</p>
                 </div>
               </div>
               <button
@@ -919,7 +907,7 @@ export default function HRAwardsPage() {
                   setIsEditCategoryModalOpen(false);
                   setEditingCategory(null);
                 }}
-                className="text-muted-foreground hover:text-foreground p-1 rounded-md"
+                className="text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] p-1 rounded-full cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -927,7 +915,7 @@ export default function HRAwardsPage() {
 
             <form onSubmit={handleSubmitEditCategory} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
                   Category Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -936,45 +924,45 @@ export default function HRAwardsPage() {
                   placeholder="e.g. Innovator of the Year"
                   value={categoryFormData.name}
                   onChange={(e) => setCategoryFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">Description</label>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">Description</label>
                 <textarea
                   placeholder="Brief description of this recognition award..."
                   value={categoryFormData.description}
                   onChange={(e) => setCategoryFormData(prev => ({ ...prev, description: e.target.value }))}
                   rows={2}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">Evaluation Criteria</label>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">Evaluation Criteria</label>
                 <textarea
                   placeholder="What accomplishments or qualities should voters consider?"
                   value={categoryFormData.criteria}
                   onChange={(e) => setCategoryFormData(prev => ({ ...prev, criteria: e.target.value }))}
                   rows={2}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">Max Winners Allowed</label>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">Max Winners Allowed</label>
                 <input
                   type="number"
                   min={1}
                   max={5}
                   value={categoryFormData.maxWinners}
                   onChange={(e) => setCategoryFormData(prev => ({ ...prev, maxWinners: parseInt(e.target.value) || 1 }))}
-                  className="w-24 px-3 py-2 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-24 px-3 py-2 text-xs rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] focus:outline-none focus:border-amber-500 transition-colors font-bold"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--nexa-border)]">
                 <NexaButton
                   variant="outline"
                   size="sm"
@@ -983,6 +971,7 @@ export default function HRAwardsPage() {
                     setIsEditCategoryModalOpen(false);
                     setEditingCategory(null);
                   }}
+                  className="rounded-full"
                 >
                   Cancel
                 </NexaButton>
@@ -991,7 +980,7 @@ export default function HRAwardsPage() {
                   size="sm"
                   type="submit"
                   disabled={!categoryFormData.name.trim()}
-                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                  className="bg-[#1A56DB] hover:bg-[#1A56DB]/90 text-white rounded-full font-bold shadow-sm"
                 >
                   Save Changes
                 </NexaButton>

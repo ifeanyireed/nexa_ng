@@ -140,47 +140,30 @@ export default function EmployeeAwardsPage() {
       subtitle="Cast your annual recognition votes, review your sealed audit receipt, and celebrate company excellence."
     >
       <div className="space-y-6">
-        {/* Top Tab Bar */}
-        <div className="border-b border-border/60">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setActiveTab("VOTE")}
-              className={`pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                activeTab === "VOTE"
-                  ? "border-amber-500 text-amber-500"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Award className="w-4 h-4" />
-              {hasVoted ? "Voting Ballot (Completed)" : "Cast Your Vote"}
-            </button>
-            <button
-              onClick={() => setActiveTab("STATUS")}
-              className={`pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                activeTab === "STATUS"
-                  ? "border-amber-500 text-amber-500"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4" />
-              My Ballot Status & Receipt
-              {hasVoted && (
-                <NexaBadge variant="success" className="px-1.5 py-0 text-[10px]">
-                  Sealed
-                </NexaBadge>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("HALL_OF_FAME")}
-              className={`pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                activeTab === "HALL_OF_FAME"
-                  ? "border-amber-500 text-amber-500"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Trophy className="w-4 h-4" />
-              Awards Hall of Fame
-            </button>
+        {/* Top Tab Bar — Rounded Pills Matching Quests System */}
+        <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+            {[
+              { id: "VOTE", label: hasVoted ? "Voting Ballot (Completed)" : "Cast Your Vote", icon: <Award className="w-3.5 h-3.5" /> },
+              { id: "STATUS", label: "My Ballot Status & Receipt", icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+              { id: "HALL_OF_FAME", label: "Awards Hall of Fame", icon: <Trophy className="w-3.5 h-3.5" /> },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === tab.id
+                    ? "bg-[#1A56DB] text-white shadow-md shadow-[#1A56DB]/20"
+                    : "text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-base)] border border-transparent hover:border-[var(--nexa-border)]"
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+                {tab.id === "STATUS" && hasVoted && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 ml-1" />
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -188,29 +171,29 @@ export default function EmployeeAwardsPage() {
         {activeTab === "VOTE" && (
           <div className="space-y-6">
             {/* Active Event Hero Card */}
-            <NexaCard className="p-6 border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent relative overflow-hidden">
+            <NexaCard variant="glass" padding="lg" className="rounded-3xl border border-[var(--nexa-border)] bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent relative overflow-hidden">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1.5 max-w-2xl">
                   <div className="flex items-center gap-2">
-                    <NexaBadge variant="warning" className="px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider">
+                    <NexaBadge variant="amber" className="rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider">
                       {activeEvent?.awardYear || 2026} Annual Awards
                     </NexaBadge>
-                    <NexaBadge variant="outline" className="text-xs">
+                    <NexaBadge variant="secondary" className="rounded-full text-xs font-medium">
                       🔒 Anonymous Voting Active
                     </NexaBadge>
                   </div>
-                  <h2 className="text-xl font-bold text-foreground">
+                  <h2 className="text-xl font-black text-[var(--nexa-text-primary)]">
                     Celebrate Excellence: Vote for Your Peers
                   </h2>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-[var(--nexa-text-muted)] font-medium leading-relaxed">
                     Recognising colleagues who made outstanding contributions. Select 1 nominee per category. Votes are locked and sealed upon final submission.
                   </p>
                 </div>
 
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="text-right">
-                    <div className="text-xs text-muted-foreground">Ballot Progress</div>
-                    <div className="text-sm font-bold text-foreground">
+                    <div className="text-[11px] text-[var(--nexa-text-muted)] font-medium">Ballot Progress</div>
+                    <div className="text-sm font-black text-[var(--nexa-text-primary)]">
                       {completedCount} of {totalCategories} Completed
                     </div>
                   </div>
@@ -219,7 +202,7 @@ export default function EmployeeAwardsPage() {
                       variant="primary"
                       size="sm"
                       onClick={() => setIsReviewModalOpen(true)}
-                      className="bg-amber-600 hover:bg-amber-700 text-white font-medium shadow-sm"
+                      className="bg-[#1A56DB] hover:bg-[#1A56DB]/90 text-white rounded-full font-bold shadow-sm"
                     >
                       Review & Submit
                     </NexaButton>
@@ -230,12 +213,12 @@ export default function EmployeeAwardsPage() {
 
             {/* Voting Already Sealed Warning */}
             {hasVoted && (
-              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 shrink-0" />
                   <div>
                     <div className="text-sm font-bold">Your Ballot is Sealed</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-[var(--nexa-text-muted)]">
                       You have already submitted your votes for this event. View your audit receipt under "My Ballot Status".
                     </div>
                   </div>
@@ -244,7 +227,7 @@ export default function EmployeeAwardsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setActiveTab("STATUS")}
-                  className="text-xs border-emerald-500/30 text-emerald-600"
+                  className="text-xs border-emerald-500/30 text-emerald-600 rounded-full"
                 >
                   View Receipt
                 </NexaButton>
@@ -260,15 +243,15 @@ export default function EmployeeAwardsPage() {
                   <button
                     key={cat.id}
                     onClick={() => setCurrentCategoryIndex(idx)}
-                    className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-2 shrink-0 border ${
+                    className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
                       isCurrent
-                        ? "bg-amber-500/15 border-amber-500/50 text-amber-500 font-semibold"
+                        ? "bg-amber-500/15 border-amber-500/50 text-amber-500 shadow-sm"
                         : isSelected
                         ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                        : "bg-muted/30 border-border/60 text-muted-foreground hover:text-foreground"
+                        : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-[#1A56DB]/40"
                     }`}
                   >
-                    <span className="w-4 h-4 rounded-full bg-background/80 flex items-center justify-center text-[10px] font-bold">
+                    <span className="w-4 h-4 rounded-full bg-[var(--nexa-bg-surface)] flex items-center justify-center text-[10px] font-bold">
                       {isSelected ? "✓" : idx + 1}
                     </span>
                     {cat.name}
@@ -280,16 +263,16 @@ export default function EmployeeAwardsPage() {
             {/* Current Category Workspace */}
             {currentCategory && (
               <div className="space-y-4">
-                <NexaCard className="p-5 border border-border/60">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-3 mb-4">
+                <NexaCard variant="glass" padding="md" className="rounded-3xl">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--nexa-border)] pb-3 mb-4">
                     <div>
-                      <div className="text-xs font-semibold uppercase tracking-wider text-amber-500">
+                      <div className="text-xs font-bold uppercase tracking-wider text-amber-500">
                         Category {currentCategoryIndex + 1} of {totalCategories}
                       </div>
-                      <h3 className="text-lg font-bold text-foreground">{currentCategory.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">{currentCategory.description}</p>
+                      <h3 className="text-base font-extrabold text-[var(--nexa-text-primary)]">{currentCategory.name}</h3>
+                      <p className="text-xs text-[var(--nexa-text-muted)] font-medium mt-0.5">{currentCategory.description}</p>
                     </div>
-                    <NexaBadge variant="outline" className="text-xs shrink-0">
+                    <NexaBadge variant="secondary" className="rounded-full text-[11px] font-bold shrink-0">
                       Criteria: {currentCategory.criteria}
                     </NexaBadge>
                   </div>
@@ -309,27 +292,27 @@ export default function EmployeeAwardsPage() {
                           onClick={() => {
                             if (!isSelf && !hasVoted) handleSelectNominee(nom);
                           }}
-                          className={`p-5 rounded-2xl border transition-all flex flex-col justify-between relative ${
+                          className={`p-5 rounded-3xl border transition-all flex flex-col justify-between relative ${
                             isSelf
-                              ? "opacity-60 bg-muted/20 border-border/40 cursor-not-allowed"
+                              ? "opacity-60 bg-[var(--nexa-bg-base)]/50 border-[var(--nexa-border)] cursor-not-allowed"
                               : isChosen
                               ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-500/10 shadow-md cursor-pointer"
-                              : "border-border/60 bg-card hover:border-border hover:bg-muted/30 cursor-pointer"
+                              : "border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:border-[#1A56DB]/40 hover:bg-[var(--nexa-bg-base)]/80 cursor-pointer"
                           }`}
                         >
                           {/* Selection Badge / Self Badge */}
                           <div className="flex items-center justify-between mb-3">
                             {isChosen ? (
-                              <NexaBadge variant="warning" className="text-xs font-bold flex items-center gap-1">
+                              <NexaBadge variant="amber" className="rounded-full text-xs font-bold flex items-center gap-1">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 Selected
                               </NexaBadge>
                             ) : isSelf ? (
-                              <NexaBadge variant="danger" className="text-[10px] font-semibold">
+                              <NexaBadge variant="danger" className="rounded-full text-[10px] font-bold">
                                 🚫 Self-Voting Blocked
                               </NexaBadge>
                             ) : (
-                              <span className="text-[11px] text-muted-foreground">Click to select</span>
+                              <span className="text-[11px] text-[var(--nexa-text-muted)] font-medium">Click to select</span>
                             )}
                           </div>
 
@@ -341,28 +324,28 @@ export default function EmployeeAwardsPage() {
                                 size="lg"
                               />
                               <div>
-                                <h4 className="text-sm font-bold text-foreground">{nom.employeeName}</h4>
-                                <div className="text-xs text-muted-foreground">{nom.department}</div>
-                                <div className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                                <h4 className="text-xs font-bold text-[var(--nexa-text-primary)]">{nom.employeeName}</h4>
+                                <div className="text-[11px] text-[var(--nexa-text-muted)] font-medium">{nom.department}</div>
+                                <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
                                   {nom.designation}
                                 </div>
                               </div>
                             </div>
 
-                            <p className="text-xs text-muted-foreground leading-relaxed italic border-l-2 border-border/60 pl-2.5">
+                            <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed italic border-l-2 border-[var(--nexa-border)] pl-2.5 font-medium">
                               "{nom.nominationPitch}"
                             </p>
                           </div>
 
-                          <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between">
-                            <span className="text-[11px] text-muted-foreground">
+                          <div className="mt-4 pt-3 border-t border-[var(--nexa-border)] flex items-center justify-between">
+                            <span className="text-[11px] text-[var(--nexa-text-muted)] font-medium">
                               {isSelf ? "You cannot vote for yourself" : isChosen ? "Choice Recorded" : "Tap to Vote"}
                             </span>
                             <div
                               className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
                                 isChosen
                                   ? "bg-amber-500 border-amber-500 text-black font-bold text-xs"
-                                  : "border-border bg-background"
+                                  : "border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]"
                               }`}
                             >
                               {isChosen && "✓"}
@@ -381,7 +364,7 @@ export default function EmployeeAwardsPage() {
                     size="sm"
                     disabled={currentCategoryIndex === 0}
                     onClick={() => setCurrentCategoryIndex((prev) => prev - 1)}
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1 rounded-full"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     Previous
@@ -393,7 +376,7 @@ export default function EmployeeAwardsPage() {
                         variant="primary"
                         size="sm"
                         onClick={() => setCurrentCategoryIndex((prev) => prev + 1)}
-                        className="bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-1"
+                        className="bg-[#1A56DB] hover:bg-[#1A56DB]/90 text-white rounded-full font-bold flex items-center gap-1 shadow-sm"
                       >
                         Next Category
                         <ChevronRight className="w-4 h-4" />
@@ -404,7 +387,7 @@ export default function EmployeeAwardsPage() {
                         size="sm"
                         disabled={completedCount === 0 || hasVoted}
                         onClick={() => setIsReviewModalOpen(true)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 font-bold"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold flex items-center gap-1 shadow-sm"
                       >
                         <ShieldCheck className="w-4 h-4" />
                         Review & Submit Ballot
@@ -421,36 +404,36 @@ export default function EmployeeAwardsPage() {
         {activeTab === "STATUS" && (
           <div className="max-w-2xl mx-auto space-y-6">
             {hasVoted ? (
-              <NexaCard className="p-8 border-emerald-500/30 bg-emerald-500/5 text-center space-y-5">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto">
+              <NexaCard variant="glass" padding="lg" className="rounded-3xl border border-emerald-500/30 bg-emerald-500/5 text-center space-y-5">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto border border-emerald-500/30">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
 
                 <div className="space-y-1">
-                  <h3 className="text-xl font-bold text-foreground">
+                  <h3 className="text-xl font-black text-[var(--nexa-text-primary)]">
                     Your Ballot Has Been Sealed
                   </h3>
-                  <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                  <p className="text-xs text-[var(--nexa-text-muted)] max-w-md mx-auto font-medium leading-relaxed">
                     Your votes were cryptographically sealed into the tamper-proof vault. Anonymity is guaranteed by Ofia ERP HR policy.
                   </p>
                 </div>
 
                 {/* Audit Receipt Card */}
-                <div className="p-4 rounded-xl bg-card border border-border text-left space-y-2.5 max-w-md mx-auto font-mono text-xs">
-                  <div className="flex justify-between items-center pb-2 border-b border-border/50">
-                    <span className="text-muted-foreground font-sans">Audit Receipt Hash:</span>
+                <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-left space-y-2.5 max-w-md mx-auto font-mono text-xs">
+                  <div className="flex justify-between items-center pb-2 border-b border-[var(--nexa-border)]">
+                    <span className="text-[var(--nexa-text-muted)] font-sans">Audit Receipt Hash:</span>
                     <span className="font-bold text-amber-500 select-all">{ballotReceipt?.receiptHash || "OFIA-2026-NEXA-B9481A"}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground font-sans">Categories Voted:</span>
-                    <span className="font-semibold text-foreground">{ballotReceipt?.categoriesVotedCount || completedCount || 6} Categories</span>
+                    <span className="text-[var(--nexa-text-muted)] font-sans">Categories Voted:</span>
+                    <span className="font-bold text-[var(--nexa-text-primary)]">{ballotReceipt?.categoriesVotedCount || completedCount || 6} Categories</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground font-sans">Timestamp:</span>
-                    <span className="text-foreground">{new Date(ballotReceipt?.submittedAt || Date.now()).toLocaleString()}</span>
+                    <span className="text-[var(--nexa-text-muted)] font-sans">Timestamp:</span>
+                    <span className="text-[var(--nexa-text-primary)]">{new Date(ballotReceipt?.submittedAt || Date.now()).toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-border/50">
-                    <span className="text-muted-foreground font-sans">Vault Status:</span>
+                  <div className="flex justify-between items-center pt-2 border-t border-[var(--nexa-border)]">
+                    <span className="text-[var(--nexa-text-muted)] font-sans">Vault Status:</span>
                     <span className="text-emerald-500 font-sans font-bold flex items-center gap-1">
                       <Lock className="w-3.5 h-3.5" /> Sealed in Vault
                     </span>
@@ -458,26 +441,24 @@ export default function EmployeeAwardsPage() {
                 </div>
 
                 <div className="pt-2">
-                  <Link href="/erp/employee/awards">
-                    <NexaButton
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setActiveTab("HALL_OF_FAME")}
-                      className="text-xs"
-                    >
-                      Browse Awards Hall of Fame →
-                    </NexaButton>
-                  </Link>
+                  <NexaButton
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActiveTab("HALL_OF_FAME")}
+                    className="text-xs rounded-full font-bold"
+                  >
+                    Browse Awards Hall of Fame →
+                  </NexaButton>
                 </div>
               </NexaCard>
             ) : (
-              <NexaCard className="p-8 text-center space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+              <NexaCard variant="glass" padding="lg" className="rounded-3xl text-center space-y-4">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto border border-amber-500/20">
                   <Clock className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-foreground">You Have Not Yet Voted</h3>
-                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                  <h3 className="text-lg font-extrabold text-[var(--nexa-text-primary)]">You Have Not Yet Voted</h3>
+                  <p className="text-xs text-[var(--nexa-text-muted)] max-w-sm mx-auto font-medium">
                     The {activeEvent?.awardYear || 2026} Annual Awards are live! Open the voting tab to select your nominees.
                   </p>
                 </div>
@@ -485,7 +466,7 @@ export default function EmployeeAwardsPage() {
                   variant="primary"
                   size="sm"
                   onClick={() => setActiveTab("VOTE")}
-                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                  className="bg-[#1A56DB] hover:bg-[#1A56DB]/90 text-white rounded-full font-bold shadow-sm"
                 >
                   Cast Your Vote Now
                 </NexaButton>
@@ -499,8 +480,8 @@ export default function EmployeeAwardsPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-foreground">Awards Hall of Fame</h3>
-                <p className="text-xs text-muted-foreground">
+                <h3 className="text-sm font-extrabold text-[var(--nexa-text-primary)]">Awards Hall of Fame</h3>
+                <p className="text-xs text-[var(--nexa-text-muted)] font-medium">
                   Recognising the remarkable people who make our workplace exceptional.
                 </p>
               </div>
@@ -513,19 +494,21 @@ export default function EmployeeAwardsPage() {
                 return (
                   <NexaCard
                     key={win.id}
-                    className="p-5 border border-border/60 hover:border-amber-500/40 transition-all flex flex-col justify-between relative overflow-hidden"
+                    variant="glass"
+                    padding="md"
+                    className="rounded-3xl hover:border-amber-500/40 transition-all flex flex-col justify-between relative overflow-hidden"
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <NexaBadge variant="warning" className="text-xs font-bold">
+                        <NexaBadge variant="amber" className="rounded-full text-xs font-bold">
                           {win.awardYear} Winner
                         </NexaBadge>
-                        <span className="text-[10px] font-mono text-muted-foreground">
+                        <span className="text-[10px] font-mono text-[var(--nexa-text-muted)]">
                           {win.certificateNumber}
                         </span>
                       </div>
 
-                      <div className="text-sm font-bold text-foreground">
+                      <div className="text-sm font-extrabold text-[var(--nexa-text-primary)]">
                         {win.categoryName}
                       </div>
 
@@ -536,23 +519,23 @@ export default function EmployeeAwardsPage() {
                           size="lg"
                         />
                         <div>
-                          <div className="text-sm font-bold text-foreground">{win.employeeName}</div>
-                          <div className="text-xs text-muted-foreground">{win.department}</div>
-                          <div className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                          <div className="text-xs font-bold text-[var(--nexa-text-primary)]">{win.employeeName}</div>
+                          <div className="text-[11px] text-[var(--nexa-text-muted)] font-medium">{win.department}</div>
+                          <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
                             {win.designation}
                           </div>
                         </div>
                       </div>
 
-                      <p className="text-xs text-muted-foreground italic border-l-2 border-amber-500/40 pl-2.5">
+                      <p className="text-xs text-[var(--nexa-text-secondary)] italic border-l-2 border-amber-500/40 pl-2.5 font-medium">
                         "{win.citation}"
                       </p>
                     </div>
 
-                    <div className="pt-4 mt-4 border-t border-border/40 flex items-center justify-between">
+                    <div className="pt-4 mt-4 border-t border-[var(--nexa-border)] flex items-center justify-between">
                       <button
                         onClick={() => handleSendKudos(win.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                           hasCheered
                             ? "bg-rose-500 text-white shadow-sm"
                             : "bg-rose-500/10 text-rose-500 hover:bg-rose-500/20"
@@ -562,7 +545,7 @@ export default function EmployeeAwardsPage() {
                         {hasCheered ? "Celebrated! 👏" : "Cheer Colleague"}
                       </button>
 
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-[10px] text-[var(--nexa-text-muted)] font-medium">
                         {win.totalVotesReceived} staff votes
                       </span>
                     </div>
@@ -576,27 +559,27 @@ export default function EmployeeAwardsPage() {
 
       {/* MODAL: REVIEW & CONFIRM BALLOT */}
       {isReviewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-background border border-border rounded-2xl w-full max-w-lg shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in">
+          <div className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
               <div>
-                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <h3 className="text-sm font-extrabold text-[var(--nexa-text-primary)] flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-amber-500" />
                   Review & Seal Your Ballot
                 </h3>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-[var(--nexa-text-muted)] font-medium">
                   Verify your selections before final submission.
                 </p>
               </div>
             </div>
 
             {submissionError && (
-              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs">
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-medium">
                 {submissionError}
               </div>
             )}
 
-            <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
               {categories.map((cat) => {
                 const nomId = selections[cat.id];
                 const nom = cat.nominees?.find((n) => n.id === nomId);
@@ -604,36 +587,37 @@ export default function EmployeeAwardsPage() {
                 return (
                   <div
                     key={cat.id}
-                    className="p-3 rounded-xl border border-border/60 bg-muted/20 flex items-center justify-between"
+                    className="p-3 rounded-2xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] flex items-center justify-between"
                   >
                     <div>
-                      <div className="text-[10px] font-semibold text-muted-foreground uppercase">{cat.name}</div>
-                      <div className="text-xs font-bold text-foreground">
-                        {nom ? nom.employeeName : <span className="text-muted-foreground italic">Skipped</span>}
+                      <div className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider">{cat.name}</div>
+                      <div className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                        {nom ? nom.employeeName : <span className="text-[var(--nexa-text-muted)] italic">Skipped</span>}
                       </div>
                     </div>
                     {nom ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-medium">
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-bold border border-emerald-500/20">
                         Selected
                       </span>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground">No vote</span>
+                      <span className="text-[10px] text-[var(--nexa-text-muted)] font-medium">No vote</span>
                     )}
                   </div>
                 );
               })}
             </div>
 
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-muted-foreground space-y-1">
-              <div className="font-semibold text-amber-600 dark:text-amber-400">🔒 Irreversible Ballot Lock:</div>
-              <p>Once sealed, your ballot cannot be altered and your cryptographic receipt code will be issued.</p>
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-[var(--nexa-text-muted)] space-y-1">
+              <div className="font-bold text-amber-600 dark:text-amber-400">🔒 Irreversible Ballot Lock:</div>
+              <p className="text-[11px] leading-relaxed">Once sealed, your ballot cannot be altered and your cryptographic receipt code will be issued.</p>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--nexa-border)]">
               <NexaButton
                 variant="outline"
                 size="sm"
                 onClick={() => setIsReviewModalOpen(false)}
+                className="rounded-full"
               >
                 Back to Edit
               </NexaButton>
@@ -641,7 +625,7 @@ export default function EmployeeAwardsPage() {
                 variant="primary"
                 size="sm"
                 onClick={handleSubmitBallot}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold shadow-sm"
               >
                 Seal & Submit My Ballot
               </NexaButton>

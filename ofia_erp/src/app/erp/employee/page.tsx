@@ -242,7 +242,7 @@ export default function EmployeeDashboard() {
           <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
             <Link
               href="/erp/employee/awards"
-              className="px-4 py-2.5 bg-white text-amber-800 font-extrabold rounded-xl text-xs hover:bg-amber-50 transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+              className="px-4 py-2.5 bg-white text-amber-800 font-extrabold rounded-full text-xs hover:bg-amber-50 transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
             >
               <span>Cast Your Vote</span>
               <ArrowRight className="w-3.5 h-3.5" />

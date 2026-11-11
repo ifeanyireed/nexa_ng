@@ -28,6 +28,7 @@
 
   --color-nexa-border: var(--nexa-border);
   --color-nexa-border-mid: var(--nexa-border-mid);
+  --color-border: var(--nexa-border);
 
   --font-sans: var(--font-dropa);
   --font-mono: var(--font-dropa);

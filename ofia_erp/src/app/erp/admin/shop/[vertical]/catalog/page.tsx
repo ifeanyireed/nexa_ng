@@ -52,6 +52,7 @@ import {
   VerticalKey,
   getStorefrontUrl,
 } from "@/lib/verticals";
+import { resolveColorHex } from "@/lib/commerce-products-store";
 
 const AFRICAN_COLOR_PRESETS: Array<{ name: string; hex: string }> = [
   { name: "Midnight Black", hex: "#111111" },
@@ -960,8 +961,12 @@ export default function VerticalCatalogPage() {
       ...(verticalKey === "fashion"
         ? {
             prints: fashionPrints,
-            colors: fashionColors.map((c) => c.name).join(", "),
-            sizes: fashionSizes.join(", "),
+            fashionPrints: fashionPrints,
+            colors: fashionColors,
+            fashionColors: fashionColors,
+            colorsString: fashionColors.map((c) => c.name).join(", "),
+            sizes: fashionSizes,
+            fashionSizes: fashionSizes,
             material: formAttributes.material || "100% African Wax Cotton",
             collection: formCollection,
             season:
@@ -1038,21 +1043,34 @@ export default function VerticalCatalogPage() {
 
     if (verticalKey === "fashion") {
       // 1. Prints
-      const rawPrints = product.attributes?.prints;
+      const rawPrints =
+        product.attributes?.fashionPrints ||
+        product.attributes?.prints ||
+        (product as any)?.fashionPrints ||
+        (product as any)?.prints;
       let parsedPrints: FabricPrint[] = [];
       if (Array.isArray(rawPrints)) {
         parsedPrints = rawPrints.map((p) => {
           if (typeof p === "string") {
-            const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === p.toLowerCase());
+            const trimmed = p.trim();
+            const found =
+              tenantAfricanPrints.find((pre) => pre.name.toLowerCase() === trimmed.toLowerCase()) ||
+              AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === trimmed.toLowerCase());
+            const varMatch = product.variants?.find((v) => v.print?.toLowerCase() === trimmed.toLowerCase());
             return {
-              name: p,
-              image: found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+              name: trimmed,
+              image:
+                varMatch?.printImage ||
+                found?.image ||
+                "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
               description: found?.description,
             };
           }
           return {
             name: p.name,
-            image: p.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+            image:
+              p.image ||
+              "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
             description: p.description,
           };
         });
@@ -1061,10 +1079,16 @@ export default function VerticalCatalogPage() {
           .split(",")
           .map((s) => {
             const name = s.trim();
-            const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === name.toLowerCase());
+            const found =
+              tenantAfricanPrints.find((pre) => pre.name.toLowerCase() === name.toLowerCase()) ||
+              AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === name.toLowerCase());
+            const varMatch = product.variants?.find((v) => v.print?.toLowerCase() === name.toLowerCase());
             return {
               name,
-              image: found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+              image:
+                varMatch?.printImage ||
+                found?.image ||
+                "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
               description: found?.description,
             };
           })
@@ -1074,10 +1098,15 @@ export default function VerticalCatalogPage() {
         const uniquePrintNames = Array.from(new Set(product.variants.map((v) => v.print).filter(Boolean) as string[]));
         parsedPrints = uniquePrintNames.map((name) => {
           const varMatch = product.variants?.find((v) => v.print === name);
-          const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === name.toLowerCase());
+          const found =
+            tenantAfricanPrints.find((pre) => pre.name.toLowerCase() === name.toLowerCase()) ||
+            AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === name.toLowerCase());
           return {
             name,
-            image: varMatch?.printImage || found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+            image:
+              varMatch?.printImage ||
+              found?.image ||
+              "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
             description: found?.description,
           };
         });
@@ -1086,27 +1115,51 @@ export default function VerticalCatalogPage() {
       setFashionPrints(finalPrints);
 
       // 2. Colors
-      const rawColors = product.attributes?.colors;
-      let parsedColorNames: string[] = [];
-      if (Array.isArray(rawColors)) {
-        parsedColorNames = rawColors.map((c) => (typeof c === "string" ? c : c.name));
+      const rawColors =
+        product.attributes?.fashionColors ||
+        product.attributes?.colors ||
+        (product as any)?.fashionColors ||
+        (product as any)?.colors;
+      let finalColors: Array<{ name: string; hex: string }> = [];
+
+      if (Array.isArray(rawColors) && rawColors.length > 0) {
+        finalColors = rawColors
+          .map((c) => {
+            if (typeof c === "string") {
+              const name = c.trim();
+              return { name, hex: resolveColorHex(name, undefined, product.variants) };
+            }
+            const name = c?.name || "Default";
+            return { name, hex: resolveColorHex(name, c?.hex, product.variants) };
+          })
+          .filter((c) => c.name);
       } else if (typeof rawColors === "string" && rawColors.trim()) {
-        parsedColorNames = rawColors.split(",").map((s) => s.trim()).filter(Boolean);
-      }
-      if (parsedColorNames.length === 0 && product.variants) {
-        parsedColorNames = Array.from(new Set(product.variants.map((v) => v.color).filter(Boolean) as string[]));
-      }
-      const distinctColorNames = Array.from(new Set(parsedColorNames));
-      const finalColors = (distinctColorNames.length > 0 ? distinctColorNames : [AFRICAN_COLOR_PRESETS[0].name]).map(
-        (name) => {
-          const presetMatch = AFRICAN_COLOR_PRESETS.find((p) => p.name.toLowerCase() === name.toLowerCase());
-          const variantMatch = product.variants?.find((v) => v.color?.toLowerCase() === name.toLowerCase());
+        finalColors = rawColors
+          .split(",")
+          .map((s) => {
+            const name = s.trim();
+            return { name, hex: resolveColorHex(name, undefined, product.variants) };
+          })
+          .filter((c) => c.name);
+      } else if (product.variants && product.variants.length > 0) {
+        const uniqueNames = Array.from(
+          new Set(product.variants.map((v) => v.color).filter(Boolean) as string[])
+        );
+        finalColors = uniqueNames.map((name) => {
+          const vMatch = product.variants?.find((v) => v.color?.toLowerCase() === name.toLowerCase());
           return {
             name,
-            hex: variantMatch?.colorHex || presetMatch?.hex || "#111111",
+            hex: resolveColorHex(name, vMatch?.colorHex, product.variants),
           };
-        }
-      );
+        });
+      }
+
+      if (finalColors.length === 0) {
+        finalColors = [
+          { name: AFRICAN_COLOR_PRESETS[0].name, hex: AFRICAN_COLOR_PRESETS[0].hex },
+          { name: AFRICAN_COLOR_PRESETS[1].name, hex: AFRICAN_COLOR_PRESETS[1].hex },
+        ];
+      }
       setFashionColors(finalColors);
 
       // 3. Sizes

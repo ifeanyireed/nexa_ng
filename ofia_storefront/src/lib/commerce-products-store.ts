@@ -94,6 +94,104 @@ export const VERTICAL_EDITORIAL_FALLBACK_IMAGES: Record<string, string[]> = {
   ],
 };
 
+export const KNOWN_COLOR_HEX_MAP: Record<string, string> = {
+  "midnight black": "#111111",
+  "obsidian black": "#111111",
+  "black": "#111111",
+  "emerald green": "#047857",
+  "forest emerald": "#1F4E3D",
+  "green": "#16A34A",
+  "olive": "#4A5240",
+  "olive moss": "#4A5240",
+  "royal navy": "#1E3A8A",
+  "midnight navy": "#152238",
+  "deep indigo": "#1E2A38",
+  "navy": "#1E3A8A",
+  "blue": "#2563EB",
+  "terracotta ochre": "#C2410C",
+  "terracotta clay": "#9E4731",
+  "terracotta": "#C2410C",
+  "rich gold": "#D97706",
+  "champagne gold": "#DFD3B6",
+  "gold": "#D97706",
+  "ruby wine": "#991B1B",
+  "ruby": "#991B1B",
+  "wine": "#722F37",
+  "burgundy": "#800020",
+  "maroon": "#800000",
+  "ivory cream": "#F8FAFC",
+  "ivory": "#FFFFF0",
+  "cream": "#FFFDD0",
+  "raw sandstone": "#D6C7B2",
+  "camel taupe": "#C2A383",
+  "taupe": "#B38B6D",
+  "sand": "#C2B280",
+  "white": "#FFFFFF",
+  "sunset coral": "#FB7185",
+  "coral": "#F87171",
+  "peach": "#FDBA74",
+  "deep amethyst": "#581C87",
+  "amethyst": "#9333EA",
+  "purple": "#9333EA",
+  "violet": "#7C3AED",
+  "yellow": "#EAB308",
+  "mustard": "#CA8A04",
+  "orange": "#F97316",
+  "red": "#DC2626",
+  "crimson": "#DC2626",
+  "pink": "#EC4899",
+  "rose": "#F43F5E",
+  "brown": "#78350F",
+  "chocolate": "#451A03",
+  "bronze": "#CD7F32",
+  "copper": "#B87333",
+  "silver": "#94A3B8",
+  "grey": "#6B7280",
+  "gray": "#6B7280",
+  "charcoal": "#374151",
+  "teal": "#0D9488",
+  "cyan": "#06B6D4",
+  "khaki": "#A3A380",
+  "beige": "#F5F5DC",
+  "tan": "#D2B48C",
+};
+
+export function resolveColorHex(colorName: string, existingHex?: string, variants?: any[]): string {
+  const normName = (colorName || "").trim().toLowerCase();
+  if (existingHex && existingHex.startsWith("#") && existingHex.length >= 4) {
+    const normHex = existingHex.toLowerCase();
+    if (normHex !== "#111111" && normHex !== "#000000" && normHex !== "#111") {
+      return existingHex;
+    }
+    if (normName.includes("black") || normName.includes("obsidian") || normName.includes("dark")) {
+      return existingHex;
+    }
+  }
+
+  if (Array.isArray(variants)) {
+    const varMatch = variants.find(
+      (v: any) =>
+        v.color?.toLowerCase() === normName &&
+        v.colorHex &&
+        v.colorHex !== "#111111" &&
+        v.colorHex !== "#000000"
+    );
+    if (varMatch?.colorHex) return varMatch.colorHex;
+  }
+
+  if (KNOWN_COLOR_HEX_MAP[normName]) {
+    return KNOWN_COLOR_HEX_MAP[normName];
+  }
+
+  for (const [key, hex] of Object.entries(KNOWN_COLOR_HEX_MAP)) {
+    if (normName.includes(key) || key.includes(normName)) {
+      return hex;
+    }
+  }
+
+  return existingHex || "#D97706";
+}
+
 export async function getStorefrontProducts(
   tenantSlug?: string,
   vertical?: VerticalType
@@ -208,37 +306,157 @@ export async function getStorefrontProducts(
               description: `${r.product_name} · Sourced directly from merchant live inventory.`,
               fashionMeta: isFashion
                 ? {
-                    sizes: (meta.fashionMeta?.sizes || (typeof meta.sizes === "string" ? meta.sizes.split(",").map((s: string) => s.trim()) : meta.sizes) || ["XS", "S", "M", "L", "XL", "Bespoke Cut"]),
-                    colors: (meta.fashionMeta?.colors || (typeof meta.colors === "string" ? meta.colors.split(",").map((c: string) => ({ name: c.trim(), hex: "#111111" })) : meta.colors) || FASHION_PALETTES[idx % FASHION_PALETTES.length]),
-                    prints: (() => {
-                      const raw = meta.fashionMeta?.prints || (typeof meta.prints === "string" ? meta.prints.split(",").map((p: string) => p.trim()) : meta.prints);
+                    sizes:
+                      meta.fashionSizes ||
+                      meta.fashionMeta?.sizes ||
+                      (typeof meta.sizes === "string"
+                        ? meta.sizes.split(",").map((s: string) => s.trim()).filter(Boolean)
+                        : meta.sizes) ||
+                      meta.attributes?.sizes ||
+                      ["XS", "S", "M", "L", "XL", "Bespoke Cut"],
+                    colors: (() => {
+                      const raw =
+                        meta.fashionColors ||
+                        meta.fashionMeta?.colors ||
+                        meta.colors ||
+                        meta.attributes?.fashionColors ||
+                        meta.attributes?.colors ||
+                        meta.attributes?.fashionMeta?.colors;
+
+                      let parsed: Array<{ name: string; hex: string }> = [];
+
                       if (Array.isArray(raw) && raw.length > 0) {
-                        return raw.map((p: any) => {
-                          if (typeof p === "string") {
-                            const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === p.toLowerCase());
-                            return {
-                              name: p,
-                              image: found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
-                              description: found?.description,
-                            };
-                          }
-                          return p;
-                        });
-                      }
-                      if (Array.isArray(meta.variants) && meta.variants.length > 0) {
-                        const uniquePrintNames = Array.from(new Set(meta.variants.map((v: any) => v.print).filter(Boolean)));
-                        if (uniquePrintNames.length > 0) {
-                          return uniquePrintNames.map((name) => {
-                            const varMatch = meta.variants.find((v: any) => v.print === name);
-                            const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === (name as string).toLowerCase());
+                        parsed = raw
+                          .map((c: any) => {
+                            if (typeof c === "string") {
+                              const name = c.trim();
+                              return {
+                                name,
+                                hex: resolveColorHex(name, undefined, meta.variants),
+                              };
+                            }
+                            const name = c?.name || "Default";
                             return {
                               name,
-                              image: varMatch?.printImage || found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
-                              description: found?.description,
+                              hex: resolveColorHex(name, c?.hex, meta.variants),
+                            };
+                          })
+                          .filter((c) => c.name);
+                      } else if (typeof raw === "string" && raw.trim()) {
+                        parsed = raw
+                          .split(",")
+                          .map((s: string) => {
+                            const name = s.trim();
+                            return {
+                              name,
+                              hex: resolveColorHex(name, undefined, meta.variants),
+                            };
+                          })
+                          .filter((c) => c.name);
+                      } else if (Array.isArray(meta.variants) && meta.variants.length > 0) {
+                        const uniqueColors = Array.from(
+                          new Set(meta.variants.map((v: any) => v.color).filter(Boolean))
+                        ) as string[];
+                        if (uniqueColors.length > 0) {
+                          parsed = uniqueColors.map((name) => {
+                            const vMatch = meta.variants.find((v: any) => v.color === name);
+                            return {
+                              name,
+                              hex: resolveColorHex(name, vMatch?.colorHex, meta.variants),
                             };
                           });
                         }
                       }
+
+                      if (parsed.length === 0) {
+                        parsed = FASHION_PALETTES[idx % FASHION_PALETTES.length];
+                      }
+
+                      return parsed;
+                    })(),
+                    prints: (() => {
+                      const raw =
+                        meta.fashionPrints ||
+                        meta.fashionMeta?.prints ||
+                        meta.prints ||
+                        meta.attributes?.fashionPrints ||
+                        meta.attributes?.prints ||
+                        meta.attributes?.fashionMeta?.prints;
+
+                      if (Array.isArray(raw) && raw.length > 0) {
+                        return raw.map((p: any) => {
+                          if (typeof p === "string") {
+                            const trimmed = p.trim();
+                            const found = AFRICAN_PRINT_PRESETS.find(
+                              (pre) => pre.name.toLowerCase() === trimmed.toLowerCase()
+                            );
+                            const varMatch = Array.isArray(meta.variants)
+                              ? meta.variants.find((v: any) => v.print?.toLowerCase() === trimmed.toLowerCase())
+                              : null;
+                            return {
+                              name: trimmed,
+                              image:
+                                varMatch?.printImage ||
+                                found?.image ||
+                                "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+                              description: found?.description || "Artisanal African fabric print",
+                            };
+                          }
+                          return {
+                            name: p?.name || "African Wax Print",
+                            image:
+                              p?.image ||
+                              "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+                            description: p?.description || "Artisanal African fabric print",
+                          };
+                        });
+                      }
+
+                      if (typeof raw === "string" && raw.trim()) {
+                        return raw
+                          .split(",")
+                          .map((s: string) => {
+                            const name = s.trim();
+                            const found = AFRICAN_PRINT_PRESETS.find(
+                              (pre) => pre.name.toLowerCase() === name.toLowerCase()
+                            );
+                            const varMatch = Array.isArray(meta.variants)
+                              ? meta.variants.find((v: any) => v.print?.toLowerCase() === name.toLowerCase())
+                              : null;
+                            return {
+                              name,
+                              image:
+                                varMatch?.printImage ||
+                                found?.image ||
+                                "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+                              description: found?.description || "Artisanal African fabric print",
+                            };
+                          })
+                          .filter((p) => p.name);
+                      }
+
+                      if (Array.isArray(meta.variants) && meta.variants.length > 0) {
+                        const uniquePrintNames = Array.from(
+                          new Set(meta.variants.map((v: any) => v.print).filter(Boolean))
+                        );
+                        if (uniquePrintNames.length > 0) {
+                          return uniquePrintNames.map((name) => {
+                            const varMatch = meta.variants.find((v: any) => v.print === name);
+                            const found = AFRICAN_PRINT_PRESETS.find(
+                              (pre) => pre.name.toLowerCase() === (name as string).toLowerCase()
+                            );
+                            return {
+                              name: name as string,
+                              image:
+                                varMatch?.printImage ||
+                                found?.image ||
+                                "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+                              description: found?.description || "Artisanal African fabric print",
+                            };
+                          });
+                        }
+                      }
+
                       return [AFRICAN_PRINT_PRESETS[0], AFRICAN_PRINT_PRESETS[1]];
                     })(),
                     materials: meta.material ? [meta.material] : ["100% Normandy Flax Linen", "Handwoven Aso-Oke"],

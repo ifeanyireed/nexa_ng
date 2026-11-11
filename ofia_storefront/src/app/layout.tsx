@@ -45,8 +45,11 @@ export default async function RootLayout({
   const tenantVertical = headerList.get("x-tenant-vertical") || null;
 
   return (
-    <html lang="en" className={`${dropa.variable} antialiased`}>
-      <body className="min-h-screen bg-white text-[#111318] selection:bg-[#0069ff]/20 selection:text-[#0069ff]">
+    <html lang="en" className={`${dropa.variable} antialiased`} suppressHydrationWarning>
+      <body
+        className="min-h-screen bg-white text-[#111318] selection:bg-[#0069ff]/20 selection:text-[#0069ff]"
+        suppressHydrationWarning
+      >
         <StorefrontTenantProvider initialTenantSlug={tenantSlug} initialVertical={tenantVertical}>
           <BuyerAuthProvider>
             <CartProvider>

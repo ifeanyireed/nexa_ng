@@ -254,8 +254,33 @@ export default function FashionStorefrontView() {
                       </p>
                     </div>
 
+                    {product.fashionMeta?.prints && product.fashionMeta.prints.length > 0 && (
+                      <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
+                        <div className="flex -space-x-1.5 overflow-hidden py-0.5">
+                          {product.fashionMeta.prints.slice(0, 3).map((p: any) => (
+                            <span
+                              key={p.name}
+                              className="inline-block w-5 h-5 rounded-full ring-2 ring-white overflow-hidden shrink-0 shadow-xs"
+                              title={`African Print: ${p.name}`}
+                            >
+                              {p.image ? (
+                                <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="w-full h-full bg-amber-700 text-[8px] text-white flex items-center justify-center font-bold">
+                                  {p.name.slice(0, 1)}
+                                </span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="text-[11px] font-medium text-amber-900 truncate">
+                          {product.fashionMeta.prints.map((p: any) => p.name).join(" · ")}
+                        </span>
+                      </div>
+                    )}
+
                     {product.fashionMeta ? (
-                      <div className="flex items-center justify-between pt-2.5 border-t border-stone-100">
+                      <div className="flex items-center justify-between pt-2 border-t border-stone-100">
                         <div className="flex items-center gap-1.5">
                           {product.fashionMeta.colors.map((c) => (
                             <span

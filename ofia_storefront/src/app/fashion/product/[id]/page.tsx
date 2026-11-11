@@ -10,6 +10,7 @@ import SwipeableImageGallery from "@/components/common/SwipeableImageGallery";
 import { useCart } from "@/context/CartContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { AFRICAN_PRINT_PRESETS } from "@/types/storefront";
 import {
   Ruler,
   ShoppingBag,
@@ -42,38 +43,101 @@ export default function FashionProductDetailPage() {
   const product = liveProducts.find((p) => p.id === productId);
 
   const normalizedPrints = useMemo(() => {
-    if (!product?.fashionMeta?.prints || !Array.isArray(product.fashionMeta.prints)) return [];
-    return product.fashionMeta.prints.map((p) => {
-      if (typeof p === "string") {
+    const rawPrints =
+      product?.fashionMeta?.prints ||
+      (product as any)?.prints ||
+      (product as any)?.attributes?.prints ||
+      (product as any)?.attributes?.fashionPrints;
+
+    if (Array.isArray(rawPrints) && rawPrints.length > 0) {
+      return rawPrints.map((p) => {
+        if (typeof p === "string") {
+          const trimmed = p.trim();
+          const found = AFRICAN_PRINT_PRESETS.find(
+            (pre) => pre.name.toLowerCase() === trimmed.toLowerCase()
+          );
+          const varMatch = product?.variants?.find(
+            (v) => v.print?.toLowerCase() === trimmed.toLowerCase()
+          );
+          return {
+            name: trimmed,
+            image:
+              varMatch?.printImage ||
+              found?.image ||
+              "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+            description: found?.description || "Artisanal African fabric print",
+          };
+        }
         return {
-          name: p,
-          image: "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
-          description: "Artisanal African fabric print",
+          name: p?.name || "African Print",
+          image:
+            p?.image ||
+            "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+          description: p?.description || "Artisanal African fabric print",
         };
+      });
+    }
+
+    if (Array.isArray(product?.variants) && product.variants.length > 0) {
+      const uniquePrintNames = Array.from(
+        new Set(product.variants.map((v) => v.print).filter(Boolean))
+      );
+      if (uniquePrintNames.length > 0) {
+        return uniquePrintNames.map((name) => {
+          const varMatch = product.variants?.find((v) => v.print === name);
+          const found = AFRICAN_PRINT_PRESETS.find(
+            (pre) => pre.name.toLowerCase() === (name as string).toLowerCase()
+          );
+          return {
+            name: name as string,
+            image:
+              varMatch?.printImage ||
+              found?.image ||
+              "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+            description: found?.description || "Artisanal African fabric print",
+          };
+        });
       }
-      return {
-        name: p.name,
-        image: p.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
-        description: p.description || "Artisanal African fabric print",
-      };
-    });
-  }, [product?.fashionMeta?.prints]);
+    }
+
+    return [];
+  }, [product]);
 
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedPrint, setSelectedPrint] = useState(
-    normalizedPrints[0]?.name || (typeof product?.fashionMeta?.prints?.[0] === "string" ? product.fashionMeta.prints[0] : (product?.fashionMeta?.prints?.[0] as any)?.name) || ""
-  );
-  const [selectedPrintImage, setSelectedPrintImage] = useState(
-    normalizedPrints[0]?.image || (product?.fashionMeta?.prints?.[0] as any)?.image || ""
-  );
-  const [selectedColor, setSelectedColor] = useState(
-    product?.fashionMeta?.colors[0]?.name || "Raw Sandstone"
-  );
-  const [selectedSize, setSelectedSize] = useState(
-    product?.fashionMeta?.sizes[1] || "M"
-  );
+  const [selectedPrint, setSelectedPrint] = useState("");
+  const [selectedPrintImage, setSelectedPrintImage] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
+
+  // Auto-sync selected print when product/normalizedPrints loads
+  useEffect(() => {
+    if (normalizedPrints.length > 0) {
+      if (!selectedPrint || !normalizedPrints.some((p) => p.name === selectedPrint)) {
+        setSelectedPrint(normalizedPrints[0].name);
+        setSelectedPrintImage(normalizedPrints[0].image);
+      }
+    }
+  }, [normalizedPrints, selectedPrint]);
+
+  // Auto-sync selected color when product colors load
+  useEffect(() => {
+    if (product?.fashionMeta?.colors && product.fashionMeta.colors.length > 0) {
+      if (!selectedColor || !product.fashionMeta.colors.some((c) => c.name === selectedColor)) {
+        setSelectedColor(product.fashionMeta.colors[0].name);
+      }
+    }
+  }, [product?.fashionMeta?.colors, selectedColor]);
+
+  // Auto-sync selected size when product sizes load
+  useEffect(() => {
+    if (product?.fashionMeta?.sizes && product.fashionMeta.sizes.length > 0) {
+      if (!selectedSize || !product.fashionMeta.sizes.includes(selectedSize)) {
+        setSelectedSize(product.fashionMeta.sizes[0] || "M");
+      }
+    }
+  }, [product?.fashionMeta?.sizes, selectedSize]);
 
   // African Fabric Print Preview Modal/Frame
   const [previewPrint, setPreviewPrint] = useState<{

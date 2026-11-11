@@ -44,7 +44,22 @@ export interface CrmLead {
   linkedinUrl?: string;
   icpFitScore: number;
   buyingSignals: string[];
-  status: "CURIOUS" | "IDENTIFIED" | "ENRICHED" | "CONTACTED" | "QUALIFIED" | "PROPOSAL" | "MEETING_BOOKED" | "CONVERTED" | "ARCHIVED";
+  status:
+    | "CURIOUS"
+    | "IDENTIFIED"
+    | "ENRICHED"
+    | "CONTACTED"
+    | "PROPOSAL"
+    | "NOT READY"
+    | "NOT_READY"
+    | "AWAITING RESPONSE"
+    | "AWAITING_RESPONSE"
+    | "MEETING BOOKED"
+    | "MEETING_BOOKED"
+    | "QUALIFIED"
+    | "CONVERTED"
+    | "ARCHIVED"
+    | (string & {});
   assignedRep?: string;
   source?: string;
   audienceList?: string;

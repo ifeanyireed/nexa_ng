@@ -147,6 +147,65 @@ const LEAD_COVER_LETTER_TEMPLATES: Record<string, LeadCoverLetterTemplate> = {
   },
 };
 
+const LEAD_STATUS_OPTIONS = [
+  "CURIOUS",
+  "CONTACTED",
+  "PROPOSAL",
+  "NOT READY",
+  "AWAITING RESPONSE",
+  "MEETING BOOKED",
+  "QUALIFIED",
+  "CONVERTED",
+  "ARCHIVED",
+] as const;
+
+const LEAD_STATUS_FILTERS = [
+  "ALL",
+  "CURIOUS",
+  "CONTACTED",
+  "PROPOSAL",
+  "NOT READY",
+  "AWAITING RESPONSE",
+  "MEETING BOOKED",
+  "QUALIFIED",
+  "CONVERTED",
+] as const;
+
+function normalizeLeadStatus(st?: string): string {
+  if (!st) return "CURIOUS";
+  const upper = st.replace(/_/g, " ").trim().toUpperCase();
+  if (upper === "MEETING BOOKED") return "MEETING BOOKED";
+  if (upper === "NOT READY") return "NOT READY";
+  if (upper === "AWAITING RESPONSE") return "AWAITING RESPONSE";
+  return st;
+}
+
+function getLeadStatusBadgeStyle(st?: string): string {
+  const norm = normalizeLeadStatus(st).toUpperCase();
+  switch (norm) {
+    case "CURIOUS":
+      return "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/30";
+    case "CONTACTED":
+      return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30";
+    case "PROPOSAL":
+      return "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/30";
+    case "NOT READY":
+      return "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30 font-semibold";
+    case "AWAITING RESPONSE":
+      return "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30 font-semibold";
+    case "MEETING BOOKED":
+      return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 font-bold";
+    case "QUALIFIED":
+      return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30";
+    case "CONVERTED":
+      return "bg-emerald-600/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/50 font-black";
+    case "ARCHIVED":
+      return "bg-zinc-500/10 text-zinc-500 border-zinc-500/30";
+    default:
+      return "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)]";
+  }
+}
+
 export default function CrmLeadsPage() {
   const { activeTenant } = useActiveTenant();
   const [leads, setLeads] = useState<CrmLead[]>([]);
@@ -1090,11 +1149,13 @@ export default function CrmLeadsPage() {
 
     // If still no specific call outcome, check if lead status confirms they have been contacted!
     if (lead) {
+      const st = normalizeLeadStatus(lead.status).toUpperCase();
       if (
-        lead.status === "CONVERTED" ||
-        lead.status === "MEETING_BOOKED" ||
-        lead.status === "QUALIFIED" ||
-        lead.status === "PROPOSAL"
+        st === "CONVERTED" ||
+        st === "MEETING BOOKED" ||
+        st === "QUALIFIED" ||
+        st === "PROPOSAL" ||
+        st === "AWAITING RESPONSE"
       ) {
         return {
           color: "green" as const,
@@ -1103,11 +1164,11 @@ export default function CrmLeadsPage() {
           dotClass: "bg-emerald-500",
         };
       }
-      if (lead.status === "CONTACTED") {
+      if (st === "CONTACTED" || st === "NOT READY") {
         return {
           color: "yellow" as const,
-          label: "Contacted",
-          tooltip: "Contacted - Click to record call details",
+          label: st === "NOT READY" ? "Not Ready" : "Contacted",
+          tooltip: `${lead.status} - Click to record call details`,
           dotClass: "bg-amber-500",
         };
       }
@@ -1786,7 +1847,12 @@ export default function CrmLeadsPage() {
       loc.includes(q) ||
       phone.includes(q) ||
       audList.includes(q);
-    const matchStatus = statusFilter === "ALL" || l.status === statusFilter;
+    const matchStatus =
+      statusFilter === "ALL" ||
+      l.status === statusFilter ||
+      (Boolean(l.status) &&
+        normalizeLeadStatus(l.status).toUpperCase() ===
+          normalizeLeadStatus(statusFilter).toUpperCase());
 
     let matchCallStatus = true;
     if (callStatusFilter !== "ALL") {
@@ -1915,7 +1981,7 @@ export default function CrmLeadsPage() {
             },
             {
               label: "Meetings Booked",
-              value: leads.filter((l) => l.status === "MEETING_BOOKED").length.toString(),
+              value: leads.filter((l) => normalizeLeadStatus(l.status) === "MEETING BOOKED").length.toString(),
               change: "Direct rep handoffs",
               changeType: "success",
               icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />,
@@ -1985,7 +2051,7 @@ export default function CrmLeadsPage() {
               <Sparkles className={`w-3.5 h-3.5 ${phoneFilter === "MISSING" ? "text-white" : "text-amber-500"}`} />
               <span>Needs Phone ({missingPhoneCount})</span>
             </button>
-            {["ALL", "CURIOUS", "IDENTIFIED", "CONTACTED", "PROPOSAL", "MEETING_BOOKED", "QUALIFIED", "CONVERTED"].map((st) => (
+            {LEAD_STATUS_FILTERS.map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
@@ -2298,24 +2364,30 @@ export default function CrmLeadsPage() {
                     <td className="py-3.5 px-4">
                       <div className="relative inline-block">
                             <select
-                              value={lead.status}
+                              value={normalizeLeadStatus(lead.status)}
                               onChange={(e) =>
                                 handleUpdateLeadField(lead.id, {
                                   status: e.target.value as any,
                                 })
                               }
                               disabled={updatingLeadId === lead.id}
-                              className="appearance-none pl-2.5 pr-6 py-1 rounded-lg text-xs font-semibold cursor-pointer border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/50 transition-all focus:outline-none focus:ring-1 focus:ring-[#1A56DB] disabled:opacity-50"
+                              className={`appearance-none pl-2.5 pr-6 py-1 rounded-lg text-xs font-semibold cursor-pointer border transition-all focus:outline-none focus:ring-1 focus:ring-[#1A56DB] disabled:opacity-50 ${getLeadStatusBadgeStyle(lead.status)}`}
                               title="Click to change lead status"
                             >
-                              <option value="CURIOUS">CURIOUS</option>
-                              <option value="IDENTIFIED">IDENTIFIED</option>
-                              <option value="CONTACTED">CONTACTED</option>
-                              <option value="PROPOSAL">PROPOSAL</option>
-                              <option value="MEETING_BOOKED">MEETING_BOOKED</option>
-                              <option value="QUALIFIED">QUALIFIED</option>
-                              <option value="CONVERTED">CONVERTED</option>
-                              <option value="ARCHIVED">ARCHIVED</option>
+                              {LEAD_STATUS_OPTIONS.map((opt) => (
+                                <option
+                                  key={opt}
+                                  value={opt}
+                                  className="bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-primary)]"
+                                >
+                                  {opt}
+                                </option>
+                              ))}
+                              {lead.status === "IDENTIFIED" && (
+                                <option value="IDENTIFIED" disabled hidden>
+                                  IDENTIFIED (Legacy)
+                                </option>
+                              )}
                             </select>
                             <ChevronDown className="w-3 h-3 text-[var(--nexa-text-muted)] absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
@@ -2681,18 +2753,20 @@ export default function CrmLeadsPage() {
                 Lead Status
               </label>
               <select
-                value={editStatus}
+                value={normalizeLeadStatus(editStatus)}
                 onChange={(e) => setEditStatus(e.target.value)}
                 className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
               >
-                <option value="CURIOUS">CURIOUS</option>
-                <option value="IDENTIFIED">IDENTIFIED</option>
-                <option value="CONTACTED">CONTACTED</option>
-                <option value="PROPOSAL">PROPOSAL</option>
-                <option value="MEETING_BOOKED">MEETING_BOOKED</option>
-                <option value="QUALIFIED">QUALIFIED</option>
-                <option value="CONVERTED">CONVERTED</option>
-                <option value="ARCHIVED">ARCHIVED</option>
+                {LEAD_STATUS_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+                {editStatus === "IDENTIFIED" && (
+                  <option value="IDENTIFIED" disabled hidden>
+                    IDENTIFIED (Legacy)
+                  </option>
+                )}
               </select>
             </div>
           </div>

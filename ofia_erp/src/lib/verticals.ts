@@ -350,6 +350,7 @@ export interface CommerceProductItem {
   price: number;
   formattedPrice: string;
   category: string;
+  collection?: string;
   stock: number;
   image: string;
   images?: string[];
@@ -1255,5 +1256,103 @@ export function getStorefrontUrl(
 
   // 4. Production storefront URL: https://<tenantSlug>.ofia.shop/<path>
   return `https://${slug}.${storefrontRootDomain}${resolvedPath}`;
+}
+
+export const KNOWN_COLOR_HEX_MAP: Record<string, string> = {
+  "midnight black": "#111111",
+  "obsidian black": "#111111",
+  "black": "#111111",
+  "emerald green": "#047857",
+  "forest emerald": "#1F4E3D",
+  "green": "#16A34A",
+  "olive": "#4A5240",
+  "olive moss": "#4A5240",
+  "royal navy": "#1E3A8A",
+  "midnight navy": "#152238",
+  "deep indigo": "#1E2A38",
+  "navy": "#1E3A8A",
+  "blue": "#2563EB",
+  "terracotta ochre": "#C2410C",
+  "terracotta clay": "#9E4731",
+  "terracotta": "#C2410C",
+  "rich gold": "#D97706",
+  "champagne gold": "#DFD3B6",
+  "gold": "#D97706",
+  "ruby wine": "#991B1B",
+  "ruby": "#991B1B",
+  "wine": "#722F37",
+  "burgundy": "#800020",
+  "maroon": "#800000",
+  "ivory cream": "#F8FAFC",
+  "ivory": "#FFFFF0",
+  "cream": "#FFFDD0",
+  "raw sandstone": "#D6C7B2",
+  "camel taupe": "#C2A383",
+  "taupe": "#B38B6D",
+  "sand": "#C2B280",
+  "white": "#FFFFFF",
+  "sunset coral": "#FB7185",
+  "coral": "#F87171",
+  "peach": "#FDBA74",
+  "deep amethyst": "#581C87",
+  "amethyst": "#9333EA",
+  "purple": "#9333EA",
+  "violet": "#7C3AED",
+  "yellow": "#EAB308",
+  "mustard": "#CA8A04",
+  "orange": "#F97316",
+  "red": "#DC2626",
+  "crimson": "#DC2626",
+  "pink": "#EC4899",
+  "rose": "#F43F5E",
+  "brown": "#78350F",
+  "chocolate": "#451A03",
+  "bronze": "#CD7F32",
+  "copper": "#B87333",
+  "silver": "#94A3B8",
+  "grey": "#6B7280",
+  "gray": "#6B7280",
+  "charcoal": "#374151",
+  "teal": "#0D9488",
+  "cyan": "#06B6D4",
+  "khaki": "#A3A380",
+  "beige": "#F5F5DC",
+  "tan": "#D2B48C",
+};
+
+export function resolveColorHex(colorName: string, existingHex?: string, variants?: any[]): string {
+  const normName = (colorName || "").trim().toLowerCase();
+  if (existingHex && existingHex.startsWith("#") && existingHex.length >= 4) {
+    const normHex = existingHex.toLowerCase();
+    if (normHex !== "#111111" && normHex !== "#000000" && normHex !== "#111") {
+      return existingHex;
+    }
+    if (normName.includes("black") || normName.includes("obsidian") || normName.includes("dark")) {
+      return existingHex;
+    }
+  }
+
+  if (Array.isArray(variants)) {
+    const varMatch = variants.find(
+      (v: any) =>
+        v.color?.toLowerCase() === normName &&
+        v.colorHex &&
+        v.colorHex !== "#111111" &&
+        v.colorHex !== "#000000"
+    );
+    if (varMatch?.colorHex) return varMatch.colorHex;
+  }
+
+  if (KNOWN_COLOR_HEX_MAP[normName]) {
+    return KNOWN_COLOR_HEX_MAP[normName];
+  }
+
+  for (const [key, hex] of Object.entries(KNOWN_COLOR_HEX_MAP)) {
+    if (normName.includes(key) || key.includes(normName)) {
+      return hex;
+    }
+  }
+
+  return existingHex || "#D97706";
 }
 

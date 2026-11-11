@@ -292,6 +292,7 @@ export async function getStorefrontProducts(
                 : undefined,
               price: Number(r.unit_price) || 0,
               category: r.category || (isFashion ? "Couture & Tailoring" : "General"),
+              collection: meta.collection || meta.attributes?.collection || undefined,
               images: resolvedImages,
               rating: 4.9,
               reviewsCount: 18 + idx * 7,
@@ -306,6 +307,8 @@ export async function getStorefrontProducts(
               description: `${r.product_name} · Sourced directly from merchant live inventory.`,
               fashionMeta: isFashion
                 ? {
+                    collection: meta.collection || meta.attributes?.collection || undefined,
+                    season: meta.season || meta.attributes?.season || undefined,
                     sizes:
                       meta.fashionSizes ||
                       meta.fashionMeta?.sizes ||

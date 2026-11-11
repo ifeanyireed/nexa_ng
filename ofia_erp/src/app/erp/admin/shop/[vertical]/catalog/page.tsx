@@ -51,8 +51,8 @@ import {
   AFRICAN_PRINT_PRESETS,
   VerticalKey,
   getStorefrontUrl,
+  resolveColorHex,
 } from "@/lib/verticals";
-import { resolveColorHex } from "@/lib/commerce-products-store";
 
 const AFRICAN_COLOR_PRESETS: Array<{ name: string; hex: string }> = [
   { name: "Midnight Black", hex: "#111111" },
@@ -134,6 +134,7 @@ export default function VerticalCatalogPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [collectionFilter, setCollectionFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -147,7 +148,7 @@ export default function VerticalCatalogPage() {
   const [formName, setFormName] = useState("");
   const [formPrice, setFormPrice] = useState("");
   const [formCategory, setFormCategory] = useState("General");
-  const [formStock, setFormStock] = useState("10");
+  const [formStock, setFormStock] = useState("1");
   const [formSku, setFormSku] = useState("");
   const [formImage, setFormImage] = useState("");
   const [formImages, setFormImages] = useState<string[]>([]);
@@ -885,8 +886,15 @@ export default function VerticalCatalogPage() {
               setTenantCategoriesList(mapped);
               setTenantCategories(mapped.map((m: any) => m.name));
             }
-            if (Array.isArray(data.config.collectionsList) && data.config.collectionsList.length > 0) {
-              setTenantCollectionsList(data.config.collectionsList);
+            const rawCols =
+              data.config.collectionsList ||
+              data.config.collections?.collectionsList ||
+              (Array.isArray(data.config.collections) ? data.config.collections : null);
+            if (Array.isArray(rawCols) && rawCols.length > 0) {
+              const mappedCols: CustomCollectionItem[] = rawCols.map((col: any, i: number) =>
+                typeof col === "string" ? { id: `col-${i + 1}`, name: col } : col
+              );
+              setTenantCollectionsList(mappedCols);
             }
           }
         })
@@ -900,7 +908,7 @@ export default function VerticalCatalogPage() {
     setFormPrice(verticalKey === "fashion" ? "65000" : "");
     setFormCategory(tenantCategoriesList[0]?.name || (verticalKey === "fashion" ? "African Heritage" : "General"));
     setFormCollection(tenantCollectionsList[0]?.name || "Vida Collection");
-    setFormStock("10");
+    setFormStock("1");
     setFormSku(initSku);
     setFormImage("");
     setFormImages([]);
@@ -922,7 +930,7 @@ export default function VerticalCatalogPage() {
         defColors,
         defSizes,
         65000,
-        10,
+        1,
         initSku
       );
       setFashionVariants(initialVars);
@@ -982,6 +990,7 @@ export default function VerticalCatalogPage() {
       name: formName,
       price: numPrice,
       category: formCategory,
+      collection: formCollection,
       stock: finalStock,
       sku: formSku,
       image: primaryImage,
@@ -1029,8 +1038,14 @@ export default function VerticalCatalogPage() {
     setFormName(product.name);
     setFormPrice(String(product.price));
     setFormCategory(product.category || tenantCategoriesList[0]?.name || "African Heritage");
-    setFormCollection(product.attributes?.collection || tenantCollectionsList[0]?.name || "Vida Collection");
-    setFormStock(String(product.stock));
+    const activeCol =
+      product.collection ||
+      product.attributes?.collection ||
+      (product as any).collection ||
+      tenantCollectionsList[0]?.name ||
+      "Vida Collection";
+    setFormCollection(activeCol);
+    setFormStock(String(product.stock !== undefined ? product.stock : 1));
     setFormSku(product.sku || "");
     const initialImages = Array.isArray(product.images) && product.images.length > 0
       ? product.images.filter(Boolean)
@@ -1186,7 +1201,7 @@ export default function VerticalCatalogPage() {
           finalColors,
           finalSizes,
           product.price || 0,
-          product.stock || 5,
+          product.stock !== undefined ? product.stock : 1,
           product.sku || "SKU-FASH"
         );
         setFashionVariants(gen);
@@ -1204,9 +1219,13 @@ export default function VerticalCatalogPage() {
         p.category.toLowerCase().includes(search.toLowerCase()) ||
         (p.sku && p.sku.toLowerCase().includes(search.toLowerCase()));
       const matchCat = categoryFilter === "ALL" || p.category === categoryFilter;
-      return matchSearch && matchCat;
+      const prodCol = (p as any).collection || p.attributes?.collection || "";
+      const matchCol =
+        collectionFilter === "ALL" ||
+        prodCol.toLowerCase() === collectionFilter.toLowerCase();
+      return matchSearch && matchCat && matchCol;
     });
-  }, [products, search, categoryFilter]);
+  }, [products, search, categoryFilter, collectionFilter]);
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
   const paginatedProducts = useMemo(() => {
@@ -1222,6 +1241,16 @@ export default function VerticalCatalogPage() {
     tenantCategories.forEach((c) => set.add(c));
     return Array.from(set);
   }, [products, tenantCategories]);
+
+  const uniqueCollections = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => {
+      const col = (p as any).collection || p.attributes?.collection;
+      if (col) set.add(col);
+    });
+    tenantCollectionsList.forEach((c) => set.add(c.name));
+    return Array.from(set);
+  }, [products, tenantCollectionsList]);
 
   const storefrontCatalogUrl = getStorefrontUrl(verticalKey, activeTenant);
 

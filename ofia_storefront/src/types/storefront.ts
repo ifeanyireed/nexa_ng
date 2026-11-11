@@ -111,6 +111,7 @@ export interface Product {
   price: number;
   originalPrice?: number;
   category: string;
+  collection?: string;
   images: string[];
   rating: number;
   reviewsCount: number;
@@ -128,6 +129,8 @@ export interface Product {
     sizes: string[];
     colors: Array<{ name: string; hex: string }>;
     prints?: Array<string | FabricPrint>;
+    collection?: string;
+    season?: string;
     materials: string[];
     fit: string;
     careInstructions: string;

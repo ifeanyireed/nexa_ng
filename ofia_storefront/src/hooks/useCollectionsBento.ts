@@ -223,14 +223,39 @@ export function useCollectionsBento({
 
   const card3 = useMemo(() => {
     const c3 = config?.collections?.card3;
+    let pillsToUse = autoPills;
+    if (c3?.mode === "static" && Array.isArray(c3?.pills) && c3.pills.length > 0) {
+      const valid = c3.pills.filter((p: any) => p && (p.label || p.image));
+      if (valid.length > 0) {
+        pillsToUse = valid.map((p: any, idx: number) => ({
+          label: p.label || defaults.card3.pills[idx]?.label || "Collation Piece",
+          count: p.count || defaults.card3.pills[idx]?.count || "Pieces",
+          image: p.image || defaults.card3.pills[idx]?.image || "",
+          href: p.href || defaults.card3.pills[idx]?.href || `${catalogPath}`,
+        }));
+      }
+    }
+
+    let bgImage = c3?.backgroundImage || defaults.card3.backgroundImage;
+    const cat3Filter = typeof c3?.category === "string" ? c3.category.trim().toLowerCase() : "";
+    if (cat3Filter) {
+      const match = products.find(
+        (p) => (p.category || "").toLowerCase() === cat3Filter
+      );
+      const matchImg = (match?.images && match.images[0]) || (match as any)?.image;
+      if (matchImg) {
+        bgImage = matchImg;
+      }
+    }
+
     return {
       title: c3?.title || defaults.card3.title,
-      backgroundImage: c3?.backgroundImage || defaults.card3.backgroundImage,
+      backgroundImage: bgImage,
       href: c3?.href || defaults.card3.href,
       theme: (c3?.theme as ContrastTheme) || defaults.card3.theme || "light",
-      pills: autoPills,
+      pills: pillsToUse,
     };
-  }, [config?.collections?.card3, defaults.card3, autoPills]);
+  }, [config?.collections?.card3, defaults.card3, autoPills, products, catalogPath]);
 
   return {
     isEnabled,

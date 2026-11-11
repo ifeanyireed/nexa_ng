@@ -49,16 +49,22 @@ function FashionCatalogContent() {
     return allProducts
       .filter((p) => {
         const matchesCat = selectedCategory === "All" || p.category === selectedCategory;
+        const matchesCollection =
+          !collectionParam ||
+          collectionParam.toLowerCase() === "all" ||
+          (p.collection && p.collection.toLowerCase().includes(collectionParam.toLowerCase())) ||
+          (p.fashionMeta?.collection &&
+            p.fashionMeta.collection.toLowerCase().includes(collectionParam.toLowerCase()));
         const matchesSize =
           selectedSize === "All" || (p.fashionMeta && p.fashionMeta.sizes.includes(selectedSize));
-        return matchesCat && matchesSize;
+        return matchesCat && matchesCollection && matchesSize;
       })
       .sort((a, b) => {
         if (sortBy === "price-asc") return a.price - b.price;
         if (sortBy === "price-desc") return b.price - a.price;
         return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
       });
-  }, [allProducts, selectedCategory, selectedSize, sortBy]);
+  }, [allProducts, selectedCategory, selectedSize, sortBy, collectionParam]);
 
   return (
     <div className="min-h-screen bg-white text-[#1A1A1A] flex flex-col justify-between">

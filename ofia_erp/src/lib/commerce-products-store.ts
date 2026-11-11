@@ -314,6 +314,7 @@ export async function getErpProducts(tenantSlug?: string, vertical?: VerticalKey
 
   // 1. Direct query in dedicated Neon PostgreSQL database
   if (normalizedSlug) {
+    const cleanSlug = normalizedSlug.replace(/-/g, "");
     try {
       const sql = await getTenantSql(normalizedSlug);
       if (sql) {
@@ -327,7 +328,14 @@ export async function getErpProducts(tenantSlug?: string, vertical?: VerticalKey
                    COALESCE(metadata, '{}'::jsonb) as metadata,
                    created_at, updated_at
             FROM shop_inventory
-            WHERE LOWER(tenant_slug) = ${normalizedSlug}
+            WHERE (
+              LOWER(tenant_slug) = ${normalizedSlug}
+              OR REPLACE(LOWER(tenant_slug), '-', '') = ${cleanSlug}
+            )
+            AND (
+              metadata->>'parentId' IS NULL
+              OR metadata->>'parentId' = ''
+            )
             ORDER BY created_at DESC;
           `;
         } catch (colErr) {
@@ -336,7 +344,10 @@ export async function getErpProducts(tenantSlug?: string, vertical?: VerticalKey
                    product_name, category, warehouse, current_stock, min_stock,
                    unit_cost, unit_price, status, supplier, created_at, updated_at
             FROM shop_inventory
-            WHERE LOWER(tenant_slug) = ${normalizedSlug}
+            WHERE (
+              LOWER(tenant_slug) = ${normalizedSlug}
+              OR REPLACE(LOWER(tenant_slug), '-', '') = ${cleanSlug}
+            )
             ORDER BY created_at DESC;
           `;
         }
@@ -358,7 +369,19 @@ export async function getErpProducts(tenantSlug?: string, vertical?: VerticalKey
             return !meta.parentId;
           });
 
-          return masterRows.map((r: any, idx: number) => {
+          const seenIds = new Set<string>();
+          const uniqueMasterRows: any[] = [];
+          for (const r of masterRows) {
+            const key = r.product_id || r.id;
+            if (key && !seenIds.has(key)) {
+              seenIds.add(key);
+              uniqueMasterRows.push(r);
+            } else if (!key) {
+              uniqueMasterRows.push(r);
+            }
+          }
+
+          return uniqueMasterRows.map((r: any, idx: number) => {
             const meta = (typeof r.metadata === "string" ? JSON.parse(r.metadata || "{}") : r.metadata) || {};
             const imgs: string[] = Array.isArray(meta.images) && meta.images.length > 0
               ? meta.images.filter(Boolean)

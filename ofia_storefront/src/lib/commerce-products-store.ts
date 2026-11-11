@@ -199,6 +199,7 @@ export async function getStorefrontProducts(
   ensureProductsFile();
 
   const normalizedSlug = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
+  const cleanSlug = normalizedSlug ? normalizedSlug.replace(/-/g, "") : "";
 
   // 1. Check live merchant inventory on their dedicated database
   if (normalizedSlug) {
@@ -230,7 +231,14 @@ export async function getStorefrontProducts(
                    COALESCE(image_url, '') as image_url,
                    COALESCE(metadata, '{}'::jsonb) as metadata
             FROM shop_inventory
-            WHERE LOWER(tenant_slug) = ${normalizedSlug}
+            WHERE (
+              LOWER(tenant_slug) = ${normalizedSlug}
+              OR REPLACE(LOWER(tenant_slug), '-', '') = ${cleanSlug}
+            )
+            AND (
+              metadata->>'parentId' IS NULL
+              OR metadata->>'parentId' = ''
+            )
             ORDER BY (current_stock > 0) DESC, created_at DESC
             LIMIT 100
           `;
@@ -238,9 +246,12 @@ export async function getStorefrontProducts(
           rows = await sql`
             SELECT id, product_id, sku, product_name, category, current_stock, unit_price, status
             FROM shop_inventory
-            WHERE LOWER(tenant_slug) = ${normalizedSlug}
+            WHERE (
+              LOWER(tenant_slug) = ${normalizedSlug}
+              OR REPLACE(LOWER(tenant_slug), '-', '') = ${cleanSlug}
+            )
             ORDER BY (current_stock > 0) DESC, created_at DESC
-            LIMIT 100
+            LIMIT 250
           `;
         }
 
@@ -273,7 +284,20 @@ export async function getStorefrontProducts(
             return !meta.parentId;
           });
 
-          const liveProducts: Product[] = masterRows.map((r: any, idx: number) => {
+          // Deduplicate rows by product_id / id so that duplicate entries are excluded
+          const seenIds = new Set<string>();
+          const uniqueMasterRows: any[] = [];
+          for (const r of masterRows) {
+            const key = r.product_id || r.id;
+            if (key && !seenIds.has(key)) {
+              seenIds.add(key);
+              uniqueMasterRows.push(r);
+            } else if (!key) {
+              uniqueMasterRows.push(r);
+            }
+          }
+
+          const liveProducts: Product[] = uniqueMasterRows.map((r: any, idx: number) => {
             const meta = (typeof r.metadata === "string" ? JSON.parse(r.metadata || "{}") : r.metadata) || {};
             const metaImages: string[] = Array.isArray(meta.images) && meta.images.length > 0
               ? meta.images

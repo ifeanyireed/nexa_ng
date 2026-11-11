@@ -29,123 +29,32 @@ interface PublicAwardWinner {
   awardYear: number;
 }
 
-const SAMPLE_PUBLIC_WINNERS: Record<number, PublicAwardWinner[]> = {
-  2026: [
-    {
-      id: "pub-1",
-      categoryName: "Employee of the Year",
-      employeeName: "Chioma Okonjo",
-      department: "Finance & Accounts",
-      designation: "Senior Financial Analyst",
-      avatarUrl: "/character1.jpg",
-      citation: "Spearheaded the unified reconciliation framework, reducing month-end close by 5 business days and preventing billing discrepancies.",
-      certificateNumber: "OFIA-2026-AWD-001",
-      awardYear: 2026,
-    },
-    {
-      id: "pub-2",
-      categoryName: "Best Team Player",
-      employeeName: "Fatima Al-Hassan",
-      department: "NOC Central",
-      designation: "Support Team Lead",
-      avatarUrl: "/character4.jpg",
-      citation: "Exemplifying selfless collaboration, continuous training, and round-the-clock support for all operational teams.",
-      certificateNumber: "OFIA-2026-AWD-002",
-      awardYear: 2026,
-    },
-    {
-      id: "pub-3",
-      categoryName: "Most Innovative Employee",
-      employeeName: "Dapo Williams",
-      department: "Systems & IT",
-      designation: "DevOps & Automation Specialist",
-      avatarUrl: "/character6.jpg",
-      citation: "Created the automated deployment pipeline that reduced staging deployment cycles from 45 minutes to 4 minutes.",
-      certificateNumber: "OFIA-2026-AWD-003",
-      awardYear: 2026,
-    },
-    {
-      id: "pub-4",
-      categoryName: "Most Punctual & Disciplined",
-      employeeName: "Ibrahim Musa",
-      department: "Fleet Operations",
-      designation: "Senior Dispatcher",
-      avatarUrl: "/character8.jpg",
-      citation: "Zero late clock-ins across 260 operating days; first to open depot dispatch desk daily.",
-      certificateNumber: "OFIA-2026-AWD-004",
-      awardYear: 2026,
-    },
-    {
-      id: "pub-5",
-      categoryName: "Outstanding Leadership",
-      employeeName: "Olumide Bakare",
-      department: "NOC Central",
-      designation: "Operations Manager",
-      avatarUrl: "/character2.jpg",
-      citation: "Steered the 24/7 Operations Center through high-volume surge periods while maintaining team morale.",
-      certificateNumber: "OFIA-2026-AWD-005",
-      awardYear: 2026,
-    },
-    {
-      id: "pub-6",
-      categoryName: "Best Performing Department",
-      employeeName: "Fleet & Logistics Operations",
-      department: "Operations",
-      designation: "Whole Department",
-      avatarUrl: "/character4.jpg",
-      citation: "Delivered 450,000+ orders across 4 metro regions with 98.7% SLA fulfillment.",
-      certificateNumber: "OFIA-2026-AWD-006",
-      awardYear: 2026,
-    },
-  ],
-  2025: [
-    {
-      id: "pub-2025-1",
-      categoryName: "Employee of the Year",
-      employeeName: "Amarachi Eze",
-      department: "Systems & IT",
-      designation: "Principal Backend Architect",
-      avatarUrl: "/character3.jpg",
-      citation: "Pioneered the offline-first enterprise data engine and microservices backbone.",
-      certificateNumber: "OFIA-2025-AWD-001",
-      awardYear: 2025,
-    },
-    {
-      id: "pub-2025-2",
-      categoryName: "Best Team Player",
-      employeeName: "Fatima Al-Hassan",
-      department: "NOC Central",
-      designation: "Support Team Lead",
-      avatarUrl: "/character4.jpg",
-      citation: "Exemplary mentorship across regional depot dispatchers.",
-      certificateNumber: "OFIA-2025-AWD-002",
-      awardYear: 2025,
-    },
-  ],
-};
-
 export default function PublicAwardsDisplayPage() {
   const params = useParams();
   const tenantSlug = (params?.tenantSlug as string) || "ofia";
-  const yearParam = parseInt((params?.year as string) || "2026", 10);
+  const yearParam = parseInt((params?.year as string) || String(new Date().getFullYear()), 10);
 
   const [selectedYear, setSelectedYear] = useState<number>(yearParam);
-  const [winners, setWinners] = useState<PublicAwardWinner[]>(SAMPLE_PUBLIC_WINNERS[yearParam] || SAMPLE_PUBLIC_WINNERS[2026]);
+  const [winners, setWinners] = useState<PublicAwardWinner[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
-    // Attempt live fetch from public hall-of-fame endpoint
-    fetch(`/api/erp/awards/hall-of-fame?tenant=${tenantSlug}&year=${selectedYear}`)
-      .then((res) => res.json())
+    setIsLoading(true);
+    fetch(`/api/erp/awards/hall-of-fame?tenant=${encodeURIComponent(tenantSlug)}&year=${selectedYear}`)
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.winners && Array.isArray(data.winners) && data.winners.length > 0) {
+        if (data?.winners && Array.isArray(data.winners)) {
           setWinners(data.winners);
         } else {
-          setWinners(SAMPLE_PUBLIC_WINNERS[selectedYear] || []);
+          setWinners([]);
         }
       })
       .catch(() => {
-        setWinners(SAMPLE_PUBLIC_WINNERS[selectedYear] || []);
+        setWinners([]);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }, [tenantSlug, selectedYear]);
 
@@ -185,7 +94,7 @@ export default function PublicAwardsDisplayPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleShare}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 text-xs font-medium transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 text-xs font-medium transition-colors cursor-pointer"
             >
               {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
               {isCopied ? "Link Copied!" : "Share Link"}
@@ -211,16 +120,16 @@ export default function PublicAwardsDisplayPage() {
           Celebrating Excellence
         </h1>
         <p className="text-sm sm:text-base text-white/60 max-w-2xl mx-auto leading-relaxed font-light">
-          Honoring the remarkable dedication, leadership, and outstanding contributions of our colleagues who embody the highest standards of our company culture.
+          Honoring the remarkable dedication, leadership, and outstanding contributions of colleagues who embody the highest standards of our culture.
         </p>
 
         {/* Year Selector Pills */}
         <div className="inline-flex items-center gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10 mt-4">
-          {[2026, 2025].map((yr) => (
+          {[new Date().getFullYear(), new Date().getFullYear() - 1].map((yr) => (
             <button
               key={yr}
               onClick={() => setSelectedYear(yr)}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 selectedYear === yr
                   ? "bg-amber-400 text-black shadow-md"
                   : "text-white/60 hover:text-white"
@@ -234,55 +143,71 @@ export default function PublicAwardsDisplayPage() {
 
       {/* Main Winners Grid */}
       <main className="max-w-6xl mx-auto px-6 pb-24 z-10 relative">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {winners.map((win, idx) => (
-            <div
-              key={win.id || idx}
-              className="p-6 rounded-3xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-amber-400/40 transition-all flex flex-col justify-between relative group overflow-hidden"
-            >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 font-bold text-[11px] uppercase tracking-wider">
-                    {win.awardYear || selectedYear} Winner
-                  </span>
-                  <span className="text-[11px] font-mono text-white/40">
-                    {win.certificateNumber}
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="text-base font-black text-white group-hover:text-amber-300 transition-colors">
-                    {win.categoryName}
-                  </h3>
-                </div>
-
-                <div className="flex items-center gap-3.5 pt-2">
-                  <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-amber-400/50 shrink-0 shadow-md">
-                    <img
-                      src={resolveAvatarUrl(win.avatarUrl)}
-                      alt={win.employeeName}
-                      className="w-full h-full object-cover"
-                    />
+        {isLoading ? (
+          <div className="py-16 text-center text-white/50 text-xs font-medium">
+            Loading official published winners...
+          </div>
+        ) : winners.length === 0 ? (
+          <div className="p-12 rounded-3xl border border-white/10 bg-white/[0.02] text-center max-w-md mx-auto space-y-3">
+            <Trophy className="w-10 h-10 text-amber-400 opacity-60 mx-auto" />
+            <h3 className="text-base font-bold text-white">No Certified Awards Published Yet</h3>
+            <p className="text-xs text-white/50">
+              Official award winners for {selectedYear} will be certified and showcased here once voting and finalization conclude.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {winners.map((win, idx) => (
+              <div
+                key={win.id || idx}
+                className="p-6 rounded-3xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-amber-400/40 transition-all flex flex-col justify-between relative group overflow-hidden"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 font-bold text-[11px] uppercase tracking-wider">
+                      {win.awardYear || selectedYear} Winner
+                    </span>
+                    <span className="text-[11px] font-mono text-white/40">
+                      {win.certificateNumber}
+                    </span>
                   </div>
+
                   <div>
-                    <h4 className="text-sm font-bold text-white">{win.employeeName}</h4>
-                    <div className="text-xs text-white/60">{win.department}</div>
-                    <div className="text-[11px] text-amber-400 font-medium">{win.designation}</div>
+                    <h3 className="text-base font-black text-white group-hover:text-amber-300 transition-colors">
+                      {win.categoryName}
+                    </h3>
                   </div>
+
+                  <div className="flex items-center gap-3.5 pt-2">
+                    <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-amber-400/50 shrink-0 shadow-md">
+                      <img
+                        src={resolveAvatarUrl(win.avatarUrl)}
+                        alt={win.employeeName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">{win.employeeName}</h4>
+                      <div className="text-xs text-white/60">{win.department}</div>
+                      <div className="text-[11px] text-amber-400 font-medium">{win.designation}</div>
+                    </div>
+                  </div>
+
+                  {win.citation && (
+                    <p className="text-xs text-white/70 italic border-l-2 border-amber-400/60 pl-3 leading-relaxed">
+                      "{win.citation}"
+                    </p>
+                  )}
                 </div>
 
-                <p className="text-xs text-white/70 italic border-l-2 border-amber-400/60 pl-3 leading-relaxed">
-                  "{win.citation}"
-                </p>
+                <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-white/50">
+                  <span>Certified Recipient</span>
+                  <span className="text-emerald-400 font-semibold">✓ Verified</span>
+                </div>
               </div>
-
-              <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-white/50">
-                <span>Certified Recipient</span>
-                <span className="text-emerald-400 font-semibold">✓ Verified</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
 
       {/* Footer */}

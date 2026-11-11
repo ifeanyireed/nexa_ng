@@ -170,98 +170,130 @@ export default function EmployeeAwardsPage() {
         {/* TAB 1: CAST YOUR VOTE */}
         {activeTab === "VOTE" && (
           <div className="space-y-6">
-            {/* Active Event Hero Card */}
-            <NexaCard variant="glass" padding="lg" className="rounded-3xl border border-[var(--nexa-border)] bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent relative overflow-hidden">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-1.5 max-w-2xl">
-                  <div className="flex items-center gap-2">
-                    <NexaBadge variant="amber" className="rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider">
-                      {activeEvent?.awardYear || 2026} Annual Awards
-                    </NexaBadge>
-                    <NexaBadge variant="secondary" className="rounded-full text-xs font-medium">
-                      🔒 Anonymous Voting Active
-                    </NexaBadge>
-                  </div>
-                  <h2 className="text-xl font-black text-[var(--nexa-text-primary)]">
-                    Celebrate Excellence: Vote for Your Peers
-                  </h2>
-                  <p className="text-xs text-[var(--nexa-text-muted)] font-medium leading-relaxed">
-                    Recognising colleagues who made outstanding contributions. Select 1 nominee per category. Votes are locked and sealed upon final submission.
+            {!activeEvent && !isLoading ? (
+              <NexaCard
+                variant="glass"
+                padding="lg"
+                className="rounded-3xl border border-[var(--nexa-border)] p-12 text-center flex flex-col items-center justify-center space-y-4"
+              >
+                <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center shadow-lg">
+                  <Trophy className="w-10 h-10" />
+                </div>
+                <div className="space-y-1.5 max-w-md">
+                  <h3 className="text-lg font-black text-[var(--nexa-text-primary)]">
+                    No Active Awards Event
+                  </h3>
+                  <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+                    There are no open employee recognition or awards voting events at this time. Check back when HR announces the next voting cycle!
                   </p>
                 </div>
+              </NexaCard>
+            ) : categories.length === 0 ? (
+              <NexaCard
+                variant="glass"
+                padding="lg"
+                className="rounded-3xl border border-[var(--nexa-border)] p-8 text-center bg-[var(--nexa-bg-surface)] space-y-2"
+              >
+                <Award className="w-8 h-8 text-[var(--nexa-text-muted)] mx-auto opacity-50" />
+                <h4 className="text-sm font-bold text-[var(--nexa-text-primary)]">Nominations Opening Soon</h4>
+                <p className="text-xs text-[var(--nexa-text-muted)] max-w-md mx-auto">
+                  Categories and nominees for {activeEvent?.title || "Annual Awards"} are currently being curated by HR.
+                </p>
+              </NexaCard>
+            ) : (
+              <>
+                {/* Active Event Hero Card */}
+                <NexaCard variant="glass" padding="lg" className="rounded-3xl border border-[var(--nexa-border)] bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1.5 max-w-2xl">
+                      <div className="flex items-center gap-2">
+                        <NexaBadge variant="amber" className="rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider">
+                          {activeEvent?.awardYear || 2026} Annual Awards
+                        </NexaBadge>
+                        <NexaBadge variant="secondary" className="rounded-full text-xs font-medium">
+                          🔒 Anonymous Voting Active
+                        </NexaBadge>
+                      </div>
+                      <h2 className="text-xl font-black text-[var(--nexa-text-primary)]">
+                        {activeEvent?.title || "Celebrate Excellence: Vote for Your Peers"}
+                      </h2>
+                      <p className="text-xs text-[var(--nexa-text-muted)] font-medium leading-relaxed">
+                        {activeEvent?.description || "Recognising colleagues who made outstanding contributions. Select 1 nominee per category. Votes are locked upon submission."}
+                      </p>
+                    </div>
 
-                <div className="flex items-center gap-4 shrink-0">
-                  <div className="text-right">
-                    <div className="text-[11px] text-[var(--nexa-text-muted)] font-medium">Ballot Progress</div>
-                    <div className="text-sm font-black text-[var(--nexa-text-primary)]">
-                      {completedCount} of {totalCategories} Completed
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="text-right">
+                        <div className="text-[11px] text-[var(--nexa-text-muted)] font-medium">Ballot Progress</div>
+                        <div className="text-sm font-black text-[var(--nexa-text-primary)]">
+                          {completedCount} of {totalCategories} Completed
+                        </div>
+                      </div>
+                      {completedCount > 0 && !hasVoted && (
+                        <NexaButton
+                          variant="primary"
+                          size="sm"
+                          onClick={() => setIsReviewModalOpen(true)}
+                          className="bg-[#1A56DB] hover:bg-[#1A56DB]/90 text-white rounded-full font-bold shadow-sm"
+                        >
+                          Review & Submit
+                        </NexaButton>
+                      )}
                     </div>
                   </div>
-                  {completedCount > 0 && !hasVoted && (
+                </NexaCard>
+
+                {/* Voting Already Sealed Warning */}
+                {hasVoted && (
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="w-5 h-5 shrink-0" />
+                      <div>
+                        <div className="text-sm font-bold">Your Ballot is Sealed</div>
+                        <div className="text-xs text-[var(--nexa-text-muted)]">
+                          You have already submitted your votes for this event. View your audit receipt under "My Ballot Status".
+                        </div>
+                      </div>
+                    </div>
                     <NexaButton
-                      variant="primary"
+                      variant="outline"
                       size="sm"
-                      onClick={() => setIsReviewModalOpen(true)}
-                      className="bg-[#1A56DB] hover:bg-[#1A56DB]/90 text-white rounded-full font-bold shadow-sm"
+                      onClick={() => setActiveTab("STATUS")}
+                      className="text-xs border-emerald-500/30 text-emerald-600 rounded-full"
                     >
-                      Review & Submit
+                      View Receipt
                     </NexaButton>
-                  )}
-                </div>
-              </div>
-            </NexaCard>
-
-            {/* Voting Already Sealed Warning */}
-            {hasVoted && (
-              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 shrink-0" />
-                  <div>
-                    <div className="text-sm font-bold">Your Ballot is Sealed</div>
-                    <div className="text-xs text-[var(--nexa-text-muted)]">
-                      You have already submitted your votes for this event. View your audit receipt under "My Ballot Status".
-                    </div>
                   </div>
+                )}
+
+                {/* Category Step Pills */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                  {categories.map((cat, idx) => {
+                    const isSelected = Boolean(selections[cat.id]);
+                    const isCurrent = idx === currentCategoryIndex;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => setCurrentCategoryIndex(idx)}
+                        className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
+                          isCurrent
+                            ? "bg-amber-500/15 border-amber-500/50 text-amber-500 shadow-sm"
+                            : isSelected
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                            : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-[#1A56DB]/40"
+                        }`}
+                      >
+                        <span className="w-4 h-4 rounded-full bg-[var(--nexa-bg-surface)] flex items-center justify-center text-[10px] font-bold">
+                          {isSelected ? "✓" : idx + 1}
+                        </span>
+                        {cat.name}
+                      </button>
+                    );
+                  })}
                 </div>
-                <NexaButton
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setActiveTab("STATUS")}
-                  className="text-xs border-emerald-500/30 text-emerald-600 rounded-full"
-                >
-                  View Receipt
-                </NexaButton>
-              </div>
-            )}
 
-            {/* Category Step Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-              {categories.map((cat, idx) => {
-                const isSelected = Boolean(selections[cat.id]);
-                const isCurrent = idx === currentCategoryIndex;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setCurrentCategoryIndex(idx)}
-                    className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
-                      isCurrent
-                        ? "bg-amber-500/15 border-amber-500/50 text-amber-500 shadow-sm"
-                        : isSelected
-                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                        : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-[#1A56DB]/40"
-                    }`}
-                  >
-                    <span className="w-4 h-4 rounded-full bg-[var(--nexa-bg-surface)] flex items-center justify-center text-[10px] font-bold">
-                      {isSelected ? "✓" : idx + 1}
-                    </span>
-                    {cat.name}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Current Category Workspace */}
-            {currentCategory && (
+                {/* Current Category Workspace */}
+                {currentCategory && (
               <div className="space-y-4">
                 <NexaCard variant="glass" padding="md" className="rounded-3xl">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--nexa-border)] pb-3 mb-4">
@@ -397,8 +429,10 @@ export default function EmployeeAwardsPage() {
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
+      </div>
+    )}
 
         {/* TAB 2: MY BALLOT STATUS & RECEIPT */}
         {activeTab === "STATUS" && (

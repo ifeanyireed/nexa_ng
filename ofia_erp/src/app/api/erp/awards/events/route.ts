@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantSql } from "@/lib/tenant-db-resolver";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
+import { ensureAwardTables } from "@/lib/awards-db";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export async function GET(request: NextRequest) {
     const activeOnly = searchParams.get("active") === "true" || searchParams.get("activeOnly") === "true";
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
 
     // Single event or active event requested
     if (id || slug || activeOnly) {
@@ -220,12 +222,26 @@ export async function POST(request: NextRequest) {
         .replace(/^-|-$/g, "");
     const publicSlug = `${cleanSlug}-${cleanYear}-${tenantSlug}`;
 
-    const start = startDate ? new Date(startDate).toISOString() : new Date().toISOString();
-    const end = endDate
-      ? new Date(endDate).toISOString()
-      : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    let start: string;
+    try {
+      start = startDate && !isNaN(new Date(startDate).getTime())
+        ? new Date(startDate).toISOString()
+        : new Date().toISOString();
+    } catch {
+      start = new Date().toISOString();
+    }
+
+    let end: string;
+    try {
+      end = endDate && !isNaN(new Date(endDate).getTime())
+        ? new Date(endDate).toISOString()
+        : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    } catch {
+      end = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    }
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
 
     await sql`
       INSERT INTO award_events (
@@ -288,6 +304,25 @@ export async function PUT(request: NextRequest) {
     }
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
+
+    let startVal: string | null = null;
+    if (startDate) {
+      try {
+        if (!isNaN(new Date(startDate).getTime())) {
+          startVal = new Date(startDate).toISOString();
+        }
+      } catch {}
+    }
+
+    let endVal: string | null = null;
+    if (endDate) {
+      try {
+        if (!isNaN(new Date(endDate).getTime())) {
+          endVal = new Date(endDate).toISOString();
+        }
+      } catch {}
+    }
 
     await sql`
       UPDATE award_events
@@ -296,8 +331,8 @@ export async function PUT(request: NextRequest) {
         description = COALESCE(${description !== undefined ? description : null}, description),
         banner_url = COALESCE(${bannerUrl !== undefined ? bannerUrl : null}, banner_url),
         status = COALESCE(${status || null}, status),
-        start_date = COALESCE(${startDate ? new Date(startDate).toISOString() : null}, start_date),
-        end_date = COALESCE(${endDate ? new Date(endDate).toISOString() : null}, end_date),
+        start_date = COALESCE(${startVal}, start_date),
+        end_date = COALESCE(${endVal}, end_date),
         is_public_visible = COALESCE(${isPublicVisible !== undefined ? Boolean(isPublicVisible) : null}, is_public_visible),
         allow_vote_editing = COALESCE(${allowVoteEditing !== undefined ? Boolean(allowVoteEditing) : null}, allow_vote_editing),
         updated_at = CURRENT_TIMESTAMP
@@ -335,6 +370,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
 
     // Clean up all related child rows
     await sql`DELETE FROM award_votes WHERE event_id = ${id};`;

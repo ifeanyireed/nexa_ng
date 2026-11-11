@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantSql } from "@/lib/tenant-db-resolver";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
+import { ensureAwardTables } from "@/lib/awards-db";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
 
     // Get event details
     const eventRows = await sql`

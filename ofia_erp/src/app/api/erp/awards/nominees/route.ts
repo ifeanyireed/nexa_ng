@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantSql } from "@/lib/tenant-db-resolver";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
+import { ensureAwardTables } from "@/lib/awards-db";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
 
     // Look up employee details in "User" table
     const userRows = await sql`
@@ -114,6 +116,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
 
     await sql`
       DELETE FROM award_nominees

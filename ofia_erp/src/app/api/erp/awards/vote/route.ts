@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantSql } from "@/lib/tenant-db-resolver";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
+import { ensureAwardTables } from "@/lib/awards-db";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
 
     const ballotRows = await sql`
       SELECT id, event_id, tenant_slug, employee_id, receipt_hash, is_sealed, categories_voted_count, submitted_at
@@ -95,6 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
 
     // 1. Validate event status & voting window
     const eventRows = await sql`

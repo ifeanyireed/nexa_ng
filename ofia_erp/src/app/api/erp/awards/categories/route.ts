@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantSql } from "@/lib/tenant-db-resolver";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
+import { ensureAwardTables } from "@/lib/awards-db";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
       .replace(/^-|-$/g, "");
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
 
     await sql`
       INSERT INTO award_categories (
@@ -101,6 +103,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
 
     await sql`
       UPDATE award_categories
@@ -149,6 +152,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const sql = await getTenantSql(tenantSlug);
+    await ensureAwardTables(sql, tenantSlug);
 
     // Clean up nominees, votes, results associated with this category
     await sql`DELETE FROM award_votes WHERE category_id = ${id};`;

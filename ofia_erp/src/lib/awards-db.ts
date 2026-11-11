@@ -135,11 +135,13 @@ export async function ensureAwardTables(sql: any, tenantSlug: string = "default"
     try {
       if (typeof sql.query === "function") {
         await sql.query(ddl);
+      } else if (typeof sql.unsafe === "function") {
+        await sql(sql.unsafe(ddl));
       } else {
         await sql([ddl] as any);
       }
     } catch (err: any) {
-      // Ignore if table/constraint already exists
+      // Table or index may already exist or statement already applied
     }
   }
   migratedTenantDbs.add(tenantSlug);

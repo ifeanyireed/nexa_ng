@@ -1366,23 +1366,44 @@ export default function VerticalCatalogPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs font-bold text-[var(--nexa-text-muted)]">Category:</span>
-            <select
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="px-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none cursor-pointer"
-            >
-              <option value="ALL">All Categories</option>
-              {uniqueCategories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[var(--nexa-text-muted)]">Category:</span>
+              <select
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none cursor-pointer"
+              >
+                <option value="ALL">All Categories</option>
+                {uniqueCategories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[var(--nexa-text-muted)]">Collection:</span>
+              <select
+                value={collectionFilter}
+                onChange={(e) => {
+                  setCollectionFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none cursor-pointer"
+              >
+                <option value="ALL">All Collections</option>
+                {uniqueCollections.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -1409,9 +1430,17 @@ export default function VerticalCatalogPage() {
                       alt={p.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/75 text-white backdrop-blur-xs">
-                      {p.category}
-                    </span>
+                    <div className="absolute top-2.5 right-2.5 flex flex-col items-end gap-1">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/75 text-white backdrop-blur-xs">
+                        {p.category}
+                      </span>
+                      {(p.collection || p.attributes?.collection) && (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-900/80 text-purple-100 backdrop-blur-xs flex items-center gap-1 border border-purple-400/30">
+                          <Layers className="w-2.5 h-2.5" />
+                          <span>{p.collection || p.attributes?.collection}</span>
+                        </span>
+                      )}
+                    </div>
                     {p.images && p.images.length > 1 && (
                       <span className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/75 text-white backdrop-blur-xs flex items-center gap-1">
                         <ImageIcon className="w-2.5 h-2.5" />
@@ -1643,6 +1672,117 @@ export default function VerticalCatalogPage() {
               </div>
             </div>
 
+            {/* Collection Selection & Management */}
+            <div className="sm:col-span-2 space-y-2 p-3 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Apparel Collection / Capsule Drop</span>
+                  <span className="text-[10px] text-purple-600 bg-purple-500/10 px-1.5 py-0.5 rounded-md font-mono font-bold">
+                    {formCollection || "None"}
+                  </span>
+                </label>
+                <span className="text-[10px] text-[var(--nexa-text-muted)]">Click chip to tie this apparel to a collection</span>
+              </div>
+
+              {/* Collection Chips with Select, Edit, Delete */}
+              <div className="flex flex-wrap gap-2">
+                {tenantCollectionsList.map((col) => {
+                  const isSelected = (formCollection || "").toLowerCase() === col.name.toLowerCase();
+                  return (
+                    <div
+                      key={col.id || col.name}
+                      className={`group relative flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 text-xs rounded-xl font-medium transition-all border ${
+                        isSelected
+                          ? "bg-purple-600 text-white border-purple-600 shadow-xs"
+                          : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-purple-500/40"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setFormCollection(col.name)}
+                        className="flex items-center gap-1.5 cursor-pointer outline-none font-semibold"
+                      >
+                        <span>{col.name}</span>
+                        {col.season && (
+                          <span
+                            className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
+                              isSelected ? "bg-white/20 text-white" : "bg-purple-500/10 text-purple-700"
+                            }`}
+                          >
+                            {col.season}
+                          </span>
+                        )}
+                        {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                      </button>
+
+                      <div className="flex items-center ml-1 border-l border-white/20 pl-1 gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenEditCollection(col, e)}
+                          className={`p-1 rounded-md transition cursor-pointer ${
+                            isSelected ? "hover:bg-white/20 text-white" : "hover:bg-purple-500/10 text-stone-400 hover:text-purple-600"
+                          }`}
+                          title={`Edit collection ${col.name}`}
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteCollection(col.id || col.name, e)}
+                          className={`p-1 rounded-md transition cursor-pointer ${
+                            isSelected ? "hover:bg-red-500/30 text-white" : "hover:bg-red-50 text-stone-400 hover:text-red-600"
+                          }`}
+                          title={`Delete collection ${col.name}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add Collection Inline */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                <input
+                  type="text"
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddCollection();
+                    }
+                  }}
+                  placeholder="New collection name (e.g. Adetola Collection, Royal Heritage)..."
+                  className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-purple-500 text-[var(--nexa-text-primary)]"
+                />
+                <input
+                  type="text"
+                  value={newCollectionSeason}
+                  onChange={(e) => setNewCollectionSeason(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddCollection();
+                    }
+                  }}
+                  placeholder="Season / Drop label (e.g. Harmattan / Resort 2026)..."
+                  className="w-full sm:w-56 px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-purple-500 text-[var(--nexa-text-primary)] font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCollection}
+                  disabled={!newCollectionName.trim()}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Collection</span>
+                </button>
+              </div>
+            </div>
+
             <div className="sm:col-span-2">
               <MultiImageUploadInput
                 label={`${currentVerticalDef.productTerm} Images & Gallery`}
@@ -1683,105 +1823,6 @@ export default function VerticalCatalogPage() {
                   />
                   <span>Enable SKU Matrix</span>
                 </label>
-              </div>
-
-              {/* 0. Designer Collection / Capsule Drop */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-purple-600" />
-                    <span>Collection / Seasonal Capsule</span>
-                    <span className="text-[10px] text-purple-600 bg-purple-500/10 px-1.5 py-0.5 rounded-md font-mono font-bold">
-                      {formCollection || "None"}
-                    </span>
-                  </label>
-                  <span className="text-[10px] text-[var(--nexa-text-muted)]">Assign this apparel piece to a designer capsule</span>
-                </div>
-
-                {/* Collection Chips with Select, Edit, Delete */}
-                <div className="flex flex-wrap gap-2">
-                  {tenantCollectionsList.map((col) => {
-                    const isSelected = (formCollection || "").toLowerCase() === col.name.toLowerCase();
-                    return (
-                      <div
-                        key={col.id || col.name}
-                        className={`group relative flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 text-xs rounded-xl font-medium transition-all border ${
-                          isSelected
-                            ? "bg-purple-600 text-white border-purple-600 shadow-xs"
-                            : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-purple-500/40"
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setFormCollection(col.name)}
-                          className="flex items-center gap-1.5 cursor-pointer outline-none font-semibold"
-                        >
-                          <span>{col.name}</span>
-                          {col.season && (
-                            <span
-                              className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
-                                isSelected ? "bg-white/20 text-white" : "bg-stone-200 text-stone-600"
-                              }`}
-                            >
-                              {col.season}
-                            </span>
-                          )}
-                          {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
-                        </button>
-
-                        <div className="flex items-center ml-1 border-l border-white/20 pl-1 gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                          <button
-                            type="button"
-                            onClick={(e) => handleOpenEditCollection(col, e)}
-                            className={`p-1 rounded-md transition cursor-pointer ${
-                              isSelected ? "hover:bg-white/20 text-white" : "hover:bg-purple-500/10 text-stone-400 hover:text-purple-600"
-                            }`}
-                            title={`Edit collection ${col.name}`}
-                          >
-                            <Edit className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleDeleteCollection(col.id || col.name, e)}
-                            className={`p-1 rounded-md transition cursor-pointer ${
-                              isSelected ? "hover:bg-red-500/30 text-white" : "hover:bg-red-50 text-stone-400 hover:text-red-600"
-                            }`}
-                            title={`Delete collection ${col.name}`}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Add Collection Inline */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
-                  <input
-                    type="text"
-                    value={newCollectionName}
-                    onChange={(e) => setNewCollectionName(e.target.value)}
-                    placeholder="Collection Name (e.g. Adetola Collection, Royal Heritage)..."
-                    className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-purple-500 text-[var(--nexa-text-primary)]"
-                  />
-                  <input
-                    type="text"
-                    value={newCollectionSeason}
-                    onChange={(e) => setNewCollectionSeason(e.target.value)}
-                    placeholder="Season (e.g. Harmattan / Resort 2026)..."
-                    className="w-full sm:w-48 px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-purple-500 text-[var(--nexa-text-primary)] font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddCollection}
-                    disabled={!newCollectionName.trim()}
-                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shrink-0"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>Create Collection</span>
-                  </button>
-                </div>
               </div>
 
               {/* 1. African Fabric Prints */}

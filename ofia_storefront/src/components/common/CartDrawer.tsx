@@ -107,6 +107,21 @@ export default function CartDrawer() {
                         +{item.selectedAddOns.length} add-ons
                       </span>
                     )}
+                    {item.selectedAccessories && item.selectedAccessories.length > 0 && (
+                      <div className="w-full mt-1.5 space-y-0.5 pt-1 border-t border-dashed border-stone-200">
+                        <span className="text-[10px] font-bold text-amber-800 block">
+                          Matching Accessories:
+                        </span>
+                        {item.selectedAccessories.map((acc, aIdx) => (
+                          <div key={aIdx} className="text-[10px] text-stone-600 flex items-center justify-between">
+                            <span className="truncate">+ {acc.name}</span>
+                            <span className="font-semibold shrink-0 font-mono">
+                              {acc.price > 0 ? `₦${acc.price.toLocaleString()}` : "Included"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between mt-2.5">

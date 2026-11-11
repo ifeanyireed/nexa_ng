@@ -198,8 +198,6 @@ function mapAttributesToVerticalMeta(vertical: VerticalKey, attrs: Record<string
         colors,
         prints,
         collection: attrs.collection,
-        season: attrs.season,
-        materials: typeof attrs.material === "string" ? [attrs.material] : ["Sustainable African Heritage Fabric"],
         fit: attrs.fit || "Tailored Contemporary Fit",
         careInstructions: "Specialist dry clean or gentle hand wash recommended.",
         sizeGuide: [
@@ -404,6 +402,11 @@ export async function getErpProducts(tenantSlug?: string, vertical?: VerticalKey
               status: r.status === "OUT_OF_STOCK" ? "OUT_OF_STOCK" : "ACTIVE",
               attributes: meta.attributes || (meta.image ? meta : {}),
               variants: Array.isArray(meta.variants) ? meta.variants : [],
+              accessories: Array.isArray(meta.accessories)
+                ? meta.accessories
+                : Array.isArray(meta.attributes?.accessories)
+                ? meta.attributes.accessories
+                : [],
             };
           });
         }
@@ -458,6 +461,7 @@ export async function saveErpProduct(item: Partial<CommerceProductItem> & { tena
         image: primaryImage,
         images: finalImagesList,
         variants: item.variants || [],
+        accessories: item.accessories || attrs.accessories || [],
         fashionMeta: item.vertical === "fashion" ? mapAttributesToVerticalMeta("fashion", attrs) : undefined,
       };
 

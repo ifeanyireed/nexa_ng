@@ -47,6 +47,7 @@ import {
   getDefaultProductsForVertical,
   CommerceProductItem,
   ProductVariant,
+  ApparelAccessoryItem,
   FabricPrint,
   AFRICAN_PRINT_PRESETS,
   VerticalKey,
@@ -193,6 +194,18 @@ export default function VerticalCatalogPage() {
   const [newCustomColorName, setNewCustomColorName] = useState("");
   const [newCustomColorHex, setNewCustomColorHex] = useState("#C2410C");
   const [newCustomSize, setNewCustomSize] = useState("");
+
+  // Companion Accessories & Add-ons state
+  const [fashionAccessories, setFashionAccessories] = useState<ApparelAccessoryItem[]>([]);
+  const [uploadingAccessoryIndex, setUploadingAccessoryIndex] = useState<number | null>(null);
+  const [editingAccessoryIndex, setEditingAccessoryIndex] = useState<number | null>(null);
+  const [isEditAccessoryModalOpen, setIsEditAccessoryModalOpen] = useState(false);
+  const [accEditName, setAccEditName] = useState("");
+  const [accEditPrice, setAccEditPrice] = useState<number>(0);
+  const [accEditStock, setAccEditStock] = useState<number>(1);
+  const [accEditImage, setAccEditImage] = useState("");
+  const [accEditIsOptional, setAccEditIsOptional] = useState<boolean>(true);
+  const [isUploadingEditAccPhoto, setIsUploadingEditAccPhoto] = useState(false);
 
   // Swatch inspection preview state
   const [previewingSwatch, setPreviewingSwatch] = useState<FabricPrint | null>(null);
@@ -902,6 +915,106 @@ export default function VerticalCatalogPage() {
     }
   }, [activeTenant?.slug, loadProducts]);
 
+  // Accessory management handlers
+  const handleAddAccessory = (presetName?: string, presetPrice?: number) => {
+    const newAcc: ApparelAccessoryItem = {
+      id: `acc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      name: presetName || "",
+      price: presetPrice !== undefined ? presetPrice : 0,
+      image: "",
+      stock: 1,
+      isOptional: true,
+    };
+    setFashionAccessories((prev) => [...prev, newAcc]);
+  };
+
+  const handleUpdateAccessory = (index: number, updates: Partial<ApparelAccessoryItem>) => {
+    setFashionAccessories((prev) =>
+      prev.map((acc, idx) => (idx === index ? { ...acc, ...updates } : acc))
+    );
+  };
+
+  const handleDeleteAccessory = (index: number) => {
+    setFashionAccessories((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleUploadAccessoryImage = async (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAccessoryIndex(index);
+    try {
+      const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("tenantSlug", slug);
+      formData.append("folder", "apparel_accessories");
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data?.url) {
+        handleUpdateAccessory(index, { image: data.url });
+      }
+    } catch (err) {
+      console.error("Accessory image upload failed:", err);
+    } finally {
+      setUploadingAccessoryIndex(null);
+      e.target.value = "";
+    }
+  };
+
+  const handleOpenEditAccessory = (index: number) => {
+    const acc = fashionAccessories[index];
+    if (!acc) return;
+    setEditingAccessoryIndex(index);
+    setAccEditName(acc.name || "");
+    setAccEditPrice(Number(acc.price) || 0);
+    setAccEditStock(acc.stock !== undefined ? acc.stock : 1);
+    setAccEditImage(acc.image || "");
+    setAccEditIsOptional(acc.isOptional !== false);
+    setIsEditAccessoryModalOpen(true);
+  };
+
+  const handleSaveEditAccessory = () => {
+    if (editingAccessoryIndex === null) return;
+    handleUpdateAccessory(editingAccessoryIndex, {
+      name: accEditName.trim(),
+      price: accEditPrice,
+      stock: accEditStock,
+      image: accEditImage,
+      isOptional: accEditIsOptional,
+    });
+    setIsEditAccessoryModalOpen(false);
+    setEditingAccessoryIndex(null);
+  };
+
+  const handleUploadEditAccessoryPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingEditAccPhoto(true);
+    try {
+      const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("tenantSlug", slug);
+      formData.append("folder", "apparel_accessories");
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data?.url) {
+        setAccEditImage(data.url);
+        if (editingAccessoryIndex !== null) {
+          handleUpdateAccessory(editingAccessoryIndex, { image: data.url });
+        }
+      }
+    } catch (err) {
+      console.error("Edit accessory photo upload failed:", err);
+    } finally {
+      setIsUploadingEditAccPhoto(false);
+      e.target.value = "";
+    }
+  };
+
   const handleOpenAddModal = () => {
     const initSku = `SKU-${verticalKey.toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-4)}`;
     setFormName("");
@@ -912,6 +1025,7 @@ export default function VerticalCatalogPage() {
     setFormSku(initSku);
     setFormImage("");
     setFormImages([]);
+    setFashionAccessories([]);
     const initAttrs: Record<string, any> = {};
     currentVerticalDef.attributeFields.forEach((field) => {
       initAttrs[field.key] = field.type === "boolean" ? true : "";
@@ -934,8 +1048,6 @@ export default function VerticalCatalogPage() {
         initSku
       );
       setFashionVariants(initialVars);
-      initAttrs.material = "100% Premium African Wax Cotton";
-      initAttrs.season = "Harmattan Capsule";
     }
 
     setFormAttributes(initAttrs);
@@ -962,10 +1074,15 @@ export default function VerticalCatalogPage() {
       "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
     const imagesToSave = finalImages.length > 0 ? finalImages : [primaryImage];
 
+    const cleanAttributes = { ...formAttributes };
+    delete cleanAttributes.material;
+    delete cleanAttributes.season;
+
     const mergedAttributes = {
-      ...formAttributes,
+      ...cleanAttributes,
       images: imagesToSave,
       collection: formCollection,
+      accessories: fashionAccessories,
       ...(verticalKey === "fashion"
         ? {
             prints: fashionPrints,
@@ -975,12 +1092,8 @@ export default function VerticalCatalogPage() {
             colorsString: fashionColors.map((c) => c.name).join(", "),
             sizes: fashionSizes,
             fashionSizes: fashionSizes,
-            material: formAttributes.material || "100% African Wax Cotton",
+            accessories: fashionAccessories,
             collection: formCollection,
-            season:
-              tenantCollectionsList.find(
-                (c) => c.name.toLowerCase() === formCollection.toLowerCase()
-              )?.season || formAttributes.season || "Harmattan Capsule",
           }
         : {}),
     };
@@ -1000,6 +1113,7 @@ export default function VerticalCatalogPage() {
       status: finalStock > 0 ? "ACTIVE" : "OUT_OF_STOCK",
       attributes: mergedAttributes,
       variants: verticalKey === "fashion" && useMatrix ? fashionVariants : undefined,
+      accessories: fashionAccessories,
     };
 
     try {
@@ -1055,6 +1169,16 @@ export default function VerticalCatalogPage() {
     setFormImages(initialImages);
     setFormImage(initialImages[0] || product.image || "");
     setFormAttributes(product.attributes || {});
+
+    const rawAccessories =
+      product.accessories ||
+      product.attributes?.accessories ||
+      (product as any)?.metadata?.accessories;
+    if (Array.isArray(rawAccessories)) {
+      setFashionAccessories(rawAccessories);
+    } else {
+      setFashionAccessories([]);
+    }
 
     if (verticalKey === "fashion") {
       // 1. Prints
@@ -2204,36 +2328,234 @@ export default function VerticalCatalogPage() {
                 </div>
               </div>
 
-              {/* 4. Fabric Material & Season */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--nexa-border)]">
-                <div>
-                  <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
-                    Fabric & Material Composition
-                  </label>
-                  <input
-                    type="text"
-                    value={formAttributes.material || ""}
-                    onChange={(e) => setFormAttributes({ ...formAttributes, material: e.target.value })}
-                    placeholder="e.g. 100% Cotton African Wax Print, Handloomed Aso-Oke"
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
-                    Collection / Season
-                  </label>
-                  <select
-                    value={formAttributes.season || "Harmattan Capsule"}
-                    onChange={(e) => setFormAttributes({ ...formAttributes, season: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+              {/* 4. Apparel Companion Accessories & Add-ons */}
+              <div className="pt-3 border-t border-[var(--nexa-border)] space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-600 font-bold shrink-0">
+                      <Sparkles className="w-4.5 h-4.5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                          Apparel Companion Accessories & Add-ons
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/25">
+                          {fashionAccessories.length} Attached
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+                        Attach matching accessories (caps, geeles, canes, pocket squares) with individual pricing and photos.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleAddAccessory("", 0)}
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
                   >
-                    <option value="Harmattan Capsule">Harmattan Capsule</option>
-                    <option value="Bridal & Ceremonial">Bridal & Ceremonial</option>
-                    <option value="All-Season Core">All-Season Core</option>
-                    <option value="Spring/Summer 2026">Spring/Summer 2026</option>
-                    <option value="Fall/Winter 2026">Fall/Winter 2026</option>
-                  </select>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Add Accessory</span>
+                  </button>
                 </div>
+
+                {/* Quick Preset Buttons */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--nexa-text-muted)]">
+                    Quick African Couture Presets:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { name: "Matching Embroidered Aso-Oke Fila", price: 25000, emoji: "👑" },
+                      { name: "Raw Silk Pocket Square & Brooch", price: 12000, emoji: "🧣" },
+                      { name: "Pre-folded Royal Auto-Gele", price: 30000, emoji: "🧕" },
+                      { name: "Traditional Coral Bead Necklace", price: 65000, emoji: "📿" },
+                      { name: "Handcrafted Beaded Walking Cane", price: 45000, emoji: "🦯" },
+                      { name: "Monogrammed Velvet Slip-ons", price: 55000, emoji: "🩴" },
+                    ].map((preset) => (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => handleAddAccessory(preset.name, preset.price)}
+                        className="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-[var(--nexa-bg-base)] hover:bg-amber-500/10 text-[var(--nexa-text-secondary)] hover:text-amber-700 border border-[var(--nexa-border)] hover:border-amber-500/40 transition-colors flex items-center gap-1 cursor-pointer"
+                        title={`Add ${preset.name} (₦${preset.price.toLocaleString()})`}
+                      >
+                        <span>{preset.emoji}</span>
+                        <span>{preset.name}</span>
+                        <span className="font-mono text-amber-600 font-bold ml-0.5">
+                          +₦{(preset.price / 1000).toFixed(0)}k
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Accessories List */}
+                {fashionAccessories.length === 0 ? (
+                  <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-dashed border-[var(--nexa-border)] text-center space-y-1">
+                    <p className="text-xs font-semibold text-[var(--nexa-text-secondary)]">
+                      No companion accessories attached to this apparel yet.
+                    </p>
+                    <p className="text-[11px] text-[var(--nexa-text-muted)]">
+                      Click a quick preset above or tap "+ Add Accessory" to configure matching caps, geeles, canes, or pocket squares.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {fashionAccessories.map((acc, index) => (
+                      <div
+                        key={acc.id || index}
+                        className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-amber-500/30 transition-all space-y-3 shadow-xs"
+                      >
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                          {/* Large Preview Image & Upload Action */}
+                          <div className="flex items-start gap-4">
+                            {/* Enlarged Image Preview (w-28 h-28 sm:w-32 sm:h-32) */}
+                            <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden border border-[var(--nexa-border)] bg-[var(--nexa-card-bg)] shrink-0 flex items-center justify-center shadow-xs group/img">
+                              {acc.image ? (
+                                <img
+                                  src={acc.image}
+                                  alt={acc.name || "Accessory"}
+                                  className="w-full h-full object-cover transition-transform duration-200 group-hover/img:scale-105"
+                                />
+                              ) : (
+                                <div className="flex flex-col items-center justify-center text-stone-400 p-2 text-center">
+                                  <ImageIcon className="w-8 h-8 stroke-1 text-stone-300 mb-1" />
+                                  <span className="text-[10px] font-bold">No Photo</span>
+                                </div>
+                              )}
+
+                              {uploadingAccessoryIndex === index && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                  <RefreshCw className="w-5 h-5 text-white animate-spin" />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Photo Upload & URL Controls */}
+                            <div className="space-y-2 flex-1">
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--nexa-text-primary)] block">
+                                Accessory Photography
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="file"
+                                  id={`acc-file-${index}`}
+                                  accept="image/*"
+                                  onChange={(e) => handleUploadAccessoryImage(index, e)}
+                                  disabled={uploadingAccessoryIndex === index}
+                                  className="hidden"
+                                />
+                                <label
+                                  htmlFor={`acc-file-${index}`}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-[var(--nexa-surface)] border border-[var(--nexa-border)] hover:bg-[var(--nexa-border)] transition-colors cursor-pointer text-[var(--nexa-text-primary)] ${
+                                    uploadingAccessoryIndex === index ? "opacity-50 cursor-not-allowed" : ""
+                                  }`}
+                                >
+                                  <Upload className="w-3.5 h-3.5 text-amber-600" />
+                                  <span>{uploadingAccessoryIndex === index ? "Uploading..." : "Upload Photo"}</span>
+                                </label>
+                              </div>
+
+                              <input
+                                type="text"
+                                value={acc.image || ""}
+                                onChange={(e) => handleUpdateAccessory(index, { image: e.target.value })}
+                                placeholder="Or enter direct photo URL..."
+                                className="w-full max-w-xs px-2.5 py-1 text-xs font-mono rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] outline-none focus:border-amber-500 text-[var(--nexa-text-primary)]"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Action Buttons: Edit and Delete Icons */}
+                          <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-start">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditAccessory(index)}
+                              className="p-2 rounded-xl text-stone-600 hover:text-amber-700 bg-[var(--nexa-surface)] hover:bg-amber-500/10 border border-[var(--nexa-border)] hover:border-amber-500/40 transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                              title="Edit accessory modal"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Edit</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAccessory(index)}
+                              className="p-2 rounded-xl text-stone-600 hover:text-red-600 bg-[var(--nexa-surface)] hover:bg-red-500/10 border border-[var(--nexa-border)] hover:border-red-500/40 transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                              title="Delete accessory"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Delete</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Inline Parameter Inputs */}
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-2 border-t border-[var(--nexa-border)] text-xs">
+                          <div className="sm:col-span-5">
+                            <label className="block text-[11px] font-bold text-[var(--nexa-text-primary)] mb-1">
+                              Accessory Title *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={acc.name}
+                              onChange={(e) => handleUpdateAccessory(index, { name: e.target.value })}
+                              placeholder="e.g. Matching Embroidered Aso-Oke Fila"
+                              className="w-full px-2.5 py-1.5 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-3">
+                            <label className="block text-[11px] font-bold text-[var(--nexa-text-primary)] mb-1">
+                              Price (₦) *
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              required
+                              value={acc.price ?? ""}
+                              onChange={(e) =>
+                                handleUpdateAccessory(index, { price: parseFloat(e.target.value) || 0 })
+                              }
+                              placeholder="e.g. 25000"
+                              className="w-full px-2.5 py-1.5 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-mono font-bold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-[11px] font-bold text-[var(--nexa-text-primary)] mb-1">
+                              Stock Qty
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={acc.stock ?? 1}
+                              onChange={(e) =>
+                                handleUpdateAccessory(index, { stock: parseInt(e.target.value) || 0 })
+                              }
+                              className="w-full px-2.5 py-1.5 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-mono font-bold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2 flex items-center pt-5">
+                            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--nexa-text-secondary)] cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={acc.isOptional !== false}
+                                onChange={(e) => handleUpdateAccessory(index, { isOptional: e.target.checked })}
+                                className="rounded accent-amber-600"
+                              />
+                              <span>Paid Add-on</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* 5. Variant SKU Matrix Table & Bulk Controls */}
@@ -2797,6 +3119,144 @@ export default function VerticalCatalogPage() {
             </NexaButton>
             <NexaButton size="sm" variant="primary" onClick={handleSaveEditCollection} className="bg-purple-600 text-white font-bold cursor-pointer">
               Save Collection
+            </NexaButton>
+          </div>
+        </div>
+      </NexaModal>
+
+      {/* MODAL: EDIT COMPANION ACCESSORY */}
+      <NexaModal
+        isOpen={isEditAccessoryModalOpen}
+        onClose={() => {
+          setIsEditAccessoryModalOpen(false);
+          setEditingAccessoryIndex(null);
+        }}
+        title="Edit Companion Accessory"
+        subtitle="Update accessory title, separate price, stock quantity, and photography."
+        maxWidth="lg"
+      >
+        <div className="space-y-4 text-xs">
+          {/* Photo Preview & Upload */}
+          <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex flex-col sm:flex-row items-center gap-4">
+            <div className="relative w-32 h-32 rounded-2xl overflow-hidden border border-[var(--nexa-border)] bg-[var(--nexa-card-bg)] shrink-0 flex items-center justify-center shadow-xs">
+              {accEditImage ? (
+                <img
+                  src={accEditImage}
+                  alt={accEditName || "Accessory Preview"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-stone-400 p-2 text-center">
+                  <ImageIcon className="w-10 h-10 stroke-1 text-stone-300 mb-1" />
+                  <span className="text-[10px] font-bold">No Photo</span>
+                </div>
+              )}
+              {isUploadingEditAccPhoto && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <RefreshCw className="w-6 h-6 text-white animate-spin" />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2 flex-1 w-full">
+              <label className="block font-bold text-[var(--nexa-text-primary)]">
+                Accessory Photo Upload
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  id="acc-modal-file-upload"
+                  accept="image/*"
+                  onChange={handleUploadEditAccessoryPhoto}
+                  disabled={isUploadingEditAccPhoto}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="acc-modal-file-upload"
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-[var(--nexa-surface)] border border-[var(--nexa-border)] hover:bg-[var(--nexa-border)] transition-colors cursor-pointer text-[var(--nexa-text-primary)] ${
+                    isUploadingEditAccPhoto ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  <Upload className="w-3.5 h-3.5 text-amber-600" />
+                  <span>{isUploadingEditAccPhoto ? "Uploading Photo..." : "Upload Device Photo"}</span>
+                </label>
+              </div>
+
+              <input
+                type="text"
+                value={accEditImage}
+                onChange={(e) => setAccEditImage(e.target.value)}
+                placeholder="Or paste direct image URL (Unsplash / Cloudinary)..."
+                className="w-full px-3 py-1.5 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-mono text-xs text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+              Accessory Title *
+            </label>
+            <input
+              type="text"
+              required
+              value={accEditName}
+              onChange={(e) => setAccEditName(e.target.value)}
+              placeholder="e.g. Matching Embroidered Aso-Oke Fila"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+                Selling Price (₦) *
+              </label>
+              <input
+                type="number"
+                min="0"
+                required
+                value={accEditPrice}
+                onChange={(e) => setAccEditPrice(parseFloat(e.target.value) || 0)}
+                placeholder="e.g. 25000"
+                className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-mono font-bold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+                Stock Quantity
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={accEditStock}
+                onChange={(e) => setAccEditStock(parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-mono font-bold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+              />
+            </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between">
+            <div>
+              <span className="font-bold text-[var(--nexa-text-primary)] block">Paid Add-on Option</span>
+              <span className="text-[11px] text-[var(--nexa-text-secondary)]">
+                When enabled, buyers can choose whether to add this accessory to their order.
+              </span>
+            </div>
+            <input
+              type="checkbox"
+              checked={accEditIsOptional}
+              onChange={(e) => setAccEditIsOptional(e.target.checked)}
+              className="w-4 h-4 rounded accent-amber-600 cursor-pointer"
+            />
+          </div>
+
+          <div className="pt-3 border-t border-[var(--nexa-border)] flex justify-end gap-2">
+            <NexaButton size="sm" variant="outline" onClick={() => setIsEditAccessoryModalOpen(false)}>
+              Cancel
+            </NexaButton>
+            <NexaButton size="sm" variant="primary" onClick={handleSaveEditAccessory} className="bg-amber-600 hover:bg-amber-700 text-white font-bold cursor-pointer">
+              Save Accessory
             </NexaButton>
           </div>
         </div>

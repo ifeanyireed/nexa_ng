@@ -344,6 +344,16 @@ export interface ProductVariant {
   image?: string;
 }
 
+export interface ApparelAccessoryItem {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  stock?: number;
+  sku?: string;
+  isOptional?: boolean; // defaults to true (optional paid add-on)
+}
+
 export interface CommerceProductItem {
   id: string;
   name: string;
@@ -359,6 +369,7 @@ export interface CommerceProductItem {
   status: "ACTIVE" | "LOW_STOCK" | "OUT_OF_STOCK" | "DRAFT";
   attributes: Record<string, any>;
   variants?: ProductVariant[];
+  accessories?: ApparelAccessoryItem[];
 }
 
 export interface CommerceServiceItem {

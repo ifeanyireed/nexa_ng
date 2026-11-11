@@ -43,7 +43,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (newItem: Omit<CartItem, "id">) => {
     setItems((prev) => {
-      // Look for identical variant
+      const getAccKey = (item: any) =>
+        (item.selectedAccessories || [])
+          .map((a: any) => a.id || a.name)
+          .sort()
+          .join(",");
+
+      // Look for identical variant and matching accessories
       const existingIndex = prev.findIndex(
         (i) =>
           i.productId === newItem.productId &&
@@ -51,7 +57,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           i.selectedColor === newItem.selectedColor &&
           i.selectedSize === newItem.selectedSize &&
           i.selectedPrint === newItem.selectedPrint &&
-          i.selectedPortion === newItem.selectedPortion
+          i.selectedPortion === newItem.selectedPortion &&
+          getAccKey(i) === getAccKey(newItem)
       );
 
       if (existingIndex > -1) {

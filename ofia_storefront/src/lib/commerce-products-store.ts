@@ -498,6 +498,11 @@ export async function getStorefrontProducts(
                   }
                 : undefined,
               variants: Array.isArray(meta.variants) ? meta.variants : [],
+              accessories: Array.isArray(meta.accessories)
+                ? meta.accessories
+                : Array.isArray(meta.attributes?.accessories)
+                ? meta.attributes.accessories
+                : [],
               tags: [r.category || (isFashion ? "Fashion" : "General"), "Bespoke"],
             };
           });

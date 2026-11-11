@@ -10,7 +10,7 @@ import SwipeableImageGallery from "@/components/common/SwipeableImageGallery";
 import { useCart } from "@/context/CartContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
-import { AFRICAN_PRINT_PRESETS } from "@/types/storefront";
+import { AFRICAN_PRINT_PRESETS, ApparelAccessoryItem } from "@/types/storefront";
 import {
   Ruler,
   ShoppingBag,
@@ -24,6 +24,7 @@ import {
   ZoomIn,
   WifiOff,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 
 export default function FashionProductDetailPage() {
@@ -239,7 +240,33 @@ export default function FashionProductDetailPage() {
     );
   }
 
-  const effectivePrice = matchingVariant?.price || product.price;
+  const accessories: ApparelAccessoryItem[] = useMemo(() => {
+    const raw =
+      product?.accessories ||
+      (product as any)?.attributes?.accessories ||
+      (product as any)?.metadata?.accessories;
+    return Array.isArray(raw) ? raw : [];
+  }, [product]);
+
+  const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
+  const [previewAccessory, setPreviewAccessory] = useState<ApparelAccessoryItem | null>(null);
+
+  const toggleAccessory = (accId: string) => {
+    setSelectedAccessories((prev) =>
+      prev.includes(accId) ? prev.filter((id) => id !== accId) : [...prev, accId]
+    );
+  };
+
+  const selectedAccessoriesData = useMemo(() => {
+    return accessories.filter((acc) => selectedAccessories.includes(acc.id));
+  }, [accessories, selectedAccessories]);
+
+  const accessoriesTotal = useMemo(() => {
+    return selectedAccessoriesData.reduce((sum, acc) => sum + (Number(acc.price) || 0), 0);
+  }, [selectedAccessoriesData]);
+
+  const basePrice = matchingVariant?.price || product.price;
+  const effectivePrice = basePrice + accessoriesTotal;
   const isVariantOutOfStock = matchingVariant
     ? (matchingVariant.stock !== undefined && matchingVariant.stock <= 0)
     : !product.inStock;
@@ -257,6 +284,12 @@ export default function FashionProductDetailPage() {
       selectedSize,
       selectedPrint: selectedPrint || undefined,
       selectedPrintImage: selectedPrintImage || matchingVariant?.printImage || undefined,
+      selectedAccessories: selectedAccessoriesData.map((a) => ({
+        id: a.id,
+        name: a.name,
+        price: Number(a.price) || 0,
+        image: a.image,
+      })),
     });
 
     setAddedSuccess(true);
@@ -499,6 +532,74 @@ export default function FashionProductDetailPage() {
               </div>
             )}
 
+            {/* EXPANDED ACCESSORY PREVIEW MODAL */}
+            {previewAccessory && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+                onClick={() => setPreviewAccessory(null)}
+              >
+                <div
+                  className="relative w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl border border-stone-200/80 overflow-hidden animate-in zoom-in-95 duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-600 animate-pulse" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500">
+                        Accessory Detail
+                      </h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewAccessory(null)}
+                      className="w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Close Preview"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="relative mt-3.5 aspect-square w-full rounded-2xl overflow-hidden border border-stone-200 bg-stone-100 shadow-inner">
+                    <img
+                      src={previewAccessory.image}
+                      alt={previewAccessory.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <div className="mt-4 space-y-1">
+                    <h3 className="text-base font-extrabold text-zinc-900">{previewAccessory.name}</h3>
+                    <p className="text-sm font-bold text-amber-700">
+                      ₦{Number(previewAccessory.price || 0).toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!selectedAccessories.includes(previewAccessory.id)) {
+                          toggleAccessory(previewAccessory.id);
+                        }
+                        setPreviewAccessory(null);
+                      }}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      <span>{selectedAccessories.includes(previewAccessory.id) ? "Already Selected" : "Add to Order"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewAccessory(null)}
+                      className="py-2.5 px-4 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* COLOR SELECTION */}
             {product.fashionMeta?.colors && (
               <div className="space-y-2 pt-4 border-t border-stone-100">
@@ -569,6 +670,93 @@ export default function FashionProductDetailPage() {
               </div>
             )}
 
+            {/* COMPANION ACCESSORIES & ADD-ONS */}
+            {accessories.length > 0 && (
+              <div className="space-y-3 pt-4 border-t border-stone-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                    <span className="text-xs font-bold text-zinc-900 uppercase tracking-wider">
+                      Complete the Look / Matching Accessories
+                    </span>
+                  </div>
+                  {accessoriesTotal > 0 && (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                      +₦{accessoriesTotal.toLocaleString()} added
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {accessories.map((acc) => {
+                    const isSelected = selectedAccessories.includes(acc.id);
+                    return (
+                      <div
+                        key={acc.id}
+                        onClick={() => toggleAccessory(acc.id)}
+                        className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                          isSelected
+                            ? "bg-amber-900/10 border-amber-700 text-amber-950 shadow-sm ring-1 ring-amber-700"
+                            : "bg-white border-stone-200 text-stone-700 hover:border-amber-700/40 hover:bg-stone-50/80"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Image preview with click to zoom */}
+                          {acc.image ? (
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewAccessory(acc);
+                              }}
+                              className="relative w-11 h-11 rounded-xl overflow-hidden border border-stone-200 shrink-0 bg-stone-100 cursor-zoom-in group/circle hover:ring-2 hover:ring-amber-500/40 transition-all"
+                              title="Click to zoom accessory image"
+                            >
+                              <img
+                                src={acc.image}
+                                alt={acc.name}
+                                className="w-full h-full object-cover transition-transform duration-200 group-hover/circle:scale-110"
+                              />
+                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/circle:opacity-100 transition-opacity flex items-center justify-center">
+                                <ZoomIn className="w-3 h-3 text-white" />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="w-11 h-11 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-[10px] font-bold text-amber-800 shrink-0">
+                              {acc.name.slice(0, 2).toUpperCase()}
+                            </div>
+                          )}
+
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold block truncate text-zinc-900 leading-tight">
+                              {acc.name}
+                            </span>
+                            <span className="text-[11px] font-semibold text-amber-700 font-mono block mt-0.5">
+                              {acc.price > 0 ? `+₦${Number(acc.price).toLocaleString()}` : "Included in Set"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Checkbox trigger */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div
+                            className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-colors ${
+                              isSelected
+                                ? "bg-amber-700 border-amber-700 text-white"
+                                : "border-stone-300 bg-white"
+                            }`}
+                          >
+                            {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* ACTION BUTTONS */}
             <div className="space-y-3 pt-4 border-t border-stone-100">
               <button
@@ -584,7 +772,9 @@ export default function FashionProductDetailPage() {
                 <span>
                   {isVariantOutOfStock
                     ? `Sold Out (${[selectedPrint, selectedColor, selectedSize].filter(Boolean).join(" · ")})`
-                    : `Add to Bag (${[selectedPrint, selectedColor, selectedSize].filter(Boolean).join(" · ")})`}
+                    : `Add to Bag · ₦${effectivePrice.toLocaleString()}${
+                        selectedAccessoriesData.length > 0 ? ` (+${selectedAccessoriesData.length} accessories)` : ""
+                      }`}
                 </span>
               </button>
 

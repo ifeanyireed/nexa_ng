@@ -101,6 +101,16 @@ export interface ProductVariant {
   stock?: number;
 }
 
+export interface ApparelAccessoryItem {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  stock?: number;
+  sku?: string;
+  isOptional?: boolean;
+}
+
 export interface Product {
   id: string;
   sku?: string;
@@ -121,6 +131,7 @@ export interface Product {
   description: string;
   highlights: string[];
   variants?: ProductVariant[];
+  accessories?: ApparelAccessoryItem[];
   tags?: string[];
 
   // Vertical-Specific Metadata:
@@ -289,6 +300,7 @@ export interface CartItem {
   selectedPrintImage?: string;
   selectedPortion?: string;
   selectedAddOns?: string[];
+  selectedAccessories?: Array<{ id: string; name: string; price: number; image?: string }>;
   specialInstructions?: string;
   deliveryOption?: string;
 }

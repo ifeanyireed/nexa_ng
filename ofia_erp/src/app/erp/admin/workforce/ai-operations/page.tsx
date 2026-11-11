@@ -298,7 +298,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                       setMatchQuery(chip);
                       handleRunMatch(chip);
                     }}
-                    className="text-[11px] px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-slate-700 transition"
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-nexa-base hover:bg-nexa-surface text-nexa-text-secondary border border-nexa-border transition"
                   >
                     &ldquo;{chip}&rdquo;
                   </button>
@@ -311,7 +311,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                   value={matchQuery}
                   onChange={(e) => setMatchQuery(e.target.value)}
                   placeholder="e.g. Find 2 senior full-stack engineers with TypeScript in Lagos"
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="flex-1 bg-nexa-base border border-nexa-border rounded-lg px-4 py-2.5 text-xs text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
                 />
                 <NexaButton
                   variant="primary"
@@ -339,7 +339,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                   {matchResults.map((res) => (
                     <div
                       key={res.personId}
-                      className="p-5 bg-nexa-surface border border-nexa-border rounded-xl space-y-3 hover:border-slate-700 transition"
+                      className="p-5 bg-nexa-surface border border-nexa-border rounded-xl space-y-3 hover:border-nexa-brand/40 transition"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -347,28 +347,28 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                           <p className="text-xs text-nexa-text-secondary">{res.designation}</p>
                         </div>
                         <div className="text-right">
-                          <span className="text-lg font-bold text-emerald-400">{res.matchScorePercent}%</span>
+                          <span className="text-lg font-bold text-emerald-500">{res.matchScorePercent}%</span>
                           <div className="text-[10px] text-nexa-text-secondary uppercase">Match</div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 text-[11px]">
                         <span className="text-nexa-text-secondary">{res.department}</span>
-                        <span className="text-slate-600">•</span>
+                        <span className="text-nexa-text-muted">•</span>
                         <span
                           className={`px-2 py-0.5 rounded font-medium text-[10px] ${
                             res.availabilityStatus === "available"
-                              ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20"
                               : res.availabilityStatus === "deployed"
-                              ? "bg-amber-950 text-amber-300 border border-amber-800"
-                              : "bg-slate-800 text-slate-300"
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20"
+                              : "bg-nexa-base text-nexa-text-secondary border border-nexa-border"
                           }`}
                         >
                           {res.availabilityStatus.toUpperCase()}
                         </span>
                       </div>
 
-                      <p className="text-xs text-nexa-text-secondary italic bg-slate-950 p-2.5 rounded border border-slate-900 leading-relaxed">
+                      <p className="text-xs text-nexa-text-secondary italic bg-nexa-base p-2.5 rounded border border-nexa-border leading-relaxed">
                         &quot;{res.rationale}&quot;
                       </p>
 
@@ -377,7 +377,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                           {res.matchedSkills.map((sk, idx) => (
                             <span
                               key={idx}
-                              className="px-2 py-0.5 rounded text-[10px] bg-emerald-950/70 border border-emerald-800/60 text-emerald-300"
+                              className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300"
                             >
                               ✓ {sk}
                             </span>
@@ -388,7 +388,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                       <div className="pt-2 border-t border-nexa-border flex justify-end">
                         <Link
                           href={`/erp/admin/workforce/people/${res.personId}`}
-                          className="text-xs text-emerald-400 hover:text-emerald-300 font-medium inline-flex items-center gap-1"
+                          className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium inline-flex items-center gap-1"
                         >
                           <span>View Full Dossier</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -410,19 +410,19 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
               <div className="p-6 bg-nexa-surface border border-nexa-border rounded-xl space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-nexa-text-primary flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-emerald-400" />
+                    <FileText className="w-4 h-4 text-emerald-500" />
                     Raw Resume / CV Input
                   </h3>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setResumeText(sampleResumeDevOps)}
-                      className="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                      className="text-[10px] px-2 py-1 rounded bg-nexa-base hover:bg-nexa-surface text-nexa-text-secondary border border-nexa-border transition"
                     >
                       DevOps Sample
                     </button>
                     <button
                       onClick={() => setResumeText(sampleResumeBiometric)}
-                      className="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                      className="text-[10px] px-2 py-1 rounded bg-nexa-base hover:bg-nexa-surface text-nexa-text-secondary border border-nexa-border transition"
                     >
                       Biometrics Sample
                     </button>
@@ -434,7 +434,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                   value={resumeText}
                   onChange={(e) => setResumeText(e.target.value)}
                   placeholder="Paste unstructured candidate CV text or applicant profile here..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 leading-relaxed"
+                  className="w-full bg-nexa-base border border-nexa-border rounded-lg p-3.5 text-xs text-nexa-text-primary placeholder:text-nexa-text-muted font-mono focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface leading-relaxed transition-colors"
                 />
 
                 <div className="flex justify-end">
@@ -467,43 +467,43 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
 
                 {parsedCandidate ? (
                   <div className="space-y-4 text-xs">
-                    <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                    <div className="p-4 bg-nexa-base rounded-xl border border-nexa-border space-y-2">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h4 className="text-base font-bold text-white">{parsedCandidate.name}</h4>
-                          <p className="text-xs text-emerald-400 font-medium">{parsedCandidate.appliedRole}</p>
+                          <h4 className="text-base font-bold text-nexa-text-primary">{parsedCandidate.name}</h4>
+                          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{parsedCandidate.appliedRole}</p>
                         </div>
                         <div className="text-right">
-                          <div className="text-xl font-bold text-emerald-400">{parsedCandidate.score}%</div>
-                          <div className="text-[10px] text-slate-500 uppercase">Fit Score</div>
+                          <div className="text-xl font-bold text-emerald-500">{parsedCandidate.score}%</div>
+                          <div className="text-[10px] text-nexa-text-muted uppercase">Fit Score</div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 pt-2 text-slate-300">
+                      <div className="grid grid-cols-2 gap-2 pt-2 text-nexa-text-secondary">
                         <div>
-                          <span className="text-slate-500">Email:</span> {parsedCandidate.email}
+                          <span className="text-nexa-text-muted">Email:</span> {parsedCandidate.email}
                         </div>
                         <div>
-                          <span className="text-slate-500">Phone:</span> {parsedCandidate.phone}
+                          <span className="text-nexa-text-muted">Phone:</span> {parsedCandidate.phone}
                         </div>
                         <div>
-                          <span className="text-slate-500">Experience:</span> {parsedCandidate.experienceYears} Years
+                          <span className="text-nexa-text-muted">Experience:</span> {parsedCandidate.experienceYears} Years
                         </div>
                         <div>
-                          <span className="text-slate-500">Education:</span> {parsedCandidate.education}
+                          <span className="text-nexa-text-muted">Education:</span> {parsedCandidate.education}
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+                      <span className="text-xs font-semibold text-nexa-text-secondary uppercase tracking-wider block mb-1.5">
                         Extracted Skills
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {parsedCandidate.skills.map((sk, idx) => (
                           <span
                             key={idx}
-                            className="px-2.5 py-0.5 rounded text-[11px] bg-slate-800 text-slate-300 border border-slate-700"
+                            className="px-2.5 py-0.5 rounded text-[11px] bg-nexa-base text-nexa-text-secondary border border-nexa-border"
                           >
                             {sk}
                           </span>
@@ -511,7 +511,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                       </div>
                     </div>
 
-                    <p className="text-slate-300 italic bg-slate-950 p-3 rounded-lg border border-slate-900 leading-relaxed">
+                    <p className="text-nexa-text-secondary italic bg-nexa-base p-3 rounded-lg border border-nexa-border leading-relaxed">
                       &quot;{parsedCandidate.summary}&quot;
                     </p>
 
@@ -528,10 +528,10 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                     </div>
                   </div>
                 ) : (
-                  <div className="p-12 text-center border border-dashed border-slate-800 rounded-xl space-y-2">
-                    <FileText className="w-10 h-10 text-slate-600 mx-auto" />
-                    <div className="text-xs font-medium text-slate-400">No candidate parsed yet</div>
-                    <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                  <div className="p-12 text-center border border-dashed border-nexa-border rounded-xl space-y-2">
+                    <FileText className="w-10 h-10 text-nexa-text-muted mx-auto" />
+                    <div className="text-xs font-medium text-nexa-text-secondary">No candidate parsed yet</div>
+                    <p className="text-[11px] text-nexa-text-muted max-w-xs mx-auto">
                       Paste a CV on the left and click &apos;Parse Candidate Dossier&apos; to extract entities and calculate fit scores.
                     </p>
                   </div>
@@ -548,7 +548,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
               <div className="bg-nexa-surface border border-nexa-border rounded-2xl p-6 sm:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-nexa-border pb-6">
                   <div>
-                    <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
                       Automated Operational Briefing
                     </span>
                     <h3 className="text-xl font-bold text-nexa-text-primary mt-1">
@@ -560,9 +560,9 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-center">
-                      <div className="text-2xl font-bold text-emerald-400">{briefing.operationalHealthScore}%</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                    <div className="bg-nexa-base p-3.5 rounded-xl border border-nexa-border text-center">
+                      <div className="text-2xl font-bold text-emerald-500">{briefing.operationalHealthScore}%</div>
+                      <div className="text-[10px] text-nexa-text-muted uppercase tracking-wider font-semibold">
                         Health Score
                       </div>
                     </div>
@@ -573,7 +573,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                   <h4 className="text-xs font-bold uppercase tracking-wider text-nexa-text-secondary">
                     Executive Summary
                   </h4>
-                  <p className="text-sm text-slate-200 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800/80">
+                  <p className="text-sm text-nexa-text-primary leading-relaxed bg-nexa-base p-4 rounded-xl border border-nexa-border">
                     {briefing.executiveSummary}
                   </p>
                 </div>
@@ -581,14 +581,14 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Highlights */}
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4" />
                       Key Operational Highlights
                     </h4>
-                    <ul className="space-y-2 text-xs text-slate-300">
+                    <ul className="space-y-2 text-xs text-nexa-text-secondary">
                       {briefing.keyHighlights.map((hl, idx) => (
-                        <li key={idx} className="p-3 rounded-lg bg-slate-950 border border-slate-800/80 flex items-start gap-2">
-                          <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <li key={idx} className="p-3 rounded-lg bg-nexa-base border border-nexa-border flex items-start gap-2">
+                          <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                           <span>{hl}</span>
                         </li>
                       ))}
@@ -597,14 +597,14 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
 
                   {/* SLA Risks & Alerts */}
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                       <AlertTriangle className="w-4 h-4" />
                       Active SLA Risks & Triage Alerts
                     </h4>
-                    <ul className="space-y-2 text-xs text-slate-300">
+                    <ul className="space-y-2 text-xs text-nexa-text-secondary">
                       {briefing.slaRisksAndAlerts.map((rk, idx) => (
-                        <li key={idx} className="p-3 rounded-lg bg-slate-950 border border-amber-950/60 text-amber-200 flex items-start gap-2">
-                          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                        <li key={idx} className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                           <span>{rk}</span>
                         </li>
                       ))}
@@ -612,7 +612,6 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                   </div>
                 </div>
 
-                {/* Recommended Actions */}
                 <div className="space-y-3 border-t border-nexa-border pt-6">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-nexa-text-secondary">
                     Recommended Leadership Actions
@@ -621,10 +620,10 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                     {briefing.recommendedActions.map((act, idx) => (
                       <div
                         key={idx}
-                        className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs"
+                        className="p-3.5 rounded-xl bg-nexa-base border border-nexa-border flex items-center justify-between text-xs"
                       >
-                        <span className="text-slate-300">{act}</span>
-                        <ArrowRight className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
+                        <span className="text-nexa-text-primary">{act}</span>
+                        <ArrowRight className="w-4 h-4 text-emerald-500 shrink-0 ml-2" />
                       </div>
                     ))}
                   </div>
@@ -652,52 +651,52 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                 </div>
 
                 {crmSyncResult && (
-                  <div className="p-3 rounded-lg bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>{crmSyncResult}</span>
                   </div>
                 )}
 
                 <form onSubmit={handleSyncCrmDeal} className="space-y-3 text-xs">
                   <div>
-                    <label className="block text-slate-400 mb-1">Company / Client Name</label>
+                    <label className="block text-nexa-text-secondary mb-1">Company / Client Name</label>
                     <input
                       type="text"
                       required
                       value={crmDealCompany}
                       onChange={(e) => setCrmDealCompany(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-400 mb-1">Deal Title / Scope</label>
+                    <label className="block text-nexa-text-secondary mb-1">Deal Title / Scope</label>
                     <input
                       type="text"
                       required
                       value={crmDealTitle}
                       onChange={(e) => setCrmDealTitle(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-400 mb-1">Monthly Contract Value</label>
+                      <label className="block text-nexa-text-secondary mb-1">Monthly Contract Value</label>
                       <input
                         type="text"
                         value={crmDealValue}
                         onChange={(e) => setCrmDealValue(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-400 mb-1">Deal Owner / Account Lead</label>
+                      <label className="block text-nexa-text-secondary mb-1">Deal Owner / Account Lead</label>
                       <input
                         type="text"
                         value={crmDealOwner}
                         onChange={(e) => setCrmDealOwner(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
                       />
                     </div>
                   </div>
@@ -720,7 +719,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
               <div className="p-6 bg-nexa-surface border border-nexa-border rounded-xl space-y-4">
                 <div>
                   <h3 className="text-sm font-bold text-nexa-text-primary flex items-center gap-2">
-                    <Send className="w-4 h-4 text-emerald-400" />
+                    <Send className="w-4 h-4 text-emerald-500" />
                     Multi-Channel Dispatch Engine
                   </h3>
                   <p className="text-xs text-nexa-text-secondary mt-0.5">
@@ -729,8 +728,8 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                 </div>
 
                 {dispatchSuccessMsg && (
-                  <div className="p-3 rounded-lg bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>{dispatchSuccessMsg}</span>
                   </div>
                 )}
@@ -738,11 +737,11 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                 <form onSubmit={handleDispatchNotification} className="space-y-3 text-xs">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-400 mb-1">Channel</label>
+                      <label className="block text-nexa-text-secondary mb-1">Channel</label>
                       <select
                         value={dispatchChannel}
                         onChange={(e) => setDispatchChannel(e.target.value as any)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary focus:outline-none focus:border-emerald-500 transition-colors"
                       >
                         <option value="whatsapp">WhatsApp Business</option>
                         <option value="email">Corporate Email</option>
@@ -752,25 +751,25 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                     </div>
 
                     <div>
-                      <label className="block text-slate-400 mb-1">Recipient Destination</label>
+                      <label className="block text-nexa-text-secondary mb-1">Recipient Destination</label>
                       <input
                         type="text"
                         required
                         value={dispatchRecipient}
                         onChange={(e) => setDispatchRecipient(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-slate-400 mb-1">Notification Message</label>
+                    <label className="block text-nexa-text-secondary mb-1">Notification Message</label>
                     <textarea
                       rows={3}
                       required
                       value={dispatchMessage}
                       onChange={(e) => setDispatchMessage(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
                     />
                   </div>
 
@@ -802,7 +801,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-950 text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[10px]">
+                  <thead className="bg-nexa-base text-nexa-text-secondary border-b border-nexa-border uppercase tracking-wider text-[10px]">
                     <tr>
                       <th className="py-2.5 px-3">Event Type</th>
                       <th className="py-2.5 px-3">Channel</th>
@@ -812,23 +811,23 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                       <th className="py-2.5 px-3">Dispatched</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/80">
+                  <tbody className="divide-y divide-nexa-border">
                     {notifications.map((notif) => (
-                      <tr key={notif.id} className="hover:bg-slate-800/40 transition">
-                        <td className="py-2.5 px-3 font-mono font-medium text-emerald-400">{notif.eventType}</td>
+                      <tr key={notif.id} className="hover:bg-nexa-surface-hover transition">
+                        <td className="py-2.5 px-3 font-mono font-medium text-emerald-600 dark:text-emerald-400">{notif.eventType}</td>
                         <td className="py-2.5 px-3">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 uppercase">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-nexa-base text-nexa-text-secondary border border-nexa-border uppercase font-mono">
                             {notif.channel}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 font-mono text-slate-300">{notif.recipient}</td>
-                        <td className="py-2.5 px-3 text-slate-300 max-w-md truncate">{notif.message}</td>
+                        <td className="py-2.5 px-3 font-mono text-nexa-text-secondary">{notif.recipient}</td>
+                        <td className="py-2.5 px-3 text-nexa-text-secondary max-w-md truncate">{notif.message}</td>
                         <td className="py-2.5 px-3">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 border border-emerald-800 text-emerald-300">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300">
                             {notif.status.toUpperCase()}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 text-slate-500 font-mono">
+                        <td className="py-2.5 px-3 text-nexa-text-muted font-mono">
                           {new Date(notif.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </td>
                       </tr>

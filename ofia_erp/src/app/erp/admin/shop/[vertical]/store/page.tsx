@@ -111,6 +111,28 @@ export default function VerticalStoreStudioPage() {
     `Curated by master practitioners with verified warranty, express dispatch across Nigeria, and physical showroom viewings.`
   );
   const [heroCtaText, setHeroCtaText] = useState(`Explore ${currentVerticalDef.productTermPlural}`);
+
+  const defaultHeroImage =
+    verticalKey === "fashion"
+      ? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80"
+      : verticalKey === "cars"
+      ? "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80"
+      : "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80";
+
+  const [heroImage, setHeroImage] = useState(defaultHeroImage);
+  const [isUploadingHeroImage, setIsUploadingHeroImage] = useState(false);
+  const [heroBgColor, setHeroBgColor] = useState("#FAF9F5");
+  const [heroEyebrow, setHeroEyebrow] = useState(
+    verticalKey === "fashion" ? "Capsule Drop & Couture" : `${currentVerticalDef.name} Drop`
+  );
+  const [heroHighlightText, setHeroHighlightText] = useState("· Artisanal Tailoring & Silhouettes");
+  const [heroCtaHref, setHeroCtaHref] = useState(
+    verticalKey === "fashion" ? "/fashion/catalog" : `/${verticalKey}/catalog`
+  );
+  const [heroFootnote, setHeroFootnote] = useState(
+    "Free Doorstep Sizing Exchanges · 7-Day Fit Guarantee"
+  );
+
   const [season, setSeason] = useState("Harmattan / Resort 2026");
   const [collectionName, setCollectionName] = useState("Heritage Noir Capsule");
   const [collectionDescription, setCollectionDescription] = useState(
@@ -371,6 +393,14 @@ export default function VerticalStoreStudioPage() {
         if (cfg.primaryColor) setPrimaryColor(cfg.primaryColor);
         if (Array.isArray(cfg.badges) && cfg.badges.length > 0) setBadges(cfg.badges);
 
+        // Hydrate Top Hero Showcase
+        if (cfg.hero?.image || cfg.bannerUrl) setHeroImage(cfg.hero?.image || cfg.bannerUrl);
+        if (cfg.hero?.bgColor) setHeroBgColor(cfg.hero.bgColor);
+        if (cfg.hero?.eyebrow) setHeroEyebrow(cfg.hero.eyebrow);
+        if (cfg.hero?.highlightText !== undefined) setHeroHighlightText(cfg.hero.highlightText);
+        if (cfg.hero?.ctaHref) setHeroCtaHref(cfg.hero.ctaHref);
+        if (cfg.hero?.footnote) setHeroFootnote(cfg.hero.footnote);
+
         // Hydrate Hero Featured Collections
         if (cfg.collections?.card1) {
           const c1 = cfg.collections.card1;
@@ -520,6 +550,29 @@ export default function VerticalStoreStudioPage() {
     }
   };
 
+  const handleUploadHeroImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingHeroImage(true);
+    try {
+      const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("tenantSlug", slug);
+      formData.append("folder", "hero_covers");
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data?.url) {
+        setHeroImage(data.url);
+      }
+    } catch (err) {
+      console.error("Top hero image upload failed:", err);
+    } finally {
+      setIsUploadingHeroImage(false);
+      e.target.value = "";
+    }
+  };
+
   const handleUploadHero1Cover = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -639,6 +692,21 @@ export default function VerticalStoreStudioPage() {
       collectionDescription,
       primaryColor,
       badges,
+      bannerUrl: heroImage,
+      heroImage: heroImage,
+      hero: {
+        headline: heroHeading,
+        subheading: heroSubheading,
+        description: heroSubheading,
+        ctaLabel: heroCtaText,
+        ctaHref: heroCtaHref,
+        badge: season,
+        image: heroImage,
+        bgColor: heroBgColor,
+        eyebrow: heroEyebrow,
+        highlightText: heroHighlightText,
+        footnote: heroFootnote,
+      },
       collections: {
         card1: {
           title: hero1Title,
@@ -835,28 +903,279 @@ export default function VerticalStoreStudioPage() {
         {/* TAB 2: HERO BANNER & 2 FEATURED COLLECTIONS */}
         {activeTab === "hero" && (
           <div className="space-y-6 max-w-4xl">
-            {/* Main Hero Copy */}
-            <NexaCard variant="glass" padding="lg" className="rounded-3xl border border-[var(--nexa-border)] space-y-4">
-              <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
-                Hero Banner Copy & Runway Story
-              </h3>
-
-              <div className="space-y-3 text-xs">
+            {/* Top Hero Banner, Background Photography & Runway Story */}
+            <NexaCard variant="glass" padding="lg" className="rounded-3xl border border-[var(--nexa-border)] space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--nexa-border)] pb-3">
                 <div>
-                  <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
-                    Headline Text
-                  </label>
-                  <input
-                    type="text"
-                    value={heroHeading}
-                    onChange={(e) => setHeroHeading(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
-                  />
+                  <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-[#1A56DB]" />
+                    <span>Top Hero Showcase & Visuals</span>
+                  </h3>
+                  <p className="text-xs text-[var(--nexa-text-secondary)] mt-0.5">
+                    Customize the primary runway showcase banner photography, atmospheric wash, and brand copy displayed at the top of your consumer storefront.
+                  </p>
+                </div>
+                <NexaBadge variant="brand" size="sm" className="rounded-full w-fit">
+                  Top Hero Banner
+                </NexaBadge>
+              </div>
+
+              {/* Live Preview Card */}
+              <div
+                className="relative rounded-2xl p-5 overflow-hidden border border-black/10 transition-colors shadow-xs"
+                style={{ backgroundColor: heroBgColor }}
+              >
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                  <div className="space-y-2 max-w-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                        {heroEyebrow || "Capsule Drop & Couture"}
+                      </span>
+                      {season && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-900 border border-amber-500/25">
+                          {season}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="text-xl sm:text-2xl font-black text-zinc-950 tracking-tight leading-tight">
+                      {heroHeading || storeName || "Brand Showcase"}
+                    </h4>
+                    {heroHighlightText && (
+                      <p className="text-xs font-medium text-stone-500">
+                        {heroHighlightText}
+                      </p>
+                    )}
+                    {heroSubheading && (
+                      <p className="text-xs text-stone-600 line-clamp-2 leading-relaxed">
+                        {heroSubheading}
+                      </p>
+                    )}
+                    <div className="pt-2 flex items-center gap-3">
+                      <span className="px-4 py-1.5 rounded-full bg-zinc-950 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm">
+                        <span>{heroCtaText || "Explore Catalog"}</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </span>
+                      <span className="text-[11px] text-stone-500 truncate">
+                        {heroFootnote}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Visual Preview */}
+                  <div className="relative w-full md:w-64 h-40 rounded-xl overflow-hidden border border-black/10 shadow-sm shrink-0">
+                    <img
+                      src={heroImage || defaultHeroImage}
+                      alt="Top Hero Runway Preview"
+                      className="w-full h-full object-cover object-center"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                    <span className="absolute bottom-2 left-2 text-[10px] font-bold bg-black/60 text-white px-2 py-0.5 rounded-full backdrop-blur-xs">
+                      Live Cover Preview
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Background Photography & Color Controls */}
+              <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-4">
+                <h4 className="font-bold text-xs text-[var(--nexa-text-primary)] uppercase tracking-wider flex items-center gap-2">
+                  <Palette className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Top Hero Background & Visual Controls</span>
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Image Upload & Direct URL */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--nexa-text-primary)]">
+                      Hero Cover Photography (Runway Visual)
+                    </label>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        id="top-hero-image-upload"
+                        accept="image/*"
+                        onChange={handleUploadHeroImage}
+                        disabled={isUploadingHeroImage}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="top-hero-image-upload"
+                        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-[var(--nexa-surface)] border border-[var(--nexa-border)] hover:bg-[var(--nexa-border)] transition-colors cursor-pointer ${
+                          isUploadingHeroImage ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        {isUploadingHeroImage ? (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#1A56DB]" />
+                        ) : (
+                          <Upload className="w-3.5 h-3.5 text-[#1A56DB]" />
+                        )}
+                        <span>{isUploadingHeroImage ? "Uploading..." : "Upload Device Photo"}</span>
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => setHeroImage(defaultHeroImage)}
+                        className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-border)] border border-[var(--nexa-border)] transition-colors cursor-pointer"
+                        title="Reset to default preset"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Reset Preset</span>
+                      </button>
+                    </div>
+
+                    <input
+                      type="text"
+                      value={heroImage}
+                      onChange={(e) => setHeroImage(e.target.value)}
+                      placeholder="Or enter direct image URL (e.g. Unsplash / Cloudinary)"
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-mono text-[11px] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                    />
+                  </div>
+
+                  {/* Atmospheric Wash Color */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--nexa-text-primary)]">
+                      Atmospheric Wash (Banner Background Tint)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={heroBgColor}
+                        onChange={(e) => setHeroBgColor(e.target.value)}
+                        className="w-9 h-9 rounded-xl border border-[var(--nexa-border)] cursor-pointer bg-transparent p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={heroBgColor}
+                        onChange={(e) => setHeroBgColor(e.target.value)}
+                        className="w-28 px-3 py-2 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-mono text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                      />
+                      <div className="flex items-center gap-1">
+                        {[
+                          { label: "Warm Linen", color: "#FAF9F5" },
+                          { label: "Noir Charcoal", color: "#111318" },
+                          { label: "Soft Slate", color: "#F8FAFC" },
+                          { label: "Pure White", color: "#FFFFFF" },
+                        ].map((preset) => (
+                          <button
+                            key={preset.color}
+                            type="button"
+                            onClick={() => setHeroBgColor(preset.color)}
+                            title={preset.label}
+                            className={`w-6 h-6 rounded-lg border transition-transform hover:scale-110 cursor-pointer ${
+                              heroBgColor.toLowerCase() === preset.color.toLowerCase()
+                                ? "border-[#1A56DB] ring-2 ring-[#1A56DB]/30 scale-105"
+                                : "border-stone-300"
+                            }`}
+                            style={{ backgroundColor: preset.color }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+                      Controls the soft atmospheric blend wash behind the runway imagery and text.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Quick Select from Live Catalog Products */}
+                {catalogProducts.length > 0 && (
+                  <div className="pt-2 border-t border-[var(--nexa-border)] space-y-2">
+                    <label className="block text-[11px] font-bold text-[var(--nexa-text-secondary)] uppercase tracking-wider">
+                      Or Pick a Live Catalogue Design as Top Hero Cover:
+                    </label>
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
+                      {catalogProducts.slice(0, 10).map((prod) => {
+                        const img = Array.isArray(prod.images) && prod.images[0] ? prod.images[0] : prod.image;
+                        if (!img) return null;
+                        const isSelected = heroImage === img;
+                        return (
+                          <button
+                            key={prod.id}
+                            type="button"
+                            onClick={() => setHeroImage(img)}
+                            className={`group relative shrink-0 w-16 h-16 rounded-xl overflow-hidden border transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-[#1A56DB] ring-2 ring-[#1A56DB]/40 scale-105"
+                                : "border-[var(--nexa-border)] hover:border-[#1A56DB]/50 opacity-80 hover:opacity-100"
+                            }`}
+                            title={prod.name}
+                          >
+                            <img src={img} alt={prod.name} className="w-full h-full object-cover" />
+                            {isSelected && (
+                              <div className="absolute inset-0 bg-[#1A56DB]/30 flex items-center justify-center">
+                                <Check className="w-4 h-4 text-white drop-shadow-md" />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Runway Story, Typography & Button Copy */}
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+                      Eyebrow Headline (Top Tag)
+                    </label>
+                    <input
+                      type="text"
+                      value={heroEyebrow}
+                      onChange={(e) => setHeroEyebrow(e.target.value)}
+                      placeholder="e.g. Capsule Drop & Couture"
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+                      Season / Runway Drop Badge
+                    </label>
+                    <input
+                      type="text"
+                      value={season}
+                      onChange={(e) => setSeason(e.target.value)}
+                      placeholder="e.g. Harmattan / Resort 2026"
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+                      Headline Text (Store / Collection Showcase)
+                    </label>
+                    <input
+                      type="text"
+                      value={heroHeading}
+                      onChange={(e) => setHeroHeading(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+                      Highlight Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      value={heroHighlightText}
+                      onChange={(e) => setHeroHighlightText(e.target.value)}
+                      placeholder="e.g. · Artisanal Tailoring & Silhouettes"
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
-                    Sub-Headline Story
+                    Sub-Headline Story / Editorial Description
                   </label>
                   <textarea
                     rows={2}
@@ -866,7 +1185,7 @@ export default function VerticalStoreStudioPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
                       CTA Button Label
@@ -881,13 +1200,26 @@ export default function VerticalStoreStudioPage() {
 
                   <div>
                     <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
-                      Season / Runway Drop Badge
+                      CTA Link Destination
                     </label>
                     <input
                       type="text"
-                      value={season}
-                      onChange={(e) => setSeason(e.target.value)}
-                      placeholder="e.g. Harmattan / Resort 2026"
+                      value={heroCtaHref}
+                      onChange={(e) => setHeroCtaHref(e.target.value)}
+                      placeholder="e.g. /fashion/catalog"
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-mono text-xs text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+                      Footnote Guarantee
+                    </label>
+                    <input
+                      type="text"
+                      value={heroFootnote}
+                      onChange={(e) => setHeroFootnote(e.target.value)}
+                      placeholder="e.g. Free Doorstep Sizing Exchanges"
                       className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
                     />
                   </div>

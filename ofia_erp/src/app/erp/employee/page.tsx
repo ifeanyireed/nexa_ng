@@ -13,6 +13,7 @@ import {
 } from "@/lib/erp-store";
 import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { BusinessShell } from "@/components/business/BusinessShell";
+import { EditAvatarModal } from "@/components/erp/EditAvatarModal";
 import {
   UserCheck,
   Star,
@@ -35,6 +36,7 @@ import {
   CheckSquare,
   GraduationCap,
   Network,
+  Camera,
 } from "lucide-react";
 import { useTenantProvisioning } from "@/lib/access-control";
 
@@ -45,6 +47,22 @@ export default function EmployeeDashboard() {
   const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
   const [userReviews, setUserReviews] = useState<PerformanceReview[]>([]);
   const [isSubmittingNew, setIsSubmittingNew] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleAvatarUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.avatar) {
+        setCurrentUser((prev) => ({ ...prev, avatar: customEvent.detail.avatar }));
+      }
+    };
+    window.addEventListener("erp_avatar_updated", handleAvatarUpdate);
+    window.addEventListener("erp_current_user_updated", handleAvatarUpdate);
+    return () => {
+      window.removeEventListener("erp_avatar_updated", handleAvatarUpdate);
+      window.removeEventListener("erp_current_user_updated", handleAvatarUpdate);
+    };
+  }, []);
 
   const hasShopModule = isModuleProvisioned("shop");
   const hasCrmModule = isModuleProvisioned("crm");
@@ -175,16 +193,26 @@ export default function EmployeeDashboard() {
         {/* Welcome Profile Header */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="flex items-center gap-4">
-            <img
-              src={resolveAvatarUrl(currentUser.avatar, currentUser.name || currentUser.id)}
-              alt={currentUser.name}
-              className="w-16 h-16 rounded-full object-cover border-2 border-blue-100 shadow-sm"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(
-                  currentUser.name || currentUser.id
-                );
-              }}
-            />
+            <div
+              onClick={() => setIsAvatarModalOpen(true)}
+              className="relative group cursor-pointer shrink-0 rounded-full"
+              title="Click to edit your avatar"
+            >
+              <img
+                src={resolveAvatarUrl(currentUser.avatar, currentUser.name || currentUser.id)}
+                alt={currentUser.name}
+                className="w-16 h-16 rounded-full object-cover border-2 border-blue-100 shadow-sm"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(
+                    currentUser.name || currentUser.id
+                  );
+                }}
+              />
+              <div className="absolute inset-0 rounded-full bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white backdrop-blur-[1px]">
+                <Camera className="w-5 h-5" />
+                <span className="text-[9px] font-bold mt-0.5">Edit</span>
+              </div>
+            </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-black text-slate-800">
@@ -909,6 +937,21 @@ export default function EmployeeDashboard() {
           </div>
         </div>
       </div>
+
+      <EditAvatarModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        currentUser={{
+          id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+          avatar: currentUser.avatar,
+          role: currentUser.role,
+        }}
+        onAvatarUpdated={(newAvatar) => {
+          setCurrentUser((prev) => ({ ...prev, avatar: newAvatar }));
+        }}
+      />
     </BusinessShell>
   );
 }

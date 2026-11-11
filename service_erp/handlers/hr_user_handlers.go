@@ -298,3 +298,84 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
+
+// ------------------------------------------------------------------------------
+// USER AVATAR UPDATE HANDLER
+// ------------------------------------------------------------------------------
+type UpdateUserAvatarRequest struct {
+	UserID     string `json:"userId"`
+	ID         string `json:"id"`
+	Email      string `json:"email"`
+	Avatar     string `json:"avatar"`
+	TenantSlug string `json:"tenantSlug"`
+}
+
+func HandleUserAvatar(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	targetDB := getDB(r)
+	if targetDB == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "Database connection unavailable"})
+		return
+	}
+
+	if r.Method != http.MethodPost && r.Method != http.MethodPut && r.Method != http.MethodPatch {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		_ = json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "Method not allowed"})
+		return
+	}
+
+	var req UpdateUserAvatarRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "Invalid request body: " + err.Error()})
+		return
+	}
+
+	id := strings.TrimSpace(req.UserID)
+	if id == "" {
+		id = strings.TrimSpace(req.ID)
+	}
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+	avatar := strings.TrimSpace(req.Avatar)
+
+	if avatar == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "avatar parameter is required"})
+		return
+	}
+
+	if id == "" && email == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "userId or email is required"})
+		return
+	}
+
+	var res sql.Result
+	var err error
+	if id != "" && email != "" {
+		res, err = targetDB.Exec(`UPDATE "User" SET avatar = $1 WHERE id = $2 OR LOWER(email) = $3`, avatar, id, email)
+	} else if id != "" {
+		res, err = targetDB.Exec(`UPDATE "User" SET avatar = $1 WHERE id = $2`, avatar, id)
+	} else {
+		res, err = targetDB.Exec(`UPDATE "User" SET avatar = $1 WHERE LOWER(email) = $2`, avatar, email)
+	}
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "Failed to update avatar: " + err.Error()})
+		return
+	}
+
+	rowsAffected, _ := res.RowsAffected()
+
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"success":      true,
+		"status":       "success",
+		"message":      "Avatar updated successfully",
+		"avatar":       avatar,
+		"userId":       id,
+		"email":        email,
+		"rowsAffected": rowsAffected,
+	})
+}

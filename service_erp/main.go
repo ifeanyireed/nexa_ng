@@ -84,6 +84,7 @@ func registerRoutes() {
 
 	// 2. HR & Performance Appraisal Endpoints
 	registerRoute("/users", handlers.HandleUsers)
+	registerRoute("/users/avatar", handlers.HandleUserAvatar)
 	registerRoute("/departments", handlers.HandleDepartments)
 	registerRoute("/objectives", handlers.HandleObjectives)
 	registerRoute("/cycles", handlers.HandleCycles)
@@ -95,6 +96,7 @@ func registerRoutes() {
 
 	// Prefix aliases for /api/v1/erp/*
 	registerRoute("/api/v1/erp/users", handlers.HandleUsers)
+	registerRoute("/api/v1/erp/users/avatar", handlers.HandleUserAvatar)
 	registerRoute("/api/v1/erp/departments", handlers.HandleDepartments)
 	registerRoute("/api/v1/erp/objectives", handlers.HandleObjectives)
 	registerRoute("/api/v1/erp/cycles", handlers.HandleCycles)

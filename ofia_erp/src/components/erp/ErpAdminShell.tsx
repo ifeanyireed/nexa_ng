@@ -58,6 +58,7 @@ import {
   UserCheck,
   Sparkles,
   Mail,
+  Camera,
   X,
   Car,
   Bike,
@@ -106,6 +107,7 @@ import {
   slugToTenantName,
 } from "@/lib/tenant-context";
 import { DashboardSkeleton } from "@/components/nexa/PageSkeleton";
+import { EditAvatarModal } from "./EditAvatarModal";
 
 export const OFIA_DEFAULT_LOGO = "/icon.png";
 
@@ -220,7 +222,9 @@ export function ErpAdminShell({
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
   const [userAvatar, setUserAvatar] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
   const [userAssignedPages, setUserAssignedPages] = useState<string[]>([]);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState<boolean>(false);
 
   const isEffectiveLoading = !isShellReady || Boolean(isLoading);
 
@@ -610,6 +614,8 @@ export function ErpAdminShell({
       setUserName(resolvedName);
       setUserEmail(resolvedEmail);
       setUserAvatar(resolvedAvatar);
+      const resolvedUserId = parsedUser?.id || (user as any)?.id || (typeof window !== "undefined" ? localStorage.getItem("nexa_user_id") || localStorage.getItem("erp_user_id") || "" : "");
+      if (resolvedUserId) setUserId(resolvedUserId);
 
       let resolvedAssignedPages: string[] = [];
       if (parsedUser && Array.isArray(parsedUser.assignedPages)) {
@@ -643,6 +649,9 @@ export function ErpAdminShell({
                 try {
                   document.cookie = `nexa_assigned_pages=${encodeURIComponent(JSON.stringify(updatedPages))}; path=/; max-age=2592000; SameSite=Lax`;
                 } catch {}
+              }
+              if (dbUser.id) {
+                setUserId(dbUser.id);
               }
               if (dbUser.role && dbUser.role !== resolvedRole) {
                 setCurrentRole(dbUser.role);
@@ -861,6 +870,12 @@ export function ErpAdminShell({
     const handleCurrentUserUpdate = (e: Event) => {
       const customEvent = e as CustomEvent;
       if (customEvent.detail) {
+        if (customEvent.detail.id) {
+          setUserId(customEvent.detail.id);
+        }
+        if (customEvent.detail.avatar) {
+          setUserAvatar(resolveAvatarUrl(customEvent.detail.avatar, customEvent.detail.name || userName || "Staff"));
+        }
         if (Array.isArray(customEvent.detail.assignedPages)) {
           setUserAssignedPages(customEvent.detail.assignedPages);
         }
@@ -870,9 +885,17 @@ export function ErpAdminShell({
       }
     };
 
+    const handleAvatarUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.avatar) {
+        setUserAvatar(resolveAvatarUrl(customEvent.detail.avatar, userName || "Staff"));
+      }
+    };
+
     window.addEventListener("ofia_rbac_updated", handleRbacUpdate);
     window.addEventListener("ofia_dept_access_updated", handleDeptUpdate);
     window.addEventListener("erp_current_user_updated", handleCurrentUserUpdate);
+    window.addEventListener("erp_avatar_updated", handleAvatarUpdated);
     window.addEventListener("erp_sidebar_collapsed_change", handleSidebarSync);
     window.addEventListener("storage", handleStorageSync);
     return () => {
@@ -880,6 +903,7 @@ export function ErpAdminShell({
       window.removeEventListener("ofia_rbac_updated", handleRbacUpdate);
       window.removeEventListener("ofia_dept_access_updated", handleDeptUpdate);
       window.removeEventListener("erp_current_user_updated", handleCurrentUserUpdate);
+      window.removeEventListener("erp_avatar_updated", handleAvatarUpdated);
       window.removeEventListener("erp_sidebar_collapsed_change", handleSidebarSync);
       window.removeEventListener("storage", handleStorageSync);
     };
@@ -1765,7 +1789,16 @@ export function ErpAdminShell({
             ) : isSidebarOpen ? (
               <div className="flex items-center justify-between p-2 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <NexaAvatar size="sm" isOnline src={userAvatar} name={isMounted ? displayedUserName : "Staff"} />
+                  <div
+                    onClick={() => setIsAvatarModalOpen(true)}
+                    className="relative group cursor-pointer shrink-0 rounded-full"
+                    title="Click to edit your avatar"
+                  >
+                    <NexaAvatar size="sm" isOnline src={userAvatar} name={isMounted ? displayedUserName : "Staff"} />
+                    <div className="absolute inset-0 rounded-full bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white backdrop-blur-[1px]">
+                      <Camera className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-nexa-text-primary truncate" suppressHydrationWarning>
                       {isMounted ? displayedUserName : "Staff"}
@@ -1809,7 +1842,16 @@ export function ErpAdminShell({
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <NexaAvatar size="sm" isOnline src={userAvatar} name={displayedUserName} />
+                <div
+                  onClick={() => setIsAvatarModalOpen(true)}
+                  className="relative group cursor-pointer shrink-0 rounded-full"
+                  title="Click to edit your avatar"
+                >
+                  <NexaAvatar size="sm" isOnline src={userAvatar} name={displayedUserName} />
+                  <div className="absolute inset-0 rounded-full bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white backdrop-blur-[1px]">
+                    <Camera className="w-3.5 h-3.5" />
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsNotifOpen(!isNotifOpen)}
@@ -2186,6 +2228,21 @@ export function ErpAdminShell({
           })}
         </nav>
       )}
+
+      {/* EDIT AVATAR MODAL */}
+      <EditAvatarModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        currentUser={{
+          id: userId || (user as any)?.id,
+          name: displayedUserName,
+          email: userEmail,
+          avatar: userAvatar,
+          role: currentRole,
+        }}
+        onAvatarUpdated={(newAvatar) => setUserAvatar(newAvatar)}
+        tenantSlug={currentTenant?.slug || extractSubdomainOrParam() || undefined}
+      />
     </div>
   );
 }

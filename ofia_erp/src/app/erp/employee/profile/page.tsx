@@ -12,6 +12,7 @@ import {
 } from "@/lib/erp-store";
 import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { BusinessShell } from "@/components/business/BusinessShell";
+import { EditAvatarModal } from "@/components/erp/EditAvatarModal";
 import {
   Award,
   CheckCircle2,
@@ -33,6 +34,7 @@ import {
   BadgeCheck,
   ExternalLink,
   ClipboardList,
+  Camera,
 } from "lucide-react";
 
 export default function EmployeeProfilePage() {
@@ -42,6 +44,34 @@ export default function EmployeeProfilePage() {
   const [profileUser, setProfileUser] = useState<User>(() => getSignedInERPUser(users));
   const [userReviews, setUserReviews] = useState<PerformanceReview[]>([]);
   const [selectedReviewId, setSelectedReviewId] = useState<string>("");
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleAvatarUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.avatar) {
+        const newAv = customEvent.detail.avatar;
+        setProfileUser((prev) => {
+          if (!prev) return prev;
+          if (
+            (customEvent.detail.id && prev.id === customEvent.detail.id) ||
+            (customEvent.detail.email && prev.email === customEvent.detail.email) ||
+            (!customEvent.detail.id && !customEvent.detail.email)
+          ) {
+            return { ...prev, avatar: newAv };
+          }
+          return prev;
+        });
+        setCurrentUser((prev) => ({ ...prev, avatar: newAv }));
+      }
+    };
+    window.addEventListener("erp_avatar_updated", handleAvatarUpdate);
+    window.addEventListener("erp_current_user_updated", handleAvatarUpdate);
+    return () => {
+      window.removeEventListener("erp_avatar_updated", handleAvatarUpdate);
+      window.removeEventListener("erp_current_user_updated", handleAvatarUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -280,16 +310,26 @@ export default function EmployeeProfilePage() {
         {/* Profile Card Header */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-            <img
-              src={resolveAvatarUrl(profileUser.avatar, profileUser.name || profileUser.id)}
-              alt={profileUser.name}
-              className="w-20 h-20 rounded-full object-cover border-4 border-blue-50 shadow-sm"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(
-                  profileUser.name || profileUser.id
-                );
-              }}
-            />
+            <div
+              onClick={() => setIsAvatarModalOpen(true)}
+              className="relative group cursor-pointer shrink-0 rounded-full"
+              title="Click to edit avatar"
+            >
+              <img
+                src={resolveAvatarUrl(profileUser.avatar, profileUser.name || profileUser.id)}
+                alt={profileUser.name}
+                className="w-20 h-20 rounded-full object-cover border-4 border-blue-50 shadow-sm"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(
+                    profileUser.name || profileUser.id
+                  );
+                }}
+              />
+              <div className="absolute inset-0 rounded-full bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white backdrop-blur-[1px]">
+                <Camera className="w-6 h-6" />
+                <span className="text-[10px] font-bold mt-0.5">Edit</span>
+              </div>
+            </div>
             <div>
               <div className="flex items-center gap-2 justify-center sm:justify-start">
                 <h2 className="text-xl font-black text-slate-800 leading-tight">
@@ -1013,6 +1053,24 @@ export default function EmployeeProfilePage() {
           </div>
         </div>
       </div>
+
+      <EditAvatarModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        currentUser={{
+          id: profileUser.id,
+          name: profileUser.name,
+          email: profileUser.email,
+          avatar: profileUser.avatar,
+          role: profileUser.role,
+        }}
+        onAvatarUpdated={(newAvatar) => {
+          setProfileUser((prev) => ({ ...prev, avatar: newAvatar }));
+          if (profileUser.id === currentUser.id || profileUser.email === currentUser.email) {
+            setCurrentUser((prev) => ({ ...prev, avatar: newAvatar }));
+          }
+        }}
+      />
     </BusinessShell>
   );
 }

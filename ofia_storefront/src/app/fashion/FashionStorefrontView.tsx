@@ -128,7 +128,7 @@ export default function FashionStorefrontView() {
               ctaLabel={config?.hero?.ctaLabel || (canBookServices ? "Schedule Bespoke Fitting" : "Explore Capsule Catalog")}
               ctaHref={config?.hero?.ctaHref || (canBookServices ? `/fashion/custom-tailoring${tenantQuery}` : `/fashion/catalog${tenantQuery}`)}
               footnote={config?.hero?.footnote || "Free Doorstep Sizing Exchanges · 7-Day Fit Guarantee"}
-              image={config?.hero?.image || store.coverImage || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80"}
+              image={config?.hero?.image || config?.bannerUrl || store.coverImage || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Capsule Collection`}
               badge={config?.season || config?.hero?.badge || "Harmattan / Resort 2026"}
               bgColor={config?.hero?.bgColor || "#FAF9F5"}

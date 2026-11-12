@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { buildGlobalKey, redisGet, redisSet, redisDel } from "./redis";
 
 export interface TenantDbConfig {
   tenantSlug: string;
@@ -45,6 +46,18 @@ export async function getTenantDatabaseConfig(tenantSlug: string): Promise<Tenan
     return cached.config;
   }
 
+  // Check Redis cache (shared across serverless instances)
+  const redisCacheKey = buildGlobalKey("storefront", "tenant_db", cleanSlug);
+  try {
+    const redisCached = await redisGet<TenantDbConfig>(redisCacheKey);
+    if (redisCached && redisCached.connectionString) {
+      dbConfigCache.set(cleanSlug, { config: redisCached, expiresAt: now + 60000 });
+      return redisCached;
+    }
+  } catch (err) {
+    // Fail-open: proceed to Neon DB lookup
+  }
+
   const registrySql = getRegistrySql();
 
   try {
@@ -70,6 +83,8 @@ export async function getTenantDatabaseConfig(tenantSlug: string): Promise<Tenan
       };
 
       dbConfigCache.set(cleanSlug, { config, expiresAt: now + 60000 });
+      // Cache in Redis with 5-minute TTL
+      await redisSet(redisCacheKey, config, 300);
       return config;
     }
   } catch (err) {
@@ -111,4 +126,8 @@ export async function getTenantSql(tenantSlug: string): Promise<any> {
 export function invalidateTenantDbCache(tenantSlug: string) {
   const cleanSlug = (tenantSlug || "").toLowerCase().trim();
   dbConfigCache.delete(cleanSlug);
+  const redisCacheKey = buildGlobalKey("storefront", "tenant_db", cleanSlug);
+  redisDel(redisCacheKey).catch((err) =>
+    console.warn(`⚠️ [Redis] Failed to invalidate '${redisCacheKey}':`, err)
+  );
 }

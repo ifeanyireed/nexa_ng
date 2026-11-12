@@ -8,6 +8,7 @@ import (
 	"os"
 	"service_erp/db"
 	"service_erp/handlers"
+	"service_erp/pkg/redis"
 	"strings"
 	"time"
 
@@ -37,9 +38,15 @@ func loadEnv(filepath string) {
 	}
 }
 
+var redisClient *redis.Client
+
 func main() {
 	// Load environment variables
 	loadEnv(".env")
+
+	// Initialize Resilient Redis Client
+	redisClient = redis.NewClient("erp")
+	defer redisClient.Close()
 
 	// Initialize database connection
 	database, err := db.InitDB()
@@ -74,10 +81,15 @@ func registerRoutes() {
 	// 1. Health check & Telemetry
 	registerRoute("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		var redisHealth map[string]interface{}
+		if redisClient != nil {
+			redisHealth = redisClient.Health(r.Context())
+		}
 		json.NewEncoder(w).Encode(map[string]any{
 			"status":    "HEALTHY",
 			"service":   "service_erp",
 			"modules":   []string{"finance", "hr", "quests"},
+			"redis":     redisHealth,
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		})
 	})

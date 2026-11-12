@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"nexa/marketplace_service/internal/db"
 	"nexa/marketplace_service/internal/handlers"
 	nexaMiddleware "nexa/marketplace_service/internal/middleware"
 	"nexa/marketplace_service/internal/models"
+	"nexa/marketplace_service/internal/redis"
 	"os"
 	"regexp"
 	"strconv"
@@ -27,6 +29,10 @@ func main() {
 	// Initialize Database via GORM
 	db.Init()
 	defer db.Close()
+
+	// Initialize Resilient Redis Client
+	redisClient := redis.NewClient("marketplace")
+	defer redisClient.Close()
 
 	// Populate missing slugs for existing profiles
 	populateSlugs()
@@ -55,7 +61,15 @@ func main() {
 	// Health Check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"service": "marketplace_service", "status": "healthy", "port": 8085, "database": "u721451974_nexa_db"}`))
+		redisHealth := redisClient.Health(r.Context())
+		resp := map[string]interface{}{
+			"service":  "marketplace_service",
+			"status":   "healthy",
+			"port":     8085,
+			"database": "neondb (postgres)",
+			"redis":    redisHealth,
+		}
+		json.NewEncoder(w).Encode(resp)
 	})
 
 	// Public Routes

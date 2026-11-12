@@ -13,12 +13,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 	"nexa/user_subscription_service/internal/models"
+	"nexa/user_subscription_service/internal/redis"
 	"nexa/user_subscription_service/internal/subscription"
 )
 
 type SubscriptionHandler struct {
 	db      *gorm.DB
 	subServ *subscription.SubscriptionService
+	redis   *redis.Client
 }
 
 func NewSubscriptionHandler(db *gorm.DB) *SubscriptionHandler {
@@ -26,6 +28,10 @@ func NewSubscriptionHandler(db *gorm.DB) *SubscriptionHandler {
 		db:      db,
 		subServ: subscription.NewSubscriptionService(db),
 	}
+}
+
+func (h *SubscriptionHandler) SetRedis(r *redis.Client) {
+	h.redis = r
 }
 
 type CheckoutPlanRequest struct {
@@ -82,9 +88,28 @@ func (h *SubscriptionHandler) GetAllPlanTiers(w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(subscription.PlanLimits)
 }
 
-// ListPlans returns all subscription plan blueprints stored in Neon Postgres database
+// ListPlans returns all subscription plan blueprints stored in Neon Postgres database (with Redis cache-aside)
 func (h *SubscriptionHandler) ListPlans(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	category := r.URL.Query().Get("category")
+	cacheKeySuffix := "all"
+	if category != "" && category != "ALL" {
+		cacheKeySuffix = category
+	}
+
+	// 1. Check Redis cache first
+	if h.redis != nil && h.redis.IsAvailable() {
+		cacheKey := h.redis.BuildGlobalKey("plans", cacheKeySuffix)
+		var cachedPlans []models.SubscriptionPlan
+		if err := h.redis.Get(r.Context(), cacheKey, &cachedPlans); err == nil && len(cachedPlans) > 0 {
+			w.Header().Set("X-Cache-Status", "HIT")
+			json.NewEncoder(w).Encode(cachedPlans)
+			return
+		}
+	}
+
+	w.Header().Set("X-Cache-Status", "MISS")
 
 	if h.db != nil {
 		var count int64
@@ -94,13 +119,17 @@ func (h *SubscriptionHandler) ListPlans(w http.ResponseWriter, r *http.Request) 
 			seedDefaultSubscriptionPlans(h.db)
 		}
 
-		category := r.URL.Query().Get("category")
 		var plans []models.SubscriptionPlan
 		query := h.db.Order("price_ngn ASC")
 		if category != "" && category != "ALL" {
 			query = query.Where("category = ?", category)
 		}
 		if err := query.Find(&plans).Error; err == nil && len(plans) > 0 {
+			// 2. Cache result in Redis with 1 hour TTL
+			if h.redis != nil && h.redis.IsAvailable() {
+				cacheKey := h.redis.BuildGlobalKey("plans", cacheKeySuffix)
+				_ = h.redis.Set(r.Context(), cacheKey, plans, 1*time.Hour)
+			}
 			json.NewEncoder(w).Encode(plans)
 			return
 		}
@@ -153,6 +182,11 @@ func (h *SubscriptionHandler) CreatePlan(w http.ResponseWriter, r *http.Request)
 			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
 			return
 		}
+	}
+
+	// Invalidate plans cache on creation
+	if h.redis != nil {
+		_ = h.redis.DeletePrefix(r.Context(), h.redis.BuildGlobalKey("plans", ""))
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -243,10 +277,17 @@ func (h *SubscriptionHandler) UpdatePlan(w http.ResponseWriter, r *http.Request)
 			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
 			return
 		}
+		if h.redis != nil {
+			_ = h.redis.DeletePrefix(r.Context(), h.redis.BuildGlobalKey("plans", ""))
+		}
 		var updated models.SubscriptionPlan
 		h.db.First(&updated, "id = ?", planID)
 		json.NewEncoder(w).Encode(updated)
 		return
+	}
+
+	if h.redis != nil {
+		_ = h.redis.DeletePrefix(r.Context(), h.redis.BuildGlobalKey("plans", ""))
 	}
 
 	rawMap["id"] = planID
@@ -263,6 +304,10 @@ func (h *SubscriptionHandler) DeletePlan(w http.ResponseWriter, r *http.Request)
 			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
 			return
 		}
+	}
+
+	if h.redis != nil {
+		_ = h.redis.DeletePrefix(r.Context(), h.redis.BuildGlobalKey("plans", ""))
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 
 	"nexa/logistics_service/internal/db"
 	"nexa/logistics_service/internal/handlers"
+	"nexa/logistics_service/internal/redis"
 )
 
 func main() {
@@ -22,6 +24,10 @@ func main() {
 	if port == "" {
 		port = "8085"
 	}
+
+	redisClient := redis.NewClient("logistics")
+	defer redisClient.Close()
+	db.SetRedisClient(redisClient)
 
 	database := db.InitDB()
 	logisticsHandler := handlers.NewLogisticsHandler(database)
@@ -48,7 +54,16 @@ func main() {
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok","service":"service_logistics","port":"` + port + `"}`))
+
+		redisHealth := redisClient.Health(r.Context())
+		resp := map[string]interface{}{
+			"status":   "ok",
+			"service":  "service_logistics",
+			"port":     port,
+			"database": "neondb (postgres)",
+			"redis":    redisHealth,
+		}
+		json.NewEncoder(w).Encode(resp)
 	})
 
 	// Logistics API Routes

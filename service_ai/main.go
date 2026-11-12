@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"nexa/ai_gtm_service/internal/db"
 	"nexa/ai_gtm_service/internal/handlers"
 	"nexa/ai_gtm_service/internal/middleware"
+	"nexa/ai_gtm_service/internal/redis"
 )
 
 func main() {
@@ -25,6 +27,9 @@ func main() {
 	}
 
 	database := db.InitDB()
+
+	redisClient := redis.NewClient("ai")
+	defer redisClient.Close()
 
 	authHandler := handlers.NewAuthHandler(database)
 	campaignsHandler := handlers.NewCampaignsHandler(database)
@@ -52,7 +57,15 @@ func main() {
 	// Health Check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"service": "ofia-voice-agent-service", "status": "healthy", "port": 8082, "voice_agent": "active"}`))
+		redisHealth := redisClient.Health(r.Context())
+		resp := map[string]interface{}{
+			"service":     "ofia-voice-agent-service",
+			"status":      "healthy",
+			"port":        8082,
+			"voice_agent": "active",
+			"redis":       redisHealth,
+		}
+		json.NewEncoder(w).Encode(resp)
 	})
 
 	// Real-Time Voice WebSocket Stream (Audio, Text, State & CRM Events)

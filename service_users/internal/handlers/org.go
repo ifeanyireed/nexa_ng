@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 	"nexa/user_subscription_service/internal/middleware"
 	"nexa/user_subscription_service/internal/models"
+	"nexa/user_subscription_service/internal/redis"
 )
 
 var (
@@ -24,11 +25,16 @@ var (
 )
 
 type OrgHandler struct {
-	db *gorm.DB
+	db    *gorm.DB
+	redis *redis.Client
 }
 
 func NewOrgHandler(db *gorm.DB) *OrgHandler {
 	return &OrgHandler{db: db}
+}
+
+func (h *OrgHandler) SetRedis(r *redis.Client) {
+	h.redis = r
 }
 
 type CreateOrgRequest struct {
@@ -502,6 +508,19 @@ func (h *OrgHandler) GetTenantRBAC(w http.ResponseWriter, r *http.Request) {
 		orgID = "default"
 	}
 
+	// 1. Check Redis cache first
+	if h.redis != nil && h.redis.IsAvailable() {
+		cacheKey := h.redis.BuildKey(orgID, "rbac", "matrix")
+		var cachedResponse map[string]interface{}
+		if err := h.redis.Get(r.Context(), cacheKey, &cachedResponse); err == nil && cachedResponse != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache-Status", "HIT")
+			json.NewEncoder(w).Encode(cachedResponse)
+			return
+		}
+	}
+
+	w.Header().Set("X-Cache-Status", "MISS")
 	matrix := make(map[string]map[string]bool)
 
 	if h.db != nil {
@@ -535,11 +554,19 @@ func (h *OrgHandler) GetTenantRBAC(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	response := map[string]interface{}{
 		"tenant_id": orgID,
 		"matrix":    matrix,
-	})
+	}
+
+	// 2. Cache in Redis with 15 minute TTL
+	if h.redis != nil && h.redis.IsAvailable() {
+		cacheKey := h.redis.BuildKey(orgID, "rbac", "matrix")
+		_ = h.redis.Set(r.Context(), cacheKey, response, 15*time.Minute)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *OrgHandler) SaveTenantRBAC(w http.ResponseWriter, r *http.Request) {
@@ -603,6 +630,13 @@ func (h *OrgHandler) SaveTenantRBAC(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
+		}
+
+		// Invalidate tenant RBAC cache on update
+		if h.redis != nil {
+			_ = h.redis.Delete(r.Context(), h.redis.BuildKey(orgID, "rbac", "matrix"))
+			_ = h.redis.Delete(r.Context(), h.redis.BuildKey(canonicalSlug, "rbac", "matrix"))
+			_ = h.redis.Delete(r.Context(), h.redis.BuildKey(canonicalID, "rbac", "matrix"))
 		}
 	}
 

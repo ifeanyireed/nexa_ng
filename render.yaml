@@ -21,7 +21,12 @@ services:
       - key: JWT_SECRET
         value: "nexa-jwt-secret-key-production-2026"
       - key: ENV
-        value: "production"
+        value: "development"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: ofia-redis-dev
+          property: connectionString
 
   # ==========================================
   # 2. AUTONOMOUS AI GTM SERVICE (:8082)
@@ -45,7 +50,12 @@ services:
       - key: JWT_SECRET
         value: "nexa-jwt-secret-key-production-2026"
       - key: ENV
-        value: "production"
+        value: "development"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: ofia-redis-dev
+          property: connectionString
 
   # ==========================================
   # 3. MARKETPLACE & COMMERCE SERVICE (:8083)
@@ -69,7 +79,12 @@ services:
       - key: JWT_SECRET
         value: "nexa-jwt-secret-key-production-2026"
       - key: ENV
-        value: "production"
+        value: "development"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: ofia-redis-dev
+          property: connectionString
 
   # ==========================================
   # 4. UNIFIED ENTERPRISE ERP SERVICE (:8084)
@@ -91,7 +106,12 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: ENV
-        value: "production"
+        value: "development"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: ofia-redis-dev
+          property: connectionString
 
   # ==========================================
   # 5. LOGISTICS & DISPATCH SERVICE (:8085)
@@ -113,7 +133,12 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: ENV
-        value: "production"
+        value: "development"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: ofia-redis-dev
+          property: connectionString
 
   # ==========================================
   # 6. OFIA COMPASS (MARKETPLACE) FRONTEND (:3000)
@@ -165,3 +190,13 @@ services:
         value: "production"
       - key: PORT
         value: "3002"
+
+  # ==========================================
+  # 9. OFIA DEV REDIS INSTANCE (FRANKFURT)
+  # ==========================================
+  - type: redis
+    name: ofia-redis-dev
+    region: frankfurt
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: [] # Private network only

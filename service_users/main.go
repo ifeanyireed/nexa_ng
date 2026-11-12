@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"nexa/user_subscription_service/internal/db"
 	"nexa/user_subscription_service/internal/handlers"
 	"nexa/user_subscription_service/internal/middleware"
+	"nexa/user_subscription_service/internal/redis"
 )
 
 func main() {
@@ -25,10 +27,16 @@ func main() {
 	}
 
 	database := db.InitDB()
+	redisClient := redis.NewClient("users")
+	defer redisClient.Close()
 
 	authHandler := handlers.NewAuthHandler(database)
 	orgHandler := handlers.NewOrgHandler(database)
+	orgHandler.SetRedis(redisClient)
+
 	subHandler := handlers.NewSubscriptionHandler(database)
+	subHandler.SetRedis(redisClient)
+
 	blogHandler := handlers.NewBlogHandler(database)
 	adminSupportHandler := handlers.NewAdminSupportHandler(database)
 
@@ -53,7 +61,16 @@ func main() {
 	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"service": "user-subscription-service", "status": "healthy", "port": 8081, "database": "neondb (postgres)"}`))
+
+		redisHealth := redisClient.Health(r.Context())
+		resp := map[string]interface{}{
+			"service":  "user-subscription-service",
+			"status":   "healthy",
+			"port":     8081,
+			"database": "neondb (postgres)",
+			"redis":    redisHealth,
+		}
+		json.NewEncoder(w).Encode(resp)
 	}
 	r.Get("/", healthHandler)
 	r.Head("/", healthHandler)

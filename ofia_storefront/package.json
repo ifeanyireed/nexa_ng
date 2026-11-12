@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
+    "@upstash/redis": "^1.41.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.4.7",
     "lenis": "^1.1.20",

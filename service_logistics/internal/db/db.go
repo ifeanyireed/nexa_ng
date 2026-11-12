@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -14,14 +15,20 @@ import (
 	"gorm.io/gorm/logger"
 
 	"nexa/logistics_service/internal/models"
+	"nexa/logistics_service/internal/redis"
 )
 
 var (
 	PlatformDB      *gorm.DB
+	RedisClient     *redis.Client
 	tenantGormPools sync.Map // map[string]*gorm.DB
 	poolMu          sync.Mutex
 	tenantDBUrls    = make(map[string]string) // normalized slug -> databaseURL
 )
+
+func SetRedisClient(rc *redis.Client) {
+	RedisClient = rc
+}
 
 type TenantOrgInfo struct {
 	ID           string `json:"id"`
@@ -97,7 +104,18 @@ func GetDBForTenant(slugOrOrgID string) (*gorm.DB, error) {
 	// Resolve database URL from registry or platform DB
 	targetURL, ok := tenantDBUrls[norm]
 	if !ok || targetURL == "" {
-		if PlatformDB != nil {
+		// 1. Check Redis for cached tenant dedicated database URL
+		if RedisClient != nil && RedisClient.IsAvailable() {
+			var cachedURL string
+			cacheKey := RedisClient.BuildGlobalKey("tenant_db", norm)
+			if err := RedisClient.Get(context.Background(), cacheKey, &cachedURL); err == nil && cachedURL != "" {
+				targetURL = cachedURL
+				tenantDBUrls[norm] = targetURL
+				ok = true
+			}
+		}
+
+		if (!ok || targetURL == "") && PlatformDB != nil {
 			var fetchedURL sql.NullString
 			err := PlatformDB.Raw(`
 				SELECT ti.database_url 
@@ -111,6 +129,12 @@ func GetDBForTenant(slugOrOrgID string) (*gorm.DB, error) {
 				targetURL = fetchedURL.String
 				tenantDBUrls[norm] = targetURL
 				ok = true
+
+				// 2. Cache in Redis with 5 minute TTL
+				if RedisClient != nil && RedisClient.IsAvailable() {
+					cacheKey := RedisClient.BuildGlobalKey("tenant_db", norm)
+					_ = RedisClient.Set(context.Background(), cacheKey, targetURL, 5*time.Minute)
+				}
 			}
 		}
 	}

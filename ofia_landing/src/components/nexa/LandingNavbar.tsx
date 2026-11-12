@@ -94,7 +94,7 @@ export const LandingNavbar = () => {
             >
               Founding Offer
             </Link>
-            <Link href="/pricing">
+            <Link href="/onboarding">
               <NexaButton size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
                 Get Started
               </NexaButton>
@@ -135,7 +135,7 @@ export const LandingNavbar = () => {
               ))}
               <div className="h-[1px] bg-[var(--nexa-border)] my-2" />
               <Link
-                href="/pricing"
+                href="/onboarding"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full"
               >

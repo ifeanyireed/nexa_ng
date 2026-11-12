@@ -4,12 +4,14 @@ import { INITIAL_TENANTS } from "@/lib/admin-data";
 import { alignTenantModules, getDefaultModulesForVertical } from "@/lib/tenant-module-aligner";
 import { ensureDefaultTenantAdmin } from "@/lib/tenant-admin-provisioner";
 import { registerDomainOnEdge, isCustomDomain } from "@/lib/domain-edge-manager";
+import { ensureInfrastructureRegistry } from "@/lib/provisioning/infrastructure-registry";
 import { neon } from "@neondatabase/serverless";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
+    await ensureInfrastructureRegistry();
     const sql = neon(MASTER_CONNECTION_STRING);
 
     // Auto-create table if needed

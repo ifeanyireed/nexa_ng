@@ -97,6 +97,8 @@ import {
   Globe,
   Copy,
   Network,
+  Mail,
+  CloudUpload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isCustomDomain, getExpectedDnsRecord, type DomainVerificationResult } from "@/lib/domain-utils";
@@ -235,6 +237,10 @@ function TenantManagementContent() {
 
   // Edit Tenant Details Form state
   const [selectedTenantForEdit, setSelectedTenantForEdit] = useState<TenantOrg | null>(null);
+  const [isResendingNeonClaim, setIsResendingNeonClaim] = useState(false);
+  const [isCheckingClaimReconciliation, setIsCheckingClaimReconciliation] = useState(false);
+  const [isVerifyingTenantInfra, setIsVerifyingTenantInfra] = useState(false);
+  const [infraVerificationResult, setInfraVerificationResult] = useState<any>(null);
   const [editTenantName, setEditTenantName] = useState("");
   const [editTenantSlug, setEditTenantSlug] = useState("");
   const [editTenantDomain, setEditTenantDomain] = useState("");
@@ -403,6 +409,21 @@ function TenantManagementContent() {
               cloudinaryUrl: org.cloudinary_url || org.cloudinaryUrl || "",
               isCustomDb: Boolean(org.is_custom_db || org.isCustomDb || org.database_url || org.databaseUrl),
               isCustomStorage: Boolean(org.is_custom_storage || org.isCustomStorage || org.cloudinary_url || org.cloudinaryUrl),
+              onboardingStatus: org.onboarding_status || org.onboardingStatus || (org.database_url ? "COMPLETED" : "NOT_STARTED"),
+              onboardingStep: Number(org.onboarding_step || org.onboardingStep || 6),
+              neonProjectId: org.neon_project_id || org.neonProjectId || "",
+              neonBranchId: org.neon_branch_id || org.neonBranchId || "",
+              neonClaimUrl: org.neon_claim_url || org.neonClaimUrl || "",
+              neonClaimCode: org.neon_claim_code || org.neonClaimCode || "",
+              neonClaimStatus: org.neon_claim_status || org.neonClaimStatus || (org.database_url ? "connected" : "not_started"),
+              neonOwnershipStatus: org.neon_ownership_status || org.neonOwnershipStatus || (org.database_url ? "customer_owned" : "unclaimed"),
+              neonReconciled: Boolean(org.neon_reconciled || org.neonReconciled),
+              neonClaimExpiresAt: org.neon_claim_expires_at || org.neonClaimExpiresAt || null,
+              cloudinaryCloudName: org.cloudinary_cloud_name || org.cloudinaryCloudName || "",
+              cloudinaryStatus: org.cloudinary_status || org.cloudinaryStatus || (org.cloudinary_url ? "active" : "not_started"),
+              cloudinaryVerified: Boolean(org.cloudinary_verified || org.cloudinaryVerified || org.cloudinary_url),
+              slugStatus: org.slug_status || org.slugStatus || "CONFIRMED",
+              slugRegisteredAt: org.slug_registered_at || org.slugRegisteredAt || org.created_at || null,
               createdAt: org.createdAt || org.created_at
                 ? new Date(org.createdAt || org.created_at).toISOString().split("T")[0]
                 : new Date().toISOString().split("T")[0],
@@ -1296,6 +1317,102 @@ function TenantManagementContent() {
     }
   };
 
+  // Resend Neon Claim Authorization Email from Admin Panel
+  const handleAdminResendNeonClaim = async (tenantSlug: string) => {
+    if (!tenantSlug) return;
+    setIsResendingNeonClaim(true);
+    try {
+      const res = await fetch("/api/onboarding/claim/resend-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantSlug }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Claim authorization email resent to tenant administrator!");
+        setTenants((prev) =>
+          prev.map((t) =>
+            t.slug === tenantSlug
+              ? {
+                  ...t,
+                  neonClaimUrl: data.claimUrl || t.neonClaimUrl,
+                  neonClaimCode: data.userCode || t.neonClaimCode,
+                  neonClaimStatus: "claim_email_sent",
+                  neonClaimExpiresAt: data.expiresAt,
+                }
+              : t
+          )
+        );
+      } else {
+        alert(data.error || "Failed to resend claim email");
+      }
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setIsResendingNeonClaim(false);
+    }
+  };
+
+  // Reconcile and check Neon Claim Status from Admin Panel
+  const handleAdminCheckNeonClaim = async (tenantSlug: string) => {
+    if (!tenantSlug) return;
+    setIsCheckingClaimReconciliation(true);
+    try {
+      const res = await fetch("/api/onboarding/claim/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantSlug }),
+      });
+      const data = await res.json();
+      if (data.success && data.reconciled) {
+        showToast("Confirmed! Tenant ownership has been claimed & reconciled on Neon.");
+        setTenants((prev) =>
+          prev.map((t) =>
+            t.slug === tenantSlug
+              ? {
+                  ...t,
+                  neonOwnershipStatus: "customer_owned",
+                  neonClaimStatus: "ownership_transferred",
+                  neonReconciled: true,
+                }
+              : t
+          )
+        );
+      } else {
+        showToast(`Neon claim status: ${data.state || "Pending customer transfer acceptance"}`);
+      }
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setIsCheckingClaimReconciliation(false);
+    }
+  };
+
+  // Run live infrastructure verification tests from Admin Panel
+  const handleAdminVerifyTenantInfra = async (tenantSlug: string) => {
+    if (!tenantSlug) return;
+    setIsVerifyingTenantInfra(true);
+    setInfraVerificationResult(null);
+    try {
+      const res = await fetch("/api/onboarding/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantSlug }),
+      });
+      const data = await res.json();
+      setInfraVerificationResult(data);
+      if (data.success) {
+        showToast("All infrastructure systems verified healthy!");
+      } else {
+        showToast("Infrastructure alert: one or more checks reported errors.");
+      }
+    } catch (err: any) {
+      alert("Verification error: " + err.message);
+    } finally {
+      setIsVerifyingTenantInfra(false);
+    }
+  };
+
   // Save Edited Tenant Details to Neon Postgres database
   const handleSaveEditTenant = async () => {
     if (!selectedTenantForEdit) return;
@@ -1653,6 +1770,16 @@ function TenantManagementContent() {
               <span>{toastMessage}</span>
             </div>
           )}
+
+          <Link
+            href="/onboarding"
+            target="_blank"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-all shadow-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+            Self-Service Onboarding Wizard
+            <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
+          </Link>
 
           <NexaButton
             size="sm"
@@ -2065,6 +2192,171 @@ function TenantManagementContent() {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* AUTOMATED INFRASTRUCTURE & NEON CLAIM GOVERNANCE */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--nexa-border)] pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                          <Database className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
+                              Automated Tenant Infrastructure &amp; Claim Registry
+                            </h4>
+                            {focusedTenant.neonOwnershipStatus === "customer_owned" ? (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
+                                <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                                Customer Owned &amp; Reconciled
+                              </span>
+                            ) : focusedTenant.neonClaimStatus === "claim_pending" || focusedTenant.neonClaimStatus === "claim_email_sent" ? (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-amber-500" />
+                                Neon Claim Pending
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                                Dedicated Database
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
+                            Automated self-service provisioning, Claimable Neon project status, and customer ownership transfer.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                          href={`/onboarding?resume=${focusedTenant.slug}`}
+                          target="_blank"
+                          className="px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Launch Onboarding Wizard</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      {/* NEON DATABASE CARD */}
+                      <div className="p-3.5 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)] flex items-center gap-1.5">
+                            <Database className="w-3.5 h-3.5 text-emerald-500" />
+                            Neon Claimable Database
+                          </span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)]">
+                            {focusedTenant.neonProjectId || "ep-neon-dedicated"}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1 font-mono text-[11px] text-[var(--nexa-text-secondary)]">
+                          <div>
+                            Branch: <span className="text-[var(--nexa-text-primary)] font-semibold">{focusedTenant.neonBranchId || "main"}</span>
+                          </div>
+                          <div>
+                            Claim State: <span className="text-emerald-600 dark:text-emerald-400 font-semibold uppercase">{focusedTenant.neonClaimStatus || "connected"}</span>
+                          </div>
+                          {focusedTenant.neonClaimCode && (
+                            <div className="flex items-center gap-1 text-amber-500">
+                              Claim Code: <span className="font-bold">{focusedTenant.neonClaimCode}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="pt-2 border-t border-[var(--nexa-border)] flex items-center gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => handleAdminCheckNeonClaim(focusedTenant.slug)}
+                            disabled={isCheckingClaimReconciliation}
+                            className="px-2.5 py-1 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:bg-[var(--nexa-border)] text-[11px] font-bold text-[var(--nexa-text-primary)] transition-colors flex items-center gap-1"
+                          >
+                            <RefreshCw className={`w-3 h-3 ${isCheckingClaimReconciliation ? "animate-spin" : ""}`} />
+                            Check Claim
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleAdminResendNeonClaim(focusedTenant.slug)}
+                            disabled={isResendingNeonClaim}
+                            className="px-2.5 py-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 transition-colors flex items-center gap-1"
+                          >
+                            <Mail className="w-3 h-3" />
+                            Resend Claim Email
+                          </button>
+
+                          {focusedTenant.neonClaimUrl && (
+                            <a
+                              href={focusedTenant.neonClaimUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-[11px] font-bold flex items-center gap-1"
+                            >
+                              Claim in Neon
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* CLOUDINARY STORAGE & SLUG CARD */}
+                      <div className="p-3.5 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)] flex items-center gap-1.5">
+                            <CloudUpload className="w-3.5 h-3.5 text-teal-500" />
+                            Cloudinary Storage &amp; Slug
+                          </span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-teal-600 dark:text-teal-400 font-semibold">
+                            {focusedTenant.cloudinaryCloudName || (focusedTenant.isCustomStorage ? "Custom Cloud" : "Platform Managed")}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1 font-mono text-[11px] text-[var(--nexa-text-secondary)]">
+                          <div>
+                            Registered Slug: <span className="text-emerald-600 dark:text-emerald-400 font-bold">{focusedTenant.slug}</span>
+                          </div>
+                          <div>
+                            Slug Status: <span className="text-emerald-500 font-bold">{focusedTenant.slugStatus || "CONFIRMED"}</span>
+                          </div>
+                          <div>
+                            Storage State: <span className="text-[var(--nexa-text-primary)] font-semibold uppercase">{focusedTenant.cloudinaryStatus || (focusedTenant.isCustomStorage ? "Active" : "Standard")}</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-[var(--nexa-border)] flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleAdminVerifyTenantInfra(focusedTenant.slug)}
+                            disabled={isVerifyingTenantInfra}
+                            className="px-3 py-1 rounded-lg bg-[#1A56DB] text-white text-[11px] font-bold hover:bg-[#1545B0] transition-colors flex items-center gap-1 shadow-xs"
+                          >
+                            <ShieldCheck className={`w-3 h-3 ${isVerifyingTenantInfra ? "animate-spin" : ""}`} />
+                            Test Live Infrastructure
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* LIVE VERIFICATION RESULTS DISPLAY */}
+                    {infraVerificationResult && (
+                      <div className="p-3 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-xs space-y-1 animate-fade-in">
+                        <div className="font-bold text-[var(--nexa-text-primary)] mb-1">
+                          Diagnostic Health Results:
+                        </div>
+                        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Neon Database: {infraVerificationResult.neon?.success ? `Operational (${infraVerificationResult.neon.latencyMs || 20}ms latency)` : infraVerificationResult.neon?.error}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-teal-600 dark:text-teal-400">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Cloudinary Media Storage: {infraVerificationResult.cloudinary?.success ? `Verified Active (${infraVerificationResult.cloudinary.cloudName || "Connected"})` : infraVerificationResult.cloudinary?.error}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* CUSTOM DOMAIN & DNS ROUTING INFRASTRUCTURE */}
@@ -3111,7 +3403,17 @@ function TenantManagementContent() {
                                 <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase">
                                   {tenant.status}
                                 </span>
-                                {tenant.databaseUrl ? (
+                                {tenant.neonOwnershipStatus === "customer_owned" ? (
+                                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase flex items-center gap-1">
+                                    <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" />
+                                    Neon: Customer Owned
+                                  </span>
+                                ) : tenant.neonClaimStatus === "claim_pending" || tenant.neonClaimStatus === "claim_email_sent" ? (
+                                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 uppercase flex items-center gap-1">
+                                    <Clock className="w-2.5 h-2.5 text-amber-500" />
+                                    Neon: Claim Pending
+                                  </span>
+                                ) : tenant.databaseUrl ? (
                                   <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 uppercase flex items-center gap-1">
                                     <Database className="w-2.5 h-2.5" />
                                     Dedicated DB Configured
@@ -3122,12 +3424,17 @@ function TenantManagementContent() {
                                     Dedicated DB (Pending Setup)
                                   </span>
                                 )}
-                                {tenant.isCustomStorage && (
-                                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 border border-cyan-500/20 uppercase flex items-center gap-1">
-                                    <UploadCloud className="w-2.5 h-2.5" />
-                                    BYOS
+                                {tenant.cloudinaryVerified ? (
+                                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-600 border border-teal-500/20 uppercase flex items-center gap-1">
+                                    <CheckCircle2 className="w-2.5 h-2.5 text-teal-500" />
+                                    Cloudinary: Active
                                   </span>
-                                )}
+                                ) : tenant.cloudinaryUrl ? (
+                                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 border border-cyan-500/20 uppercase flex items-center gap-1">
+                                    <UploadCloud className="w-2.5 h-2.5" />
+                                    Cloudinary: Pending Verify
+                                  </span>
+                                ) : null}
                               </div>
                               <p className="text-[11px] text-[var(--nexa-text-muted)] mt-1">
                                 Workspace:{" "}
@@ -3139,7 +3446,7 @@ function TenantManagementContent() {
                                 >
                                   {tenant.domain}
                                 </a>{" "}
-                                • Owner: {tenant.ownerName}
+                                • Slug: <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{tenant.slug}</span> ({tenant.slugStatus || "CONFIRMED"}) • Owner: {tenant.ownerName}
                               </p>
                             </div>
                           </div>
@@ -3458,6 +3765,26 @@ function TenantManagementContent() {
         subtitle="Onboard a new enterprise workspace and configure initial ERP modules"
       >
         <div className="space-y-4">
+          {/* Automated Self-Service Onboarding Wizard Banner */}
+          <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
+              <div>
+                <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Automated Self-Service Onboarding Wizard</div>
+                <div className="text-[11px] text-[var(--nexa-text-muted)]">Includes live slug check, Claimable Neon DB setup, and Cloudinary provisioning.</div>
+              </div>
+            </div>
+            <Link
+              href="/onboarding"
+              target="_blank"
+              onClick={() => setIsNewTenantModalOpen(false)}
+              className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold shrink-0 flex items-center gap-1 transition-colors shadow-xs"
+            >
+              Launch Wizard
+              <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
               Organization Name *

@@ -132,14 +132,14 @@ export default function Home() {
             transition={{ duration: 0.7, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
           >
-            <Link href="/pricing" className="w-full sm:w-auto">
+            <Link href="/onboarding" className="w-full sm:w-auto">
               <NexaButton size="xl" variant="primary" rightIcon={<ArrowRight className="w-5 h-5" />} className="w-full sm:w-auto shadow-lg shadow-blue-500/20">
-                Claim Founding Offer (₦5,000/mo)
+                Start Free Trial / Onboard
               </NexaButton>
             </Link>
-            <Link href="/products" className="w-full sm:w-auto">
+            <Link href="/pricing" className="w-full sm:w-auto">
               <NexaButton size="xl" variant="secondary" className="w-full sm:w-auto">
-                Explore the 12 Products
+                Founding Offer (₦5,000/mo)
               </NexaButton>
             </Link>
           </motion.div>

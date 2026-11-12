@@ -28,6 +28,21 @@ export interface TenantOrg {
   dbMode?: "DEDICATED";
   isCustomDb?: boolean;
   isCustomStorage?: boolean;
+  onboardingStatus?: string;
+  onboardingStep?: number;
+  neonProjectId?: string;
+  neonBranchId?: string;
+  neonClaimUrl?: string;
+  neonClaimCode?: string;
+  neonClaimStatus?: string;
+  neonOwnershipStatus?: string;
+  neonReconciled?: boolean;
+  neonClaimExpiresAt?: string;
+  cloudinaryCloudName?: string;
+  cloudinaryStatus?: string;
+  cloudinaryVerified?: boolean;
+  slugStatus?: string;
+  slugRegisteredAt?: string;
   createdAt: string;
 }
 

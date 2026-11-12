@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { buildGlobalKey, redisDel } from "./redis";
 
 export interface TenantDbConfig {
   tenantSlug: string;
@@ -179,6 +180,11 @@ export async function getTenantSql(tenantSlug: string): Promise<any> {
 export function invalidateTenantDbCache(tenantSlug: string) {
   const cleanSlug = (tenantSlug || "").toLowerCase().trim();
   dbConfigCache.delete(cleanSlug);
+  // Invalidate shared Redis cache across all services & storefronts
+  const storefrontKey = buildGlobalKey("storefront", "tenant_db", cleanSlug);
+  const adminKey = buildGlobalKey("admin", "tenant_db", cleanSlug);
+  redisDel(storefrontKey).catch(() => {});
+  redisDel(adminKey).catch(() => {});
 }
 
 /**

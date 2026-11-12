@@ -2,16 +2,28 @@ import { Redis } from "@upstash/redis";
 
 /**
  * OFIA Redis Client & Namespace Architecture for Serverless Tier
- * Provides fail-open resilience, multi-tenant isolation, and explicit TTLs.
+ * Uses Upstash Redis SDK (Redis.fromEnv) with fail-open resilience,
+ * multi-tenant isolation, and explicit TTLs.
  */
 
 const env = (process.env.NODE_ENV || process.env.ENV || "development").toLowerCase();
 
 let redisClient: Redis | null = null;
 
-function getRedisClient(): Redis | null {
+export function getRedisClient(): Redis | null {
   if (redisClient) return redisClient;
 
+  // 1. Standard Upstash SDK initialization from environment
+  try {
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+      redisClient = Redis.fromEnv();
+      return redisClient;
+    }
+  } catch (err) {
+    // Fall back to manual check below
+  }
+
+  // 2. Vercel KV environment variables fallback (KV_REST_API_URL / KV_REST_API_TOKEN)
   const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 

@@ -20,6 +20,7 @@ import {
   Building2,
   Briefcase,
   Layers,
+  AlertCircle,
 } from "lucide-react";
 
 import { AUTH_API } from "@/lib/api-client";
@@ -209,6 +210,40 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
+  const [incompleteOnboardingNotice, setIncompleteOnboardingNotice] = useState<{
+    slug: string;
+    resumeUrl: string;
+  } | null>(null);
+
+  // Check if tenant associated with this domain/subdomain has incomplete onboarding
+  React.useEffect(() => {
+    if (!resolvedSlug || ["www", "admin", "erp", "app"].includes(resolvedSlug.toLowerCase())) {
+      return;
+    }
+    let isCancelled = false;
+    async function checkTenantOnboarding() {
+      try {
+        const res = await fetch(`/api/tenant/onboarding-check?slug=${encodeURIComponent(resolvedSlug)}`, {
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (!isCancelled && data.exists && !data.isComplete) {
+            setIncompleteOnboardingNotice({
+              slug: data.slug || resolvedSlug,
+              resumeUrl: data.resumeUrl || `https://ofia.ng/onboarding?resume=${encodeURIComponent(data.slug || resolvedSlug)}`,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("Tenant onboarding check error:", err);
+      }
+    }
+    checkTenantOnboarding();
+    return () => {
+      isCancelled = true;
+    };
+  }, [resolvedSlug]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -310,6 +345,30 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         document.cookie = `nexa_user_email=${encodeURIComponent(normalizedEmail)}; path=/; max-age=2592000; SameSite=Lax${domainAttr}`;
         document.cookie = `nexa_assigned_pages=${encodeURIComponent(JSON.stringify(resolvedAssignedPages))}; path=/; max-age=2592000; SameSite=Lax${domainAttr}`;
       }
+
+      // Check if tenant onboarding is incomplete before routing into ERP
+      try {
+        const checkSlug = resolvedSlug || emailDomain;
+        const checkUrl = `/api/tenant/onboarding-check?${checkSlug ? `slug=${encodeURIComponent(checkSlug)}` : `email=${encodeURIComponent(normalizedEmail)}`}`;
+        const obRes = await fetch(checkUrl, { cache: "no-store" });
+        if (obRes.ok) {
+          const obData = await obRes.json();
+          if (obData.exists && !obData.isComplete) {
+            setIsLoading(false);
+            setError("Workspace setup is incomplete. Redirecting you to finish onboarding...");
+            const targetResumeUrl =
+              obData.resumeUrl ||
+              `https://ofia.ng/onboarding?resume=${encodeURIComponent(obData.slug || checkSlug)}`;
+            setTimeout(() => {
+              window.location.href = targetResumeUrl;
+            }, 1200);
+            return;
+          }
+        }
+      } catch (checkErr) {
+        console.warn("[Login] Onboarding status check skipped:", checkErr);
+      }
+
       navigateUser(normalizedEmail, resolvedRole, resolvedAssignedPages);
     } catch (err: any) {
       setError(err.message || "Invalid credentials or authentication failed.");
@@ -660,6 +719,24 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
                 : "Access your enterprise workspace, accounting ledger, and AI tools."}
             </p>
           </div>
+
+          {incompleteOnboardingNotice && (
+            <div className="mb-5 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3 shadow-sm">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <div className="font-bold text-amber-950 text-sm">Workspace Setup Incomplete</div>
+                <div className="text-amber-800 mt-1 leading-relaxed">
+                  This workspace has not completed its automated infrastructure provisioning. Complete setup to access your ERP dashboard.
+                </div>
+                <a
+                  href={incompleteOnboardingNotice.resumeUrl}
+                  className="inline-flex items-center gap-1 font-bold text-amber-950 underline mt-2 hover:text-black transition-colors"
+                >
+                  Resume Onboarding Setup &rarr;
+                </a>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">

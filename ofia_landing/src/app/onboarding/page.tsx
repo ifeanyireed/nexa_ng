@@ -42,6 +42,33 @@ const VERTICAL_OPTIONS = [
   { id: "health", name: "Health & Wellness", icon: ShieldCheck, desc: "Clinics, pharmacies, fitness centers & spas" },
 ];
 
+const PLAN_TIER_OPTIONS = [
+  {
+    key: "STARTER",
+    name: "Starter",
+    price: "₦25,000/mo",
+    seats: "2 Team Seats",
+    desc: "Single-store catalog, appointment booking & digital storefront.",
+    badge: "14-Day Trial",
+  },
+  {
+    key: "GROWTH",
+    name: "Growth",
+    price: "₦75,000/mo",
+    seats: "10 Team Seats",
+    desc: "Dedicated Neon Database, POS registers, 1 warehouse IMS & CRM.",
+    badge: "Most Popular",
+  },
+  {
+    key: "SCALE",
+    name: "Scale",
+    price: "₦180,000/mo",
+    seats: "25 Team Seats",
+    desc: "3 depots, full GAAP accounting, HR/Workforce & custom domain.",
+    badge: "Multi-Branch",
+  },
+];
+
 interface SlugCheckResult {
   isAvailable: boolean;
   category?: string;
@@ -89,6 +116,7 @@ function TenantOnboardingContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
   const [vertical, setVertical] = useState("retail");
+  const [planTier, setPlanTier] = useState("GROWTH");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("Lagos");
   const [country, setCountry] = useState("Nigeria");
@@ -145,11 +173,19 @@ function TenantOnboardingContent() {
   const [isResuming, setIsResuming] = useState(false);
   const [showResumeModal, setShowResumeModal] = useState(false);
 
-  // Check URL parameters for resuming: ?resume=<slug> or ?step=<n>
+  // Check URL parameters for resuming: ?resume=<slug> or ?step=<n> or pre-selected plan: ?plan=<tier>
   useEffect(() => {
     const resumeParam = searchParams.get("resume") || searchParams.get("slug");
     if (resumeParam) {
       loadExistingProgress(resumeParam);
+    }
+
+    const planParam = searchParams.get("plan");
+    if (planParam) {
+      const normalized = planParam.toUpperCase();
+      if (["STARTER", "GROWTH", "SCALE", "ENTERPRISE"].includes(normalized)) {
+        setPlanTier(normalized);
+      }
     }
   }, [searchParams]);
 
@@ -167,6 +203,9 @@ function TenantOnboardingContent() {
         setOwnerName(data.tenant.owner_name || "");
         setOwnerEmail(data.tenant.owner_email || "");
         setVertical(data.tenant.vertical || "retail");
+        if (data.tenant.plan_tier) {
+          setPlanTier(data.tenant.plan_tier.toUpperCase());
+        }
 
         if (data.tenant.neon_project_id) {
           setNeonData({
@@ -328,6 +367,7 @@ function TenantOnboardingContent() {
           ownerEmail: ownerEmail.trim(),
           password: password || undefined,
           vertical,
+          planTier,
           phone: phone.trim(),
         }),
       });
@@ -740,6 +780,50 @@ function TenantOnboardingContent() {
                       className="w-full bg-[#0B0F17] border border-slate-700/80 rounded-xl pl-11 pr-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Subscription Plan Tier Selector */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                    Subscription Tier &amp; Plan *
+                  </label>
+                  <span className="text-[11px] text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                    Includes 14-Day Free Trial
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {PLAN_TIER_OPTIONS.map((plan) => {
+                    const isSelected = planTier === plan.key;
+                    return (
+                      <div
+                        key={plan.key}
+                        onClick={() => setPlanTier(plan.key)}
+                        className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                          isSelected
+                            ? "bg-emerald-500/15 border-emerald-400 ring-1 ring-emerald-500 text-white"
+                            : "bg-[#0B0F17] border-slate-700/80 hover:border-slate-600 text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-xs font-bold text-white">{plan.name}</span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isSelected ? "bg-emerald-400 text-black" : "bg-slate-800 text-slate-400"}`}>
+                            {plan.badge}
+                          </span>
+                        </div>
+                        <div className="text-sm font-extrabold text-emerald-400 font-mono mb-0.5">
+                          {plan.price}
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-semibold mb-1">
+                          {plan.seats}
+                        </div>
+                        <p className="text-[10px] text-slate-500 leading-snug">
+                          {plan.desc}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1486,9 +1570,14 @@ function TenantOnboardingContent() {
               <Sparkles className="w-8 h-8 text-black" />
             </div>
 
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-              Workspace Live & Operational
-            </span>
+            <div className="inline-flex flex-wrap items-center justify-center gap-2 mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+                Workspace Live &amp; Operational
+              </span>
+              <span className="text-xs font-bold uppercase tracking-wider text-teal-400 bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full">
+                {planTier} Plan • 14-Day Free Trial
+              </span>
+            </div>
 
             <h1 className="text-3xl font-extrabold text-white mt-3 mb-2">
               Welcome to Ofia, {businessName}!

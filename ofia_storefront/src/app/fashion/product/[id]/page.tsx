@@ -687,21 +687,21 @@ export default function FashionProductDetailPage() {
                   )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {accessories.map((acc) => {
                     const isSelected = selectedAccessories.includes(acc.id);
                     return (
                       <div
                         key={acc.id}
                         onClick={() => toggleAccessory(acc.id)}
-                        className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                        className={`p-3 sm:p-3.5 rounded-2xl sm:rounded-3xl border transition-all cursor-pointer flex items-center justify-between gap-3 min-h-[72px] sm:min-h-[80px] shadow-2xs hover:shadow-xs ${
                           isSelected
                             ? "bg-amber-900/10 border-amber-700 text-amber-950 shadow-sm ring-1 ring-amber-700"
                             : "bg-white border-stone-200 text-stone-700 hover:border-amber-700/40 hover:bg-stone-50/80"
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          {/* Image preview with click to zoom */}
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          {/* Circle Photo preview with click to zoom (like African print swatches) */}
                           {acc.image ? (
                             <div
                               role="button"
@@ -710,7 +710,7 @@ export default function FashionProductDetailPage() {
                                 e.stopPropagation();
                                 setPreviewAccessory(acc);
                               }}
-                              className="relative w-11 h-11 rounded-xl overflow-hidden border border-stone-200 shrink-0 bg-stone-100 cursor-zoom-in group/circle hover:ring-2 hover:ring-amber-500/40 transition-all"
+                              className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border border-stone-200 shrink-0 bg-stone-100 cursor-zoom-in group/circle hover:ring-2 hover:ring-amber-500/40 transition-all shadow-2xs"
                               title="Click to zoom accessory image"
                             >
                               <img
@@ -719,20 +719,20 @@ export default function FashionProductDetailPage() {
                                 className="w-full h-full object-cover transition-transform duration-200 group-hover/circle:scale-110"
                               />
                               <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/circle:opacity-100 transition-opacity flex items-center justify-center">
-                                <ZoomIn className="w-3 h-3 text-white" />
+                                <ZoomIn className="w-3.5 h-3.5 text-white" />
                               </div>
                             </div>
                           ) : (
-                            <div className="w-11 h-11 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-[10px] font-bold text-amber-800 shrink-0">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center text-xs font-bold text-amber-800 shrink-0">
                               {acc.name.slice(0, 2).toUpperCase()}
                             </div>
                           )}
 
                           <div className="min-w-0">
-                            <span className="text-xs font-bold block truncate text-zinc-900 leading-tight">
+                            <span className="text-xs sm:text-sm font-bold block truncate text-zinc-900 leading-tight">
                               {acc.name}
                             </span>
-                            <span className="text-[11px] font-semibold text-amber-700 font-mono block mt-0.5">
+                            <span className="text-xs font-semibold text-amber-700 font-mono block mt-0.5">
                               {acc.price > 0 ? `+₦${Number(acc.price).toLocaleString()}` : "Included in Set"}
                             </span>
                           </div>

@@ -113,6 +113,52 @@ const DEFAULT_COLLECTIONS: CustomCollectionItem[] = [
   },
 ];
 
+export interface AccessoryPresetItem {
+  id?: string;
+  name: string;
+  price: number;
+  image: string;
+}
+
+const DEFAULT_ACCESSORY_PRESETS: AccessoryPresetItem[] = [
+  {
+    id: "acc-pre-1",
+    name: "Matching Embroidered Aso-Oke Fila",
+    price: 25000,
+    image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "acc-pre-2",
+    name: "Raw Silk Pocket Square & Brooch",
+    price: 12000,
+    image: "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "acc-pre-3",
+    name: "Pre-folded Royal Auto-Gele",
+    price: 30000,
+    image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "acc-pre-4",
+    name: "Traditional Coral Bead Necklace",
+    price: 65000,
+    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "acc-pre-5",
+    name: "Handcrafted Beaded Walking Cane",
+    price: 45000,
+    image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "acc-pre-6",
+    name: "Monogrammed Velvet Slip-ons",
+    price: 55000,
+    image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=400&q=80",
+  },
+];
+
 export default function VerticalCatalogPage() {
   const params = useParams();
   const router = useRouter();
@@ -206,6 +252,22 @@ export default function VerticalCatalogPage() {
   const [accEditImage, setAccEditImage] = useState("");
   const [accEditIsOptional, setAccEditIsOptional] = useState<boolean>(true);
   const [isUploadingEditAccPhoto, setIsUploadingEditAccPhoto] = useState(false);
+
+  // Companion Accessory Presets (tablets with photos, edit/delete actions, and persistence)
+  const [tenantAccessoryPresets, setTenantAccessoryPresets] = useState<AccessoryPresetItem[]>(DEFAULT_ACCESSORY_PRESETS);
+  const [editingPreset, setEditingPreset] = useState<AccessoryPresetItem | null>(null);
+  const [isEditPresetModalOpen, setIsEditPresetModalOpen] = useState(false);
+  const [presetEditName, setPresetEditName] = useState("");
+  const [presetEditPrice, setPresetEditPrice] = useState<number>(0);
+  const [presetEditImage, setPresetEditImage] = useState("");
+  const [isUploadingPresetPhoto, setIsUploadingPresetPhoto] = useState(false);
+  const [previewAccessoryPreset, setPreviewAccessoryPreset] = useState<AccessoryPresetItem | null>(null);
+
+  // New accessory preset quick adder
+  const [newPresetName, setNewPresetName] = useState("");
+  const [newPresetPrice, setNewPresetPrice] = useState("");
+  const [newPresetImage, setNewPresetImage] = useState("");
+  const [isUploadingNewPresetPhoto, setIsUploadingNewPresetPhoto] = useState(false);
 
   // Swatch inspection preview state
   const [previewingSwatch, setPreviewingSwatch] = useState<FabricPrint | null>(null);
@@ -909,11 +971,130 @@ export default function VerticalCatalogPage() {
               );
               setTenantCollectionsList(mappedCols);
             }
+            if (Array.isArray(data.config.accessoryPresets) && data.config.accessoryPresets.length > 0) {
+              setTenantAccessoryPresets(data.config.accessoryPresets);
+            }
           }
         })
         .catch(() => {});
     }
   }, [activeTenant?.slug, loadProducts]);
+
+  // Accessory Presets Persistence & Handlers
+  const persistTenantAccessoryPresets = async (newPresets: AccessoryPresetItem[]) => {
+    const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+    try {
+      await fetch(`/api/erp/shop/store-settings?tenant=${encodeURIComponent(slug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: slug,
+          vertical: verticalKey,
+          accessoryPresets: newPresets,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to persist accessory presets:", err);
+    }
+  };
+
+  const handleToggleAccessoryPreset = (preset: AccessoryPresetItem) => {
+    const existsIndex = fashionAccessories.findIndex(
+      (a) => a.name.toLowerCase() === preset.name.toLowerCase()
+    );
+    if (existsIndex >= 0) {
+      // Detach if already selected
+      setFashionAccessories((prev) => prev.filter((_, idx) => idx !== existsIndex));
+    } else {
+      // Attach to product companion accessories
+      setFashionAccessories((prev) => [
+        ...prev,
+        {
+          id: `acc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          name: preset.name,
+          price: preset.price,
+          image: preset.image,
+          stock: 1,
+          isOptional: true,
+        },
+      ]);
+    }
+  };
+
+  const handleOpenEditAccessoryPreset = (preset: AccessoryPresetItem, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    setEditingPreset(preset);
+    setPresetEditName(preset.name);
+    setPresetEditPrice(preset.price);
+    setPresetEditImage(preset.image);
+    setIsEditPresetModalOpen(true);
+  };
+
+  const handleDeleteAccessoryPreset = async (presetName: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const updated = tenantAccessoryPresets.filter(
+      (p) => p.name.toLowerCase() !== presetName.toLowerCase()
+    );
+    setTenantAccessoryPresets(updated);
+    await persistTenantAccessoryPresets(updated);
+  };
+
+  const handleSaveEditedAccessoryPreset = async () => {
+    if (!editingPreset || !presetEditName.trim()) return;
+    const updatedPreset: AccessoryPresetItem = {
+      ...editingPreset,
+      name: presetEditName.trim(),
+      price: Number(presetEditPrice) || 0,
+      image:
+        presetEditImage.trim() ||
+        editingPreset.image ||
+        "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=400&q=80",
+    };
+    const updatedList = tenantAccessoryPresets.map((p) =>
+      p.name.toLowerCase() === editingPreset.name.toLowerCase() ? updatedPreset : p
+    );
+    setTenantAccessoryPresets(updatedList);
+    // Sync any attached instances on the active product
+    setFashionAccessories((prev) =>
+      prev.map((acc) =>
+        acc.name.toLowerCase() === editingPreset.name.toLowerCase()
+          ? { ...acc, name: updatedPreset.name, price: updatedPreset.price, image: updatedPreset.image }
+          : acc
+      )
+    );
+    setIsEditPresetModalOpen(false);
+    setEditingPreset(null);
+    await persistTenantAccessoryPresets(updatedList);
+  };
+
+  const handleUploadPresetPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPresetPhoto(true);
+    try {
+      const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("tenantSlug", slug);
+      formData.append("folder", "apparel_accessories");
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data?.url) {
+        setPresetEditImage(data.url);
+      }
+    } catch (err) {
+      console.error("Accessory preset photo upload failed:", err);
+    } finally {
+      setIsUploadingPresetPhoto(false);
+      e.target.value = "";
+    }
+  };
 
   // Accessory management handlers
   const handleAddAccessory = (presetName?: string, presetPrice?: number) => {
@@ -2360,41 +2541,211 @@ export default function VerticalCatalogPage() {
                   </button>
                 </div>
 
-                {/* Quick Preset Buttons */}
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--nexa-text-muted)]">
-                    Quick African Couture Presets:
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      { name: "Matching Embroidered Aso-Oke Fila", price: 25000, emoji: "👑" },
-                      { name: "Raw Silk Pocket Square & Brooch", price: 12000, emoji: "🧣" },
-                      { name: "Pre-folded Royal Auto-Gele", price: 30000, emoji: "🧕" },
-                      { name: "Traditional Coral Bead Necklace", price: 65000, emoji: "📿" },
-                      { name: "Handcrafted Beaded Walking Cane", price: 45000, emoji: "🦯" },
-                      { name: "Monogrammed Velvet Slip-ons", price: 55000, emoji: "🩴" },
-                    ].map((preset) => (
+                {/* Quick Accessory Presets Tablets */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--nexa-text-primary)]">
+                      Couture Accessories & Companion Presets
+                    </span>
+                    <span className="text-[10px] text-[var(--nexa-text-muted)]">
+                      Click tablet to toggle • Click circle to zoom photo
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2.5">
+                    {tenantAccessoryPresets.map((preset) => {
+                      const isAttached = fashionAccessories.some(
+                        (a) => a.name.toLowerCase() === preset.name.toLowerCase()
+                      );
+                      return (
+                        <div
+                          key={preset.name}
+                          className={`group relative flex items-center gap-2 pl-3 pr-2 py-2 text-xs rounded-2xl font-medium transition-all border min-h-[48px] sm:min-h-[50px] shadow-2xs ${
+                            isAttached
+                              ? "bg-amber-600 text-white border-amber-600 shadow-xs ring-1 ring-amber-600/40"
+                              : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-amber-500/50 hover:bg-stone-50/50 dark:hover:bg-stone-800/50"
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAccessoryPreset(preset)}
+                            className="flex items-center gap-2.5 cursor-pointer outline-none text-left"
+                            title={isAttached ? `Click to remove ${preset.name}` : `Click to attach ${preset.name}`}
+                          >
+                            {/* Circle Photo Swatch with Zoom Preview (exact pattern like African print tablets) */}
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewAccessoryPreset(preset);
+                              }}
+                              className={`relative w-8 h-8 rounded-full overflow-hidden border shrink-0 shadow-xs cursor-zoom-in hover:scale-110 transition-transform ${
+                                isAttached ? "border-white/60 ring-2 ring-white/30" : "border-stone-300 dark:border-stone-600"
+                              }`}
+                              title="Click circle to preview accessory photo"
+                            >
+                              <img
+                                src={preset.image}
+                                alt={preset.name}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                <ZoomIn className="w-2.5 h-2.5 text-white" />
+                              </div>
+                            </div>
+
+                            {/* Accessory Name & Price */}
+                            <div className="flex flex-col">
+                              <span className="font-bold text-xs leading-tight">{preset.name}</span>
+                              <span className={`font-mono text-[11px] font-bold ${
+                                isAttached ? "text-amber-100" : "text-amber-600"
+                              }`}>
+                                +₦{Number(preset.price).toLocaleString()}
+                              </span>
+                            </div>
+
+                            {/* Attached Check Icon */}
+                            {isAttached && <Check className="w-3.5 h-3.5 stroke-[3] text-white shrink-0 ml-0.5" />}
+                          </button>
+
+                          {/* Edit & Delete Action Buttons on Tablet */}
+                          <div className={`flex items-center ml-1 border-l pl-1.5 gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity ${
+                            isAttached ? "border-white/30" : "border-[var(--nexa-border)]"
+                          }`}>
+                            <button
+                              type="button"
+                              onClick={(e) => handleOpenEditAccessoryPreset(preset, e)}
+                              className={`p-1.5 rounded-lg transition cursor-pointer ${
+                                isAttached
+                                  ? "hover:bg-white/20 text-white"
+                                  : "hover:bg-amber-500/10 text-stone-400 hover:text-amber-600"
+                              }`}
+                              title={`Edit ${preset.name} preset`}
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteAccessoryPreset(preset.name, e)}
+                              className={`p-1.5 rounded-lg transition cursor-pointer ${
+                                isAttached
+                                  ? "hover:bg-red-500/30 text-white"
+                                  : "hover:bg-red-50 text-stone-400 hover:text-red-600"
+                              }`}
+                              title={`Delete ${preset.name} preset`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {tenantAccessoryPresets.length === 0 && (
+                      <p className="text-xs text-[var(--nexa-text-muted)] italic">
+                        No accessory presets configured yet. Add your custom presets below.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Add New Custom Accessory Preset Bar */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                    <input
+                      type="text"
+                      value={newPresetName}
+                      onChange={(e) => setNewPresetName(e.target.value)}
+                      placeholder="Add custom accessory preset (e.g. Benin Bronze Brooch, Leather Fan)..."
+                      className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-amber-500 text-[var(--nexa-text-primary)]"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      value={newPresetPrice}
+                      onChange={(e) => setNewPresetPrice(e.target.value)}
+                      placeholder="Price (₦)..."
+                      className="w-full sm:w-28 px-3 py-1.5 text-xs font-mono font-bold rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-amber-500 text-[var(--nexa-text-primary)]"
+                    />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-amber-500/40 text-[var(--nexa-text-secondary)] cursor-pointer">
+                        <Upload className="w-3 h-3 text-amber-600" />
+                        <span>{isUploadingNewPresetPhoto ? "Uploading..." : newPresetImage ? "Photo Ready" : "Upload Photo"}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={isUploadingNewPresetPhoto}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setIsUploadingNewPresetPhoto(true);
+                            try {
+                              const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : "reedbreed");
+                              const formData = new FormData();
+                              formData.append("file", file);
+                              formData.append("tenantSlug", slug);
+                              formData.append("folder", "apparel_accessories");
+                              const res = await fetch("/api/upload", { method: "POST", body: formData });
+                              const data = await res.json();
+                              if (data?.url) setNewPresetImage(data.url);
+                            } catch (err) {
+                              console.error("Upload error:", err);
+                            } finally {
+                              setIsUploadingNewPresetPhoto(false);
+                              e.target.value = "";
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {newPresetImage && (
+                        <div className="relative group shrink-0">
+                          <div className="w-7 h-7 rounded-full overflow-hidden border border-[var(--nexa-border)]">
+                            <img src={newPresetImage} alt="Preset Preview" className="w-full h-full object-cover" />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setNewPresetImage("")}
+                            className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-2 h-2" />
+                          </button>
+                        </div>
+                      )}
+
                       <button
-                        key={preset.name}
                         type="button"
-                        onClick={() => handleAddAccessory(preset.name, preset.price)}
-                        className="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-[var(--nexa-bg-base)] hover:bg-amber-500/10 text-[var(--nexa-text-secondary)] hover:text-amber-700 border border-[var(--nexa-border)] hover:border-amber-500/40 transition-colors flex items-center gap-1 cursor-pointer"
-                        title={`Add ${preset.name} (₦${preset.price.toLocaleString()})`}
+                        onClick={async () => {
+                          const name = newPresetName.trim();
+                          if (!name) return;
+                          const price = parseFloat(newPresetPrice) || 0;
+                          const image = newPresetImage || "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=400&q=80";
+                          const newPreset: AccessoryPresetItem = {
+                            id: `acc-pre-${Date.now()}`,
+                            name,
+                            price,
+                            image,
+                          };
+                          const updated = [...tenantAccessoryPresets, newPreset];
+                          setTenantAccessoryPresets(updated);
+                          setNewPresetName("");
+                          setNewPresetPrice("");
+                          setNewPresetImage("");
+                          await persistTenantAccessoryPresets(updated);
+                        }}
+                        disabled={!newPresetName.trim()}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-[var(--nexa-bg-surface)] hover:bg-amber-500/10 text-amber-600 border border-[var(--nexa-border)] hover:border-amber-500/40 disabled:opacity-50 cursor-pointer"
                       >
-                        <span>{preset.emoji}</span>
-                        <span>{preset.name}</span>
-                        <span className="font-mono text-amber-600 font-bold ml-0.5">
-                          +₦{(preset.price / 1000).toFixed(0)}k
-                        </span>
+                        + Add Preset
                       </button>
-                    ))}
+                    </div>
                   </div>
                 </div>
 
                 {/* Accessories List */}
                 {fashionAccessories.length === 0 ? (
-                  <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-dashed border-[var(--nexa-border)] text-center space-y-1">
-                    <p className="text-xs font-semibold text-[var(--nexa-text-secondary)]">
+                  <div className="p-6 rounded-3xl bg-[var(--nexa-bg-base)] border border-dashed border-[var(--nexa-border)] text-center space-y-1.5 min-h-[110px] flex flex-col items-center justify-center">
+                    <p className="text-xs font-bold text-[var(--nexa-text-secondary)]">
                       No companion accessories attached to this apparel yet.
                     </p>
                     <p className="text-[11px] text-[var(--nexa-text-muted)]">
@@ -2402,17 +2753,17 @@ export default function VerticalCatalogPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {fashionAccessories.map((acc, index) => (
                       <div
                         key={acc.id || index}
-                        className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-amber-500/30 transition-all space-y-3 shadow-xs"
+                        className="p-5 sm:p-6 rounded-3xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-amber-500/40 transition-all space-y-4 shadow-sm min-h-[230px] sm:min-h-[260px]"
                       >
-                        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-5">
                           {/* Large Preview Image & Upload Action */}
-                          <div className="flex items-start gap-4">
-                            {/* Enlarged Image Preview (w-28 h-28 sm:w-32 sm:h-32) */}
-                            <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden border border-[var(--nexa-border)] bg-[var(--nexa-card-bg)] shrink-0 flex items-center justify-center shadow-xs group/img">
+                          <div className="flex items-start gap-5 flex-1">
+                            {/* Enlarged Image Preview (w-36 h-36 sm:w-44 sm:h-44) */}
+                            <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl sm:rounded-3xl overflow-hidden border border-[var(--nexa-border)] bg-[var(--nexa-card-bg)] shrink-0 flex items-center justify-center shadow-sm group/img">
                               {acc.image ? (
                                 <img
                                   src={acc.image}
@@ -2420,22 +2771,22 @@ export default function VerticalCatalogPage() {
                                   className="w-full h-full object-cover transition-transform duration-200 group-hover/img:scale-105"
                                 />
                               ) : (
-                                <div className="flex flex-col items-center justify-center text-stone-400 p-2 text-center">
-                                  <ImageIcon className="w-8 h-8 stroke-1 text-stone-300 mb-1" />
-                                  <span className="text-[10px] font-bold">No Photo</span>
+                                <div className="flex flex-col items-center justify-center text-stone-400 p-3 text-center">
+                                  <ImageIcon className="w-10 h-10 stroke-1 text-stone-300 mb-1.5" />
+                                  <span className="text-[11px] font-bold">No Photo</span>
                                 </div>
                               )}
 
                               {uploadingAccessoryIndex === index && (
                                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                  <RefreshCw className="w-5 h-5 text-white animate-spin" />
+                                  <RefreshCw className="w-6 h-6 text-white animate-spin" />
                                 </div>
                               )}
                             </div>
 
                             {/* Photo Upload & URL Controls */}
-                            <div className="space-y-2 flex-1">
-                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--nexa-text-primary)] block">
+                            <div className="space-y-2.5 flex-1">
+                              <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--nexa-text-primary)] block">
                                 Accessory Photography
                               </span>
                               <div className="flex items-center gap-2">
@@ -2449,11 +2800,11 @@ export default function VerticalCatalogPage() {
                                 />
                                 <label
                                   htmlFor={`acc-file-${index}`}
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-[var(--nexa-surface)] border border-[var(--nexa-border)] hover:bg-[var(--nexa-border)] transition-colors cursor-pointer text-[var(--nexa-text-primary)] ${
+                                  className={`inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--nexa-surface)] border border-[var(--nexa-border)] hover:bg-[var(--nexa-border)] transition-colors cursor-pointer text-[var(--nexa-text-primary)] shadow-2xs ${
                                     uploadingAccessoryIndex === index ? "opacity-50 cursor-not-allowed" : ""
                                   }`}
                                 >
-                                  <Upload className="w-3.5 h-3.5 text-amber-600" />
+                                  <Upload className="w-4 h-4 text-amber-600" />
                                   <span>{uploadingAccessoryIndex === index ? "Uploading..." : "Upload Photo"}</span>
                                 </label>
                               </div>
@@ -2463,39 +2814,39 @@ export default function VerticalCatalogPage() {
                                 value={acc.image || ""}
                                 onChange={(e) => handleUpdateAccessory(index, { image: e.target.value })}
                                 placeholder="Or enter direct photo URL..."
-                                className="w-full max-w-xs px-2.5 py-1 text-xs font-mono rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] outline-none focus:border-amber-500 text-[var(--nexa-text-primary)]"
+                                className="w-full max-w-sm px-3 py-1.5 text-xs font-mono rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] outline-none focus:border-amber-500 text-[var(--nexa-text-primary)]"
                               />
                             </div>
                           </div>
 
                           {/* Action Buttons: Edit and Delete Icons */}
-                          <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-start">
+                          <div className="flex items-center gap-2 shrink-0 self-end sm:self-start">
                             <button
                               type="button"
                               onClick={() => handleOpenEditAccessory(index)}
-                              className="p-2 rounded-xl text-stone-600 hover:text-amber-700 bg-[var(--nexa-surface)] hover:bg-amber-500/10 border border-[var(--nexa-border)] hover:border-amber-500/40 transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                              className="px-3 py-2 rounded-xl text-stone-600 hover:text-amber-700 bg-[var(--nexa-surface)] hover:bg-amber-500/10 border border-[var(--nexa-border)] hover:border-amber-500/40 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold shadow-2xs"
                               title="Edit accessory modal"
                             >
-                              <Edit className="w-3.5 h-3.5" />
+                              <Edit className="w-4 h-4" />
                               <span className="hidden sm:inline">Edit</span>
                             </button>
 
                             <button
                               type="button"
                               onClick={() => handleDeleteAccessory(index)}
-                              className="p-2 rounded-xl text-stone-600 hover:text-red-600 bg-[var(--nexa-surface)] hover:bg-red-500/10 border border-[var(--nexa-border)] hover:border-red-500/40 transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                              className="px-3 py-2 rounded-xl text-stone-600 hover:text-red-600 bg-[var(--nexa-surface)] hover:bg-red-500/10 border border-[var(--nexa-border)] hover:border-red-500/40 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold shadow-2xs"
                               title="Delete accessory"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                               <span className="hidden sm:inline">Delete</span>
                             </button>
                           </div>
                         </div>
 
                         {/* Inline Parameter Inputs */}
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-2 border-t border-[var(--nexa-border)] text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-3 border-t border-[var(--nexa-border)] text-xs">
                           <div className="sm:col-span-5">
-                            <label className="block text-[11px] font-bold text-[var(--nexa-text-primary)] mb-1">
+                            <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1.5">
                               Accessory Title *
                             </label>
                             <input
@@ -2504,12 +2855,12 @@ export default function VerticalCatalogPage() {
                               value={acc.name}
                               onChange={(e) => handleUpdateAccessory(index, { name: e.target.value })}
                               placeholder="e.g. Matching Embroidered Aso-Oke Fila"
-                              className="w-full px-2.5 py-1.5 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+                              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
                             />
                           </div>
 
                           <div className="sm:col-span-3">
-                            <label className="block text-[11px] font-bold text-[var(--nexa-text-primary)] mb-1">
+                            <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1.5">
                               Price (₦) *
                             </label>
                             <input
@@ -2521,12 +2872,12 @@ export default function VerticalCatalogPage() {
                                 handleUpdateAccessory(index, { price: parseFloat(e.target.value) || 0 })
                               }
                               placeholder="e.g. 25000"
-                              className="w-full px-2.5 py-1.5 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-mono font-bold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+                              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-mono font-bold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
                             />
                           </div>
 
                           <div className="sm:col-span-2">
-                            <label className="block text-[11px] font-bold text-[var(--nexa-text-primary)] mb-1">
+                            <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1.5">
                               Stock Qty
                             </label>
                             <input
@@ -2536,17 +2887,17 @@ export default function VerticalCatalogPage() {
                               onChange={(e) =>
                                 handleUpdateAccessory(index, { stock: parseInt(e.target.value) || 0 })
                               }
-                              className="w-full px-2.5 py-1.5 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-mono font-bold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+                              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] font-mono font-bold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
                             />
                           </div>
 
-                          <div className="sm:col-span-2 flex items-center pt-5">
-                            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--nexa-text-secondary)] cursor-pointer">
+                          <div className="sm:col-span-2 flex items-center pt-6">
+                            <label className="flex items-center gap-2 text-xs font-bold text-[var(--nexa-text-secondary)] cursor-pointer">
                               <input
                                 type="checkbox"
                                 checked={acc.isOptional !== false}
                                 onChange={(e) => handleUpdateAccessory(index, { isOptional: e.target.checked })}
-                                className="rounded accent-amber-600"
+                                className="w-4 h-4 rounded accent-amber-600"
                               />
                               <span>Paid Add-on</span>
                             </label>
@@ -3261,6 +3612,143 @@ export default function VerticalCatalogPage() {
           </div>
         </div>
       </NexaModal>
+
+      {/* MODAL: EDIT ACCESSORY PRESET */}
+      <NexaModal
+        isOpen={isEditPresetModalOpen}
+        onClose={() => {
+          setIsEditPresetModalOpen(false);
+          setEditingPreset(null);
+        }}
+        title="Edit Accessory Preset"
+        subtitle="Update the preset accessory title, price, and upload a bespoke photo swatch."
+        maxWidth="md"
+      >
+        <div className="space-y-4 text-xs">
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1.5">
+              Accessory Title *
+            </label>
+            <input
+              type="text"
+              required
+              value={presetEditName}
+              onChange={(e) => setPresetEditName(e.target.value)}
+              placeholder="e.g. Matching Embroidered Aso-Oke Fila"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1.5">
+              Price (₦) *
+            </label>
+            <input
+              type="number"
+              min="0"
+              required
+              value={presetEditPrice ?? ""}
+              onChange={(e) => setPresetEditPrice(parseFloat(e.target.value) || 0)}
+              placeholder="e.g. 25000"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-mono font-bold text-[var(--nexa-text-primary)] outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[var(--nexa-text-primary)] mb-1.5">
+              Accessory Photo / Swatch
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={presetEditImage}
+                onChange={(e) => setPresetEditImage(e.target.value)}
+                placeholder="https://... or upload photo"
+                className="flex-1 px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none font-mono text-[11px]"
+              />
+              <label className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] hover:border-amber-500 text-amber-600 font-bold text-xs cursor-pointer shrink-0">
+                <Upload className="w-3.5 h-3.5" />
+                <span>{isUploadingPresetPhoto ? "Uploading..." : "Upload Photo"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={isUploadingPresetPhoto}
+                  onChange={handleUploadPresetPhoto}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            {presetEditImage && (
+              <div className="mt-2.5 flex items-center gap-3 p-2.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+                <img
+                  src={presetEditImage}
+                  alt="Preview"
+                  className="w-12 h-12 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                />
+                <div>
+                  <span className="text-xs font-bold text-[var(--nexa-text-primary)] block">Circle Preview</span>
+                  <span className="text-[10px] text-[var(--nexa-text-muted)]">This will appear in the accessory preset tablet</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-3 border-t border-[var(--nexa-border)] flex justify-end gap-2">
+            <NexaButton size="sm" variant="outline" onClick={() => setIsEditPresetModalOpen(false)}>
+              Cancel
+            </NexaButton>
+            <NexaButton size="sm" variant="primary" onClick={handleSaveEditedAccessoryPreset} className="bg-amber-600 text-white font-bold cursor-pointer">
+              Save Preset
+            </NexaButton>
+          </div>
+        </div>
+      </NexaModal>
+
+      {/* MODAL: PREVIEW ACCESSORY PRESET PHOTO */}
+      {previewAccessoryPreset && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setPreviewAccessoryPreset(null)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape" || e.key === "Enter") setPreviewAccessoryPreset(null);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 cursor-pointer"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Accessory Preset Preview"
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)] rounded-2xl shadow-2xl max-w-md w-full overflow-hidden cursor-default"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-[var(--nexa-border)]">
+              <div>
+                <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">
+                  {previewAccessoryPreset.name}
+                </h3>
+                <span className="text-xs font-mono font-bold text-amber-600">
+                  +₦{Number(previewAccessoryPreset.price).toLocaleString()}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewAccessoryPreset(null)}
+                className="p-1 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-500 hover:text-stone-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 flex items-center justify-center bg-black/5 dark:bg-black/30">
+              <img
+                src={previewAccessoryPreset.image}
+                alt={previewAccessoryPreset.name}
+                className="max-h-[340px] w-auto rounded-xl object-contain shadow-md"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </BusinessShell>
   );
 }

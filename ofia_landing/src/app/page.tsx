@@ -139,7 +139,7 @@ export default function Home() {
             </Link>
             <Link href="/pricing" className="w-full sm:w-auto">
               <NexaButton size="xl" variant="secondary" className="w-full sm:w-auto">
-                Founding Offer (₦5,000/mo)
+                View Pricing (From ₦25,000/mo)
               </NexaButton>
             </Link>
           </motion.div>
@@ -410,7 +410,7 @@ export default function Home() {
                 transition={{ duration: 0.75, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
                 className="text-3xl sm:text-5xl font-extrabold text-display text-white mb-6 leading-tight"
               >
-                Get full platform access for <span className="text-blue-400">₦5,000/mo</span>
+                Launch your Storefront &amp; ERP from <span className="text-blue-400">₦25,000/mo</span>
               </motion.h2>
 
               <motion.p
@@ -420,7 +420,7 @@ export default function Home() {
                 transition={{ duration: 0.75, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
                 className="text-slate-300 text-base sm:text-lg mb-8 leading-relaxed"
               >
-                Join our founding cohort today. Lock in founder rates for life, get dedicated onboarding support, and deploy your business on Nigeria&apos;s fastest-growing enterprise infrastructure.
+                Start with a 14-day free trial, or join our first 500 KYB-verified businesses to unlock 3 Months Free on the Growth Plan (₦75,000/mo value) with dedicated onboarding support.
               </motion.p>
 
               <motion.div

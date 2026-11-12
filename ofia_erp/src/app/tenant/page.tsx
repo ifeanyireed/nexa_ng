@@ -72,7 +72,7 @@ export default function TenantHubPage() {
               Growth Tier
             </div>
             <div className="text-[11px] text-[#1A56DB] font-semibold">
-              ₦65,000 / month • Active
+              ₦75,000 / month • 1.5% Direct / 2.5% Escrow
             </div>
           </NexaCard>
 
@@ -82,10 +82,10 @@ export default function TenantHubPage() {
               <Users className="w-4 h-4 text-[#0E9F6E]" />
             </div>
             <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              4 / 5 Seats
+              4 / 10 Seats
             </div>
             <div className="text-[11px] text-[#0E9F6E] font-bold">
-              1 Seat Available
+              6 Seats Available (+₦5,000/extra)
             </div>
           </NexaCard>
 
@@ -95,10 +95,10 @@ export default function TenantHubPage() {
               <Bot className="w-4 h-4 text-[#9061F9]" />
             </div>
             <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              1,640 / 2,000
+              1,640 / 2,500
             </div>
             <div className="text-[11px] text-[#9061F9] font-mono">
-              82% Remaining
+              65.6% Remaining
             </div>
           </NexaCard>
 

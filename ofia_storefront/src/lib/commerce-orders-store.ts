@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { StorefrontOrderPayload, StorefrontBookingPayload } from "@/types/storefront";
 import { getTenantSql, MASTER_CONNECTION_STRING } from "./tenant-db-resolver";
+import { calculatePlatformFeeSplit } from "./pricing-plans";
 
 function getSyncDir() {
   const candidates = [
@@ -312,9 +313,14 @@ export async function saveStorefrontOrder(order: StorefrontOrderPayload): Promis
   }
 
   const rawAmount = Number(order.rawAmount) || 0;
-  const platformFee = order.platformFee ?? Math.round(rawAmount * 0.015 * 100) / 100; // 1.5% commission
-  const merchantAmount = order.merchantAmount ?? Math.max(0, rawAmount - platformFee); // 98.5%
   const isEscrow = Boolean(order.isEscrow);
+  const { platformFee, merchantAmount } = calculatePlatformFeeSplit(rawAmount, {
+    planTier: (order as any).planTier,
+    isEscrow,
+    channel: order.channel,
+    overridePlatformFee: order.platformFee,
+    overrideMerchantAmount: order.merchantAmount,
+  });
   const escrowStatus = isEscrow ? "HELD" : "NONE";
   const settlementStatus = isEscrow ? "HELD_ESCROW" : "AVAILABLE";
 
@@ -690,8 +696,13 @@ export async function saveStorefrontBooking(
 
   const rawAmount = Number((booking as any).rawAmount || (booking as any).amount) || 0;
   const isEscrow = Boolean(booking.isEscrow);
-  const platformFee = Math.round(rawAmount * 0.015 * 100) / 100;
-  const merchantAmount = Math.max(0, rawAmount - platformFee);
+  const { platformFee, merchantAmount } = calculatePlatformFeeSplit(rawAmount, {
+    planTier: (booking as any).planTier,
+    isEscrow,
+    channel: "STOREFRONT",
+    overridePlatformFee: booking.platformFee,
+    overrideMerchantAmount: booking.merchantAmount,
+  });
   const escrowStatus = isEscrow ? "HELD" : "NONE";
   const settlementStatus = isEscrow ? "HELD_ESCROW" : "AVAILABLE";
 

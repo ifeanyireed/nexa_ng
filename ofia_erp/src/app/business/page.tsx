@@ -22,6 +22,7 @@ import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { Footer } from "@/components/nexa/Footer";
+import { PUBLIC_PRICING_PLANS, MODULE_ADDONS } from "@/lib/pricing-plans";
 
 export default function BusinessSolutionsPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">("monthly");
@@ -66,76 +67,36 @@ export default function BusinessSolutionsPage() {
     },
   ];
 
-  const pricingPlans = [
-    {
-      name: "Starter",
-      description: "For solo professionals starting their digital operations.",
-      monthlyPrice: 5000,
-      annualPrice: 50000,
-      features: [
-        "Core Booking Engine & Scheduling",
-        "Basic Profile Web Page",
-        "NexaChat Client & Customer Messaging",
-        "Standard Review & Rating Access",
-        "Standard lead distribution"
-      ],
-      cta: "Start with Starter",
-      popular: false,
-      tag: "Solo Pros"
-    },
-    {
-      name: "Business",
-      description: "For growing teams seeking trust badges & active leads.",
-      monthlyPrice: 15000,
-      annualPrice: 150000,
-      features: [
-        "Everything in Starter",
-        "Verified Partner 'Nexa Gold' Badge",
-        "Priority Search & Discovery Placement",
-        "Enterprise CRM & Lead Pipelines",
-        "3 Months Free Promo (First 500 accounts)",
-        "Reduced Platform Commission"
-      ],
-      cta: "Activate Business Trial",
-      popular: true,
-      tag: "Most Popular"
-    },
-    {
-      name: "Pro",
-      description: "For agencies & enterprises scaling across locations.",
-      monthlyPrice: 50000,
-      annualPrice: 500000,
-      features: [
-        "Everything in Business",
-        "WhatsApp Broadcast List Builder",
-        "Custom API Access & Web Integrations",
-        "Full Advanced Analytics Dashboard",
-        "Premium SMS Notification Templates",
-        "Dedicated Account Manager",
-        "Zero Platform Commissions"
-      ],
-      cta: "Go Pro Enterprise",
-      popular: false,
-      tag: "For Scale"
-    }
-  ];
+  const pricingPlans = PUBLIC_PRICING_PLANS.map((plan) => ({
+    key: plan.key,
+    name: plan.name,
+    description: plan.description,
+    monthlyPrice: plan.monthlyPriceNGN,
+    annualPrice: plan.annualPriceNGN,
+    takeRates: plan.takeRates,
+    seatsIncluded: plan.seatsIncluded,
+    features: plan.highlights,
+    cta: plan.ctaLabel,
+    popular: Boolean(plan.popular),
+    tag: plan.tag,
+  }));
 
   const faqs = [
     {
-      question: "How does the 3 Months Free promo work for the Business tier?",
-      answer: "To celebrate our launch, the first 500 verified businesses to claim and complete their profiles get 3 months of the Business subscription completely free. No Paystack setup or credit card info is required to start your trial."
+      question: "How does the 3 Months Free promo work for the Growth tier?",
+      answer: "To celebrate our launch, the first 500 verified businesses to complete KYB verification get 3 months of the Growth subscription (₦75,000/mo value) completely free, or 0% direct storefront commission on their first ₦5,000,000 in GMV."
+    },
+    {
+      question: "How do Storefront Direct vs. Protected Escrow fees work?",
+      answer: "In-store POS counter sales are always 0% commission. Online Storefront orders charge 0.5%–2.0% for Direct Checkout depending on your tier, or 1.5%–3.0% when Protected Escrow with Delivery OTP verification is enabled."
+    },
+    {
+      question: "Can I add Mobility Fleet or Workforce OS without upgrading to Enterprise?",
+      answer: "Yes! Any Growth or Scale workspace can activate specialized industry suites—like Ofia Mobility & Fleet (+₦75k/mo), Workforce Outsourcing OS (+₦60k/mo), or AI Voice Telephony (+₦50k/mo)—as modular add-ons."
     },
     {
       question: "Can I cancel or switch plan tiers at any time?",
-      answer: "Yes, absolutely! Nexa subscriptions are billed monthly or annually depending on your preference. You can upgrade, downgrade, or cancel at any time directly through your billing portal."
-    },
-    {
-      question: "What payment systems do you support for invoicing and billing?",
-      answer: "We support Paystack for instant secure billing. You can pay via debit cards, bank transfers, USSD codes, or mobile money in Nigeria."
-    },
-    {
-      question: "How does 'Niche Hub Advertising' affect my listing?",
-      answer: "With Niche Hub Advertising, your business appears at the very top of search results and category landing pages for your niche (e.g. 'AC Technicians in Lagos'). This increases lead generation rates by up to 4.5x compared to standard listings."
+      answer: "Yes, absolutely! Subscriptions are billed monthly or annually (with 2 months free on annual plans) via Paystack. You can upgrade, downgrade, or manage modular add-ons anytime from your Tenant Billing Portal."
     }
   ];
 
@@ -296,7 +257,7 @@ export default function BusinessSolutionsPage() {
           </div>
 
           {/* CARDS GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             {pricingPlans.map((plan, i) => {
               const price = billingCycle === "monthly" ? plan.monthlyPrice : plan.annualPrice;
               const period = billingCycle === "monthly" ? "mo" : "yr";
@@ -311,13 +272,13 @@ export default function BusinessSolutionsPage() {
                   <NexaCard
                     variant="interactive"
                     className={cn(
-                      "p-8 w-full flex flex-col relative border-t-4 transition-all duration-300 h-full",
+                      "p-6 w-full flex flex-col relative border-t-4 transition-all duration-300 h-full",
                       plan.popular 
                         ? "border-t-nexa-brand shadow-2xl shadow-nexa-brand/5 border-x-nexa-brand/10 border-b-nexa-brand/10" 
                         : "border-t-nexa-border"
                     )}
                   >
-                    <div className="mb-6">
+                    <div className="mb-5">
                       <span className="text-[10px] uppercase tracking-widest font-black text-nexa-text-faint">
                         {plan.tag}
                       </span>
@@ -327,23 +288,29 @@ export default function BusinessSolutionsPage() {
                       </p>
                     </div>
 
-                    <div className="mb-8 flex items-baseline gap-1 bg-nexa-bg-base/40 p-4 rounded-2xl border border-nexa-border/30">
-                      <span className="text-2xl md:text-3xl font-black tracking-tight">
-                        {formatPrice(price)}
-                      </span>
-                      <span className="text-xs text-nexa-text-secondary font-bold">
-                        /{period}
-                      </span>
+                    <div className="mb-5 p-4 rounded-2xl border border-nexa-border/30 bg-nexa-bg-base/40 space-y-2">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl md:text-3xl font-black tracking-tight">
+                          {plan.key === "ENTERPRISE" ? `From ${formatPrice(price)}` : formatPrice(price)}
+                        </span>
+                        <span className="text-xs text-nexa-text-secondary font-bold">
+                          /{period}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] pt-2 border-t border-nexa-border/40 text-nexa-text-secondary">
+                        <span>Storefront Fee: <strong>{plan.takeRates.directCheckoutPct}%</strong></span>
+                        <span>Escrow OTP: <strong>{plan.takeRates.escrowCheckoutPct}%</strong></span>
+                      </div>
                     </div>
 
                     {/* FEATURES */}
-                    <div className="flex-1 mb-8">
-                      <p className="text-xs font-black uppercase text-nexa-text-faint tracking-wider mb-4">
-                        What's Included
+                    <div className="flex-1 mb-6">
+                      <p className="text-xs font-black uppercase text-nexa-text-faint tracking-wider mb-3">
+                        What's Included ({plan.seatsIncluded} Seats)
                       </p>
-                      <ul className="space-y-3">
+                      <ul className="space-y-2.5">
                         {plan.features.map((feat, idx) => (
-                          <li key={idx} className="flex items-start gap-2.5 text-xs text-nexa-text-secondary leading-relaxed">
+                          <li key={idx} className="flex items-start gap-2 text-xs text-nexa-text-secondary leading-relaxed">
                             <span className="w-4 h-4 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
                               <Check className="w-3.5 h-3.5" />
                             </span>
@@ -356,7 +323,7 @@ export default function BusinessSolutionsPage() {
                     <NexaButton
                       variant={plan.popular ? "primary" : "secondary"}
                       className={cn(
-                        "w-full h-14 rounded-xl text-sm font-black transition-all",
+                        "w-full h-12 rounded-xl text-xs font-black transition-all",
                         plan.popular ? "bg-nexa-brand text-white shadow-xl shadow-nexa-brand/15" : "hover:border-nexa-brand/45"
                       )}
                     >
@@ -366,6 +333,48 @@ export default function BusinessSolutionsPage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* MODULAR ADD-ONS STRIP */}
+          <div className="mt-12 pt-10 border-t border-nexa-border/50">
+            <div className="text-center mb-8">
+              <span className="text-[10px] font-black uppercase tracking-widest text-nexa-brand">
+                Layer 3 • À La Carte Extensions
+              </span>
+              <h3 className="text-xl md:text-2xl font-extrabold mt-1">
+                Modular Industry Suites for Growth & Scale
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {MODULE_ADDONS.map((addon) => (
+                <div
+                  key={addon.key}
+                  className="p-5 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border/60 flex flex-col justify-between gap-3"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="text-xs font-extrabold text-nexa-text-primary">
+                        {addon.name}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-nexa-brand/10 text-nexa-brand">
+                        {addon.badge}
+                      </span>
+                    </div>
+                    <p className="text-xs text-nexa-text-secondary leading-relaxed">
+                      {addon.description}
+                    </p>
+                  </div>
+                  <div className="pt-2 border-t border-nexa-border/40 flex items-center justify-between text-xs">
+                    <span className="font-black text-nexa-brand">
+                      {addon.formattedPrice}
+                    </span>
+                    <span className="text-[10px] text-nexa-text-faint">
+                      {addon.overageNote}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

@@ -9,93 +9,27 @@ import {
   Sparkles,
   HelpCircle,
   ChevronDown,
-  ShieldCheck,
   Truck,
-  Building2,
-  Store,
-  CreditCard,
   PhoneCall,
-  Zap,
   Smartphone,
   Navigation,
   Radio,
   ArrowRight,
+  Layers,
 } from "lucide-react";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
+import {
+  LANDING_PRICING_PLANS,
+  LANDING_MODULE_ADDONS,
+} from "@/lib/pricing-plans";
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">("monthly");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
-  const plans = [
-    {
-      id: "entry",
-      name: "Entry Plan",
-      badge: "Founding Offer",
-      badgeVariant: "emerald" as const,
-      monthlyPrice: 5000,
-      annualPricePerMonth: 4000,
-      annualBilledTotal: 48000,
-      note: "Founding-offer pricing for the first 500 businesses.",
-      features: [
-        "Custom branded online shop (.ofia.shop)",
-        "Mobile-optimized catalog & WhatsApp checkout",
-        "Core ERP sales & inventory dashboard",
-        "Single cashier register & POS mobile mode",
-        "Integrated escrow checkout protection",
-        "Standard WhatsApp community support",
-      ],
-      cta: "Claim Founding Offer",
-      popular: false,
-    },
-    {
-      id: "sme",
-      name: "SME Plan",
-      badge: "Most Popular",
-      badgeVariant: "brand" as const,
-      monthlyPrice: 25000,
-      annualPricePerMonth: 20000,
-      annualBilledTotal: 240000,
-      note: "Full digital storefront + operational modules for active retail & trade teams.",
-      features: [
-        "Everything in Entry plan",
-        "Custom domain support (yourbrand.com / .ng)",
-        "Advanced inventory, purchase orders & barcode generator",
-        "Automated accounting, P&L, VAT & expense logs",
-        "Ofia Voice Agent for autonomous phone qualification (Voicebip PSTN)",
-        "Priority SEO indexing & custom search metadata",
-        "Up to 5 staff accounts with custom permission gates",
-        "Direct nationwide courier & fleet dispatch",
-      ],
-      cta: "Start 14-Day Free Trial",
-      popular: true,
-    },
-    {
-      id: "growth",
-      name: "Growth Plan",
-      badge: "Multi-Location",
-      badgeVariant: "purple" as const,
-      monthlyPrice: 75000,
-      annualPricePerMonth: 60000,
-      annualBilledTotal: 720000,
-      note: "Complete operational horsepower for multi-branch retailers and distributors.",
-      features: [
-        "Everything in SME plan",
-        "Multi-warehouse & multi-branch ledger consolidation",
-        "Full HR, employee shift management & payroll slips",
-        "Advanced customer retention & predictive analytics",
-        "Dedicated Voicebip SIP trunking & high-volume Voice Agent outbound dialer",
-        "Custom API & webhook developer access",
-        "Dedicated Account Manager & VIP phone support",
-        "Unlimited staff accounts & unlimited POS registers",
-        "Quarterly business review & inventory audit support",
-      ],
-      cta: "Scale with Growth",
-      popular: false,
-    },
-  ];
+  const plans = LANDING_PRICING_PLANS;
 
   const mobileApps = [
     {
@@ -122,7 +56,7 @@ export default function PricingPage() {
       badge: "White-Label Ready",
       badgeVariant: "brand" as const,
       category: "Passenger Mobility",
-      pricingTag: "Transport OS Suite",
+      pricingTag: "Mobility Suite (+₦75k/mo)",
       desc: "Turnkey passenger booking app for transport operators, shuttles, and schools. Passengers book interstate coaches, reserve shuttle seats, plan charters, and track school buses.",
       features: [
         "Interactive seat selection maps & instant QR boarding pass",
@@ -140,7 +74,7 @@ export default function PricingPage() {
       badge: "Universal Cockpit",
       badgeVariant: "purple" as const,
       category: "Driver Operations",
-      pricingTag: "Fleet Ops Add-On",
+      pricingTag: "Mobility Suite (+₦75k/mo)",
       desc: "Unified driver cockpit across all transit operations: interstate routes, intra-city shuttles, school routes, charters, and staff commutes with passenger manifests.",
       features: [
         "Digital passenger manifest with instant QR scan check-in",
@@ -158,7 +92,7 @@ export default function PricingPage() {
       badge: "Logistics Native",
       badgeVariant: "amber" as const,
       category: "Logistics & Couriers",
-      pricingTag: "Dispatch Module",
+      pricingTag: "Dispatch Module (+₦35k/mo or Scale+)",
       desc: "Dedicated mobile tool for motorcycle, van, and haulage delivery couriers. Accepts broadcast delivery job offers across store orders, vendor dispatch, and customer shipments.",
       features: [
         "Real-time broadcast dispatch job offers with distance & fare preview",
@@ -174,28 +108,28 @@ export default function PricingPage() {
 
   const faqs = [
     {
-      q: "What is included in the Founding-Offer price?",
-      a: "The Entry Plan is locked in at ₦5,000/month for the lifetime of your continuous active subscription as part of our initial 500 merchant cohort. You get full access to your dedicated storefront, omnichannel POS, and foundational ERP dashboard.",
+      q: "How does the 14-Day Free Trial & Founding Cohort Promo work?",
+      a: "Every business can onboard with a 14-day risk-free trial on slug.ofia.shop and slug.ofia.ng without a payment card. In addition, the first 500 verified businesses to complete KYB verification qualify for 3 Months Free on the Growth Tier (₦75,000/mo value) or 0% direct storefront commission on their first ₦5,000,000 in GMV.",
+    },
+    {
+      q: "How do Storefront Direct vs. Protected Escrow fees work?",
+      a: "In-store POS counter checkout is always 0% commission across all tiers. Online Storefront orders charge 0.5%–2.0% for Direct Instant Checkout depending on your subscription tier, or 1.5%–3.0% when Protected Escrow with Delivery OTP verification is enabled.",
+    },
+    {
+      q: "Can I add Mobility Fleet or Workforce OS without jumping to the Enterprise plan?",
+      a: "Yes! Any Growth (₦75k/mo) or Scale (₦200k/mo) workspace can activate specialized industry modules à la carte — including Ofia Mobility & Fleet Suite (+₦75,000/mo), Workforce & Outsourcing OS (+₦60,000/mo), Dispatch Control (+₦35,000/mo, free on Scale+), or AI Voice Telephony (+₦50,000/mo).",
     },
     {
       q: "Can I upgrade or downgrade between plans at any time?",
-      a: "Yes. You can switch your tier at any moment through your Ofia Merchant App or Billing Dashboard. Unused balances are automatically prorated and credited to your new invoice.",
+      a: "Yes. You can switch your tier or toggle modular add-ons at any moment through your Tenant Billing Dashboard. Unused balances are automatically prorated and credited to your next invoice.",
     },
     {
-      q: "Do I need separate bank accounts or payment gateways?",
-      a: "No! Ofia Payments comes pre-integrated. You can instantly accept direct bank transfers via automated virtual accounts, debit cards, USSD, and scan-to-pay QR codes. Funds settle automatically into your registered commercial bank account.",
-    },
-    {
-      q: "How does the annual discount work?",
-      a: "When you pay annually upfront, you receive two full months free (a 20% discount across all tiers). We also assign an onboarding specialist to help upload your product catalog and train your floor staff.",
-    },
-    {
-      q: "How does Ofia protect against courier delivery fraud?",
-      a: "Every transaction through Ofia Shops can be backed by Ofia Escrow. The customer funds are held safely until our integrated courier collects the OTP from the buyer upon delivery.",
+      q: "How does the annual billing discount work?",
+      a: "When you pay annually upfront via Paystack, you receive two full months free (~17% discount across Starter, Growth, Scale, and Enterprise). We also include free onboarding migration for your Product Catalog and Chart of Accounts.",
     },
     {
       q: "Can I white-label the mobile applications under my own business brand?",
-      a: "Yes. Our Flutter mobile applications (Ofia Passenger Mobility, Ofia Universal Driver, Ofia Customer, and Courier Rider) are architected on a multi-tenant engine. You can customize app branding, logos, splash screens, color palettes, and active service modules directly from Ofia ERP without requiring separate codebases or custom builds.",
+      a: "Yes. Our Flutter mobile applications (Ofia Passenger Mobility, Ofia Universal Driver, Ofia Customer, and Courier Rider) are architected on a multi-tenant engine. You can customize app branding, logos, splash screens, color palettes, and active service modules directly from Ofia ERP.",
     },
   ];
 
@@ -216,7 +150,7 @@ export default function PricingPage() {
             <div className="inline-flex items-center gap-2 bg-nexa-brand/10 text-nexa-brand px-4 py-1.5 rounded-full border border-nexa-brand/20 mb-6">
               <Sparkles className="w-4 h-4 text-nexa-brand" />
               <span className="text-xs font-bold uppercase tracking-[0.2em]">
-                Predictable Transparent Subscriptions
+                Unified Storefront + Enterprise ERP Pricing
               </span>
             </div>
           </motion.div>
@@ -237,8 +171,7 @@ export default function PricingPage() {
             transition={{ duration: 0.75, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="text-lg sm:text-xl text-nexa-text-secondary leading-relaxed"
           >
-            Designed specifically for Nigerian commerce. Choose a plan that matches
-            your velocity today, and unlock more capacity as you expand.
+            From solo vertical storefronts to multi-branch ERP, AI sales swarms, and fleet telemetry. Lower your transaction take-rate automatically as you scale.
           </motion.p>
 
           {/* BILLING CYCLE SELECTOR */}
@@ -284,19 +217,19 @@ export default function PricingPage() {
             >
               Annual Billing
               <span className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold px-2 py-0.5 rounded-full">
-                Save 20%
+                2 Months Free (~17% Off)
               </span>
             </span>
           </motion.div>
         </div>
 
         {/* PRICING CARDS GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch mb-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch mb-20">
           {plans.map((plan, idx) => {
             const displayPrice =
               billingCycle === "monthly"
                 ? plan.monthlyPrice.toLocaleString()
-                : plan.annualPricePerMonth.toLocaleString();
+                : plan.annualBilledTotal.toLocaleString();
 
             return (
               <motion.div
@@ -304,7 +237,7 @@ export default function PricingPage() {
                 initial={{ opacity: 0, y: 60 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
-                transition={{ delay: idx * 0.15, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ delay: idx * 0.12, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
                 className={`h-full flex ${plan.popular ? "relative z-20" : "relative z-10"}`}
               >
                 <NexaCard
@@ -318,7 +251,7 @@ export default function PricingPage() {
                 >
                   {plan.popular && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-30">
-                      <span className="bg-nexa-brand text-white px-4 py-1 rounded-full text-xs font-extrabold tracking-wider uppercase shadow-md flex items-center gap-1.5">
+                      <span className="bg-nexa-brand text-white px-4 py-1 rounded-full text-xs font-extrabold tracking-wider uppercase shadow-md flex items-center gap-1.5 whitespace-nowrap">
                         <Sparkles className="w-3.5 h-3.5" />
                         Most Popular
                       </span>
@@ -327,7 +260,7 @@ export default function PricingPage() {
 
                   <div>
                     {/* Header */}
-                    <div className="flex items-center justify-between gap-2 mb-4">
+                    <div className="flex items-center justify-between gap-2 mb-3">
                       <h3 className="text-2xl font-bold text-slate-900">{plan.name}</h3>
                       {!plan.popular && (
                         <NexaBadge variant={plan.badgeVariant} size="sm">
@@ -336,36 +269,56 @@ export default function PricingPage() {
                       )}
                     </div>
 
-                    <p className="text-xs text-nexa-text-secondary mb-6 h-10">
+                    <p className="text-xs text-nexa-text-secondary mb-5 min-h-[40px] leading-relaxed">
                       {plan.note}
                     </p>
 
                     {/* Price Display */}
-                    <div className="mb-6 pb-6 border-b border-nexa-border/60">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+                    <div className="mb-5 pb-5 border-b border-nexa-border/60">
+                      <div className="flex items-baseline gap-1 flex-wrap">
+                        {plan.key === "ENTERPRISE" && (
+                          <span className="text-xs font-bold uppercase text-slate-500 mr-1">
+                            From
+                          </span>
+                        )}
+                        <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                           ₦{displayPrice}
                         </span>
-                        <span className="text-sm font-semibold text-slate-500">
-                          / month
+                        <span className="text-xs font-semibold text-slate-500">
+                          / {billingCycle === "monthly" ? "mo" : "yr"}
                         </span>
                       </div>
-                      {billingCycle === "annually" && (
-                        <p className="text-xs text-emerald-600 font-medium mt-1.5">
-                          Billed annually at ₦{plan.annualBilledTotal.toLocaleString()} / year
-                        </p>
-                      )}
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 mt-1.5 font-medium">
+                        <span>{plan.usdEquivalentMonthly}</span>
+                        <span className="text-emerald-600 font-bold">{plan.seatsIncluded}</span>
+                      </div>
+
+                      {/* Take-Rate Strip */}
+                      <div className="mt-3 p-2.5 rounded-xl bg-slate-900/5 border border-nexa-border/60 text-[11px] space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Direct Checkout Fee:</span>
+                          <span className="font-bold text-slate-900">{plan.directCheckoutPct}%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Protected Escrow OTP:</span>
+                          <span className="font-bold text-emerald-600">{plan.escrowCheckoutPct}%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">In-Store POS Fee:</span>
+                          <span className="font-bold text-nexa-brand">0%</span>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Features List */}
-                    <div className="space-y-3 mb-8">
+                    <div className="space-y-2.5 mb-8">
                       <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
                         What&apos;s Included
                       </div>
                       {plan.features.map((feature, fIdx) => (
                         <div
                           key={fIdx}
-                          className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 leading-normal"
+                          className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed"
                         >
                           <div className="w-4 h-4 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
                             <Check className="w-3 h-3 stroke-[3]" />
@@ -378,11 +331,11 @@ export default function PricingPage() {
 
                   {/* CTA Button */}
                   <div className="pt-4 border-t border-nexa-border/60">
-                    <Link href="http://localhost:3000/join" className="w-full">
+                    <Link href={plan.ctaHref} className="w-full">
                       <NexaButton
                         variant={plan.popular ? "primary" : "secondary"}
                         size="lg"
-                        className="w-full font-bold shadow-sm"
+                        className="w-full font-bold shadow-sm text-xs sm:text-sm"
                       >
                         {plan.cta}
                       </NexaButton>
@@ -392,6 +345,65 @@ export default function PricingPage() {
               </motion.div>
             );
           })}
+        </div>
+
+        {/* LAYER 3: MODULAR INDUSTRY SUITE ADD-ONS */}
+        <div className="mb-24">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <div className="inline-flex items-center gap-2 bg-blue-500/10 text-blue-600 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-3">
+              <Layers className="w-3.5 h-3.5" />
+              Layer 3 · À La Carte Industry Add-Ons
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
+              Modular Industry Suites for Growth &amp; Scale
+            </h2>
+            <p className="text-sm sm:text-base text-nexa-text-secondary">
+              Need Fleet Telemetry, Workforce Outsourcing OS, or AI Voice Telephony on a Growth or Scale plan? Activate specialized modules à la carte without jumping to a full Enterprise contract.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {LANDING_MODULE_ADDONS.map((addon, idx) => (
+              <motion.div
+                key={addon.key}
+                initial={{ opacity: 0, y: 45 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ delay: idx * 0.1, duration: 0.65 }}
+                className="h-full"
+              >
+                <NexaCard
+                  variant="glass"
+                  padding="md"
+                  className="h-full border-nexa-border hover:border-nexa-brand/40 transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <NexaBadge variant={addon.badgeVariant} size="sm">
+                        {addon.badge}
+                      </NexaBadge>
+                      <span className="text-[11px] font-bold text-emerald-600">
+                        {addon.includedFromTier}
+                      </span>
+                    </div>
+                    <h4 className="text-base font-bold text-slate-900 mb-1">
+                      {addon.name}
+                    </h4>
+                    <div className="text-lg font-extrabold text-nexa-brand mb-3">
+                      {addon.formattedPrice}
+                    </div>
+                    <p className="text-xs text-nexa-text-secondary leading-relaxed mb-4">
+                      {addon.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-nexa-border/60 text-[11px] font-semibold text-slate-500">
+                    {addon.overageNote}
+                  </div>
+                </NexaCard>
+              </motion.div>
+            ))}
+          </div>
         </div>
 
         {/* NATIVE MOBILE APPLICATIONS */}
@@ -635,7 +647,7 @@ export default function PricingPage() {
                   transition={{ duration: 0.75, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
                   className="text-2xl sm:text-3xl font-extrabold text-white mb-3"
                 >
-                  Operating 10+ retail locations or a wholesale distributor?
+                  Operating 10+ retail locations or a national fleet network?
                 </motion.h3>
                 <motion.p
                   initial={{ opacity: 0, y: 45 }}
@@ -644,8 +656,7 @@ export default function PricingPage() {
                   transition={{ duration: 0.75, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   className="text-slate-300 text-sm leading-relaxed max-w-2xl"
                 >
-                  We provide tailored SLA agreements, dedicated cloud server clusters, custom
-                  ERP data migration from legacy accounting tools, and hands-on staff training.
+                  We provide tailored SLA agreements, isolated sovereign Neon PostgreSQL databases, BYOK AI model routing, custom ERP data migration, and hands-on staff training.
                 </motion.p>
               </div>
 
@@ -665,7 +676,7 @@ export default function PricingPage() {
                     Speak with an Architect
                   </NexaButton>
                 </Link>
-                <Link href="http://localhost:3000/join" className="w-full">
+                <Link href="/onboarding?plan=GROWTH" className="w-full">
                   <NexaButton
                     variant="white"
                     size="lg"

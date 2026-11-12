@@ -5,6 +5,7 @@ import { decrementInventoryForOrder } from "./commerce-inventory-store";
 import { sendOrderStatusNotification } from "./commerce-notifications";
 import { publishCommerceEvent } from "./commerce-event-hub";
 import { getTenantSql } from "./tenant-db-resolver";
+import { calculatePlatformFeeSplit } from "./pricing-plans";
 
 function getSyncDir() {
   const candidates = [
@@ -162,9 +163,14 @@ export async function saveErpOrder(order: Partial<CommerceOrderItem>): Promise<C
   const orderNum = order.orderNumber || `OFIA-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
   const rawAmount = Number(order.rawAmount) || 0;
-  const platformFee = order.platformFee ?? Math.round(rawAmount * 0.015 * 100) / 100; // 1.5% commission
-  const merchantAmount = order.merchantAmount ?? Math.max(0, rawAmount - platformFee); // 98.5% split
   const isEscrow = Boolean(order.isEscrow);
+  const { platformFee, merchantAmount } = calculatePlatformFeeSplit(rawAmount, {
+    planTier: (order as any).planTier,
+    isEscrow,
+    channel: order.channel,
+    overridePlatformFee: order.platformFee,
+    overrideMerchantAmount: order.merchantAmount,
+  });
   const escrowStatus = isEscrow ? "HELD" : "NONE";
   const settlementStatus = isEscrow ? "HELD_ESCROW" : "AVAILABLE";
 
@@ -523,8 +529,13 @@ export async function saveErpBooking(booking: Partial<CommerceBookingItem>): Pro
 
   const rawAmount = typeof booking.amount === "number" ? booking.amount : (booking.amount ? parseFloat(String(booking.amount).replace(/[^0-9.]/g, "")) || 0 : 0);
   const isEscrow = Boolean(booking.isEscrow);
-  const platformFee = Math.round(rawAmount * 0.015 * 100) / 100;
-  const merchantAmount = Math.max(0, rawAmount - platformFee);
+  const { platformFee, merchantAmount } = calculatePlatformFeeSplit(rawAmount, {
+    planTier: (booking as any).planTier,
+    isEscrow,
+    channel: "STOREFRONT",
+    overridePlatformFee: booking.platformFee,
+    overrideMerchantAmount: booking.merchantAmount,
+  });
   const escrowStatus = isEscrow ? "HELD" : "NONE";
   const settlementStatus = isEscrow ? "HELD_ESCROW" : "AVAILABLE";
 

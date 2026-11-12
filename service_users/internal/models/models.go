@@ -105,9 +105,13 @@ type Subscription struct {
 	ID                       string    `gorm:"primaryKey;size:191" json:"id"`
 	OrganizationID           string    `gorm:"size:191;not null;uniqueIndex" json:"organization_id"`
 	PlanTier                 PlanTier  `gorm:"size:50;not null" json:"plan_tier"`
+	BillingCycle             string    `gorm:"size:20;default:'MONTHLY'" json:"billing_cycle"`
 	PaystackSubscriptionCode string    `gorm:"size:191" json:"paystack_subscription_code,omitempty"`
 	PaystackCustomerCode     string    `gorm:"size:191" json:"paystack_customer_code,omitempty"`
 	Status                   string    `gorm:"size:50;not null;default:'ACTIVE'" json:"status"`
+	ExtraLeads               int       `gorm:"default:0" json:"extra_leads"`
+	ExtraCampaigns           int       `gorm:"default:0" json:"extra_campaigns"`
+	ExtraSeats               int       `gorm:"default:0" json:"extra_seats"`
 	CurrentPeriodStart       time.Time `json:"current_period_start"`
 	CurrentPeriodEnd         time.Time `json:"current_period_end"`
 	CancelAtPeriodEnd        bool      `gorm:"default:false" json:"cancel_at_period_end"`

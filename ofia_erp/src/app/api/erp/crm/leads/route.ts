@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantSql } from "@/lib/tenant-db-resolver";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
+import { enforceLeadQuota } from "@/lib/subscription-enforcer";
 
 export const dynamic = "force-dynamic";
 
@@ -505,6 +506,32 @@ export async function POST(request: NextRequest) {
       `;
       targetLead = updated;
     } else {
+      // Enforce monthly CRM lead quota before inserting a new lead
+      try {
+        const [monthCountRow] = await sql`
+          SELECT COUNT(*)::int AS cnt FROM crm_leads
+          WHERE LOWER(tenant_slug) = ${tenantSlug}
+            AND created_at >= date_trunc('month', NOW());
+        `;
+        const currentMonthLeads = Number(monthCountRow?.cnt || 0);
+        const quota = await enforceLeadQuota(tenantSlug, currentMonthLeads, 1);
+        if (!quota.allowed) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: quota.error,
+              code: quota.code,
+              planTier: quota.planTier,
+              limit: quota.limit,
+              current: quota.current,
+            },
+            { status: quota.status }
+          );
+        }
+      } catch (qErr: any) {
+        console.warn("[CRM-Leads POST] Lead quota check note:", qErr.message);
+      }
+
       const [saved] = await sql`
         INSERT INTO crm_leads (
           id, tenant_slug, tenant_id, name, contact_name, company, company_name, email, contact_email, phone, contact_phone,

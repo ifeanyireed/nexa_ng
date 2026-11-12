@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/hex"
@@ -9,7 +10,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
+
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 	"nexa/user_subscription_service/internal/models"
@@ -35,14 +38,31 @@ func (h *SubscriptionHandler) SetRedis(r *redis.Client) {
 }
 
 type CheckoutPlanRequest struct {
-	PlanTier models.PlanTier `json:"plan_tier"`
-	Email    string          `json:"email"`
+	PlanTier     models.PlanTier `json:"plan_tier"`
+	BillingCycle string          `json:"billing_cycle"`
+	Email        string          `json:"email"`
+	CallbackURL  string          `json:"callback_url"`
 }
 
 type CheckoutResponse struct {
-	AuthorizationURL string `json:"authorization_url"`
-	AccessCode       string `json:"access_code"`
-	Reference        string `json:"reference"`
+	AuthorizationURL string          `json:"authorization_url"`
+	AccessCode       string          `json:"access_code"`
+	Reference        string          `json:"reference"`
+	AmountNGN        float64         `json:"amount_ngn"`
+	PlanTier         models.PlanTier `json:"plan_tier"`
+	BillingCycle     string          `json:"billing_cycle"`
+	Mode             string          `json:"mode"`
+}
+
+func (h *SubscriptionHandler) invalidateRBACCache(r *http.Request, org *models.Organization, rawOrgID string) {
+	if h.redis == nil {
+		return
+	}
+	_ = h.redis.Delete(r.Context(), h.redis.BuildKey(rawOrgID, "rbac", "matrix"))
+	if org != nil {
+		_ = h.redis.Delete(r.Context(), h.redis.BuildKey(org.ID, "rbac", "matrix"))
+		_ = h.redis.Delete(r.Context(), h.redis.BuildKey(org.Slug, "rbac", "matrix"))
+	}
 }
 
 // GetSubscriptionDetails returns centralized SubscriptionHelper limits and usage for the workspace
@@ -55,30 +75,36 @@ func (h *SubscriptionHandler) GetSubscriptionDetails(w http.ResponseWriter, r *h
 
 	if h.db != nil {
 		summary, err := h.subServ.GetTenantSubscription(orgID)
-		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+		if err == nil && summary != nil {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(summary)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(summary)
-		return
 	}
 
-	// Mock fallback
+	// Fallback default summary when org is not yet in Organization table
 	limits := subscription.GetLimitsForTier(models.PlanGrowth)
+	modules := subscription.GetModulesForTierAndVertical(models.PlanGrowth, "retail")
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"organization_id": orgID,
+		"slug":            orgID,
 		"plan_tier":       models.PlanGrowth,
+		"billing_cycle":   "MONTHLY",
 		"status":          "ACTIVE",
 		"limits":          limits,
+		"modules":         modules,
 		"usage": map[string]interface{}{
-			"leads_researched": 3420,
-			"emails_sent":      980,
-			"ai_tokens_used":   1425000,
-			"ai_cost_usd":      142.5,
+			"leads_researched":       0,
+			"emails_sent":            0,
+			"whatsapp_messages_sent": 0,
+			"ai_tokens_used":         0,
+			"ai_cost_usd":            0,
 		},
-		"days_remaining": 22,
+		"extra_leads":     0,
+		"extra_campaigns": 0,
+		"extra_seats":     0,
+		"days_remaining":  30,
 	})
 }
 
@@ -115,7 +141,6 @@ func (h *SubscriptionHandler) ListPlans(w http.ResponseWriter, r *http.Request) 
 		var count int64
 		h.db.Model(&models.SubscriptionPlan{}).Count(&count)
 		if count == 0 {
-			// Auto-seed default catalog into Neon Postgres database
 			seedDefaultSubscriptionPlans(h.db)
 		}
 
@@ -125,7 +150,6 @@ func (h *SubscriptionHandler) ListPlans(w http.ResponseWriter, r *http.Request) 
 			query = query.Where("category = ?", category)
 		}
 		if err := query.Find(&plans).Error; err == nil && len(plans) > 0 {
-			// 2. Cache result in Redis with 1 hour TTL
 			if h.redis != nil && h.redis.IsAvailable() {
 				cacheKey := h.redis.BuildGlobalKey("plans", cacheKeySuffix)
 				_ = h.redis.Set(r.Context(), cacheKey, plans, 1*time.Hour)
@@ -135,7 +159,6 @@ func (h *SubscriptionHandler) ListPlans(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	// Fallback mock seeds if database is not reachable
 	json.NewEncoder(w).Encode(getDefaultSeedPlans())
 }
 
@@ -184,7 +207,6 @@ func (h *SubscriptionHandler) CreatePlan(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	// Invalidate plans cache on creation
 	if h.redis != nil {
 		_ = h.redis.DeletePrefix(r.Context(), h.redis.BuildGlobalKey("plans", ""))
 	}
@@ -316,15 +338,16 @@ func (h *SubscriptionHandler) DeletePlan(w http.ResponseWriter, r *http.Request)
 	})
 }
 
-// UpdateTenantSubscription updates a tenant's active subscription tier in Neon Postgres
+// UpdateTenantSubscription updates a tenant's active subscription tier, status, and module matrix in Neon Postgres
 func (h *SubscriptionHandler) UpdateTenantSubscription(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgId")
 	w.Header().Set("Content-Type", "application/json")
 
 	var req struct {
-		PlanTier   models.PlanTier `json:"plan_tier"`
-		PlanID     string          `json:"plan_id"`
-		Status     string          `json:"status"`
+		PlanTier     models.PlanTier `json:"plan_tier"`
+		PlanID       string          `json:"plan_id"`
+		BillingCycle string          `json:"billing_cycle"`
+		Status       string          `json:"status"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
@@ -334,33 +357,69 @@ func (h *SubscriptionHandler) UpdateTenantSubscription(w http.ResponseWriter, r 
 	if req.PlanTier == "" {
 		req.PlanTier = models.PlanGrowth
 	}
+	req.PlanTier = models.PlanTier(strings.ToUpper(strings.TrimSpace(string(req.PlanTier))))
+
+	if req.BillingCycle == "" {
+		req.BillingCycle = "MONTHLY"
+	} else {
+		req.BillingCycle = strings.ToUpper(strings.TrimSpace(req.BillingCycle))
+	}
+
+	if req.Status == "" {
+		req.Status = "ACTIVE"
+	} else {
+		req.Status = strings.ToUpper(strings.TrimSpace(req.Status))
+	}
 
 	if h.db != nil {
-		// Update Organization table
-		h.db.Model(&models.Organization{}).Where("id = ?", orgID).Update("plan_tier", req.PlanTier)
+		var org models.Organization
+		err := h.db.Where("id = ? OR LOWER(slug) = LOWER(?)", orgID, orgID).First(&org).Error
+		targetOrgID := orgID
+		if err == nil {
+			targetOrgID = org.ID
+			h.db.Model(&org).Updates(map[string]interface{}{
+				"plan_tier":     req.PlanTier,
+				"billing_cycle": req.BillingCycle,
+				"status":        req.Status,
+				"updated_at":    time.Now(),
+			})
+		}
 
-		// Update or Create Subscription table record
+		periodEnd := time.Now().AddDate(0, 1, 0)
+		if req.BillingCycle == "ANNUAL" || req.BillingCycle == "YEARLY" {
+			periodEnd = time.Now().AddDate(1, 0, 0)
+		}
+
 		var sub models.Subscription
-		if err := h.db.First(&sub, "organization_id = ?", orgID).Error; err == nil {
+		if err := h.db.First(&sub, "organization_id = ?", targetOrgID).Error; err == nil {
 			h.db.Model(&sub).Updates(map[string]interface{}{
-				"plan_tier":  req.PlanTier,
-				"status":     "ACTIVE",
-				"updated_at": time.Now(),
+				"plan_tier":          req.PlanTier,
+				"billing_cycle":      req.BillingCycle,
+				"status":             req.Status,
+				"current_period_end": periodEnd,
+				"updated_at":         time.Now(),
 			})
 		} else {
 			h.db.Create(&models.Subscription{
-				ID:                 fmt.Sprintf("sub-%s-%d", orgID, time.Now().Unix()),
-				OrganizationID:     orgID,
+				ID:                 fmt.Sprintf("sub-%s-%d", targetOrgID, time.Now().Unix()),
+				OrganizationID:     targetOrgID,
 				PlanTier:           req.PlanTier,
-				Status:             "ACTIVE",
+				BillingCycle:       req.BillingCycle,
+				Status:             req.Status,
 				CurrentPeriodStart: time.Now(),
-				CurrentPeriodEnd:   time.Now().AddDate(0, 1, 0),
+				CurrentPeriodEnd:   periodEnd,
 				CreatedAt:          time.Now(),
 				UpdatedAt:          time.Now(),
 			})
 		}
 
-		summary, err := h.subServ.GetTenantSubscription(orgID)
+		// Automatically align ERP/Shop/Mobility modules & RBAC matrix for the new tier
+		if org.ID != "" {
+			h.subServ.SyncTenantModulesForTier(&org, req.PlanTier, req.Status)
+			h.invalidateRBACCache(r, &org, orgID)
+		}
+
+		summary, err := h.subServ.GetTenantSubscription(targetOrgID)
 		if err == nil {
 			json.NewEncoder(w).Encode(summary)
 			return
@@ -371,28 +430,78 @@ func (h *SubscriptionHandler) UpdateTenantSubscription(w http.ResponseWriter, r 
 		"success":         true,
 		"organization_id": orgID,
 		"plan_tier":       req.PlanTier,
-		"status":          "ACTIVE",
-		"message":         "Tenant subscription updated successfully in database",
+		"billing_cycle":   req.BillingCycle,
+		"status":          req.Status,
+		"message":         "Tenant subscription and module entitlements updated successfully",
 	})
 }
 
-// OverrideTenantQuotas configures extra leads/campaign overrides for a workspace
+// OverrideTenantQuotas persists extra leads, campaigns, and team seat overrides for a workspace in Neon Postgres
 func (h *SubscriptionHandler) OverrideTenantQuotas(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgId")
 	w.Header().Set("Content-Type", "application/json")
 
 	var req struct {
-		ExtraLeads      int             `json:"extra_leads"`
-		ExtraCampaigns  int             `json:"extra_campaigns"`
-		PlanTier        models.PlanTier `json:"plan_tier"`
+		ExtraLeads     int             `json:"extra_leads"`
+		ExtraCampaigns int             `json:"extra_campaigns"`
+		ExtraSeats     int             `json:"extra_seats"`
+		PlanTier       models.PlanTier `json:"plan_tier"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
 		return
 	}
 
-	if h.db != nil && req.PlanTier != "" {
-		h.db.Model(&models.Organization{}).Where("id = ?", orgID).Update("plan_tier", req.PlanTier)
+	if h.db != nil {
+		var org models.Organization
+		targetOrgID := orgID
+		if err := h.db.Where("id = ? OR LOWER(slug) = LOWER(?)", orgID, orgID).First(&org).Error; err == nil {
+			targetOrgID = org.ID
+			if req.PlanTier != "" {
+				req.PlanTier = models.PlanTier(strings.ToUpper(strings.TrimSpace(string(req.PlanTier))))
+				h.db.Model(&org).Update("plan_tier", req.PlanTier)
+				h.subServ.SyncTenantModulesForTier(&org, req.PlanTier, org.Status)
+				h.invalidateRBACCache(r, &org, orgID)
+			}
+		}
+
+		var sub models.Subscription
+		if err := h.db.First(&sub, "organization_id = ?", targetOrgID).Error; err == nil {
+			updates := map[string]interface{}{
+				"extra_leads":     req.ExtraLeads,
+				"extra_campaigns": req.ExtraCampaigns,
+				"extra_seats":     req.ExtraSeats,
+				"updated_at":      time.Now(),
+			}
+			if req.PlanTier != "" {
+				updates["plan_tier"] = req.PlanTier
+			}
+			h.db.Model(&sub).Updates(updates)
+		} else {
+			tier := req.PlanTier
+			if tier == "" {
+				tier = models.PlanGrowth
+			}
+			h.db.Create(&models.Subscription{
+				ID:                 fmt.Sprintf("sub-%s-%d", targetOrgID, time.Now().Unix()),
+				OrganizationID:     targetOrgID,
+				PlanTier:           tier,
+				BillingCycle:       "MONTHLY",
+				Status:             "ACTIVE",
+				ExtraLeads:         req.ExtraLeads,
+				ExtraCampaigns:     req.ExtraCampaigns,
+				ExtraSeats:         req.ExtraSeats,
+				CurrentPeriodStart: time.Now(),
+				CurrentPeriodEnd:   time.Now().AddDate(0, 1, 0),
+				CreatedAt:          time.Now(),
+				UpdatedAt:          time.Now(),
+			})
+		}
+
+		if summary, err := h.subServ.GetTenantSubscription(targetOrgID); err == nil {
+			json.NewEncoder(w).Encode(summary)
+			return
+		}
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -400,12 +509,76 @@ func (h *SubscriptionHandler) OverrideTenantQuotas(w http.ResponseWriter, r *htt
 		"organization_id": orgID,
 		"extra_leads":     req.ExtraLeads,
 		"extra_campaigns": req.ExtraCampaigns,
+		"extra_seats":     req.ExtraSeats,
 		"plan_tier":       req.PlanTier,
-		"message":         "Tenant quota override configured successfully in database",
+		"message":         "Tenant quota overrides persisted in database",
 	})
 }
 
-// InitializeCheckout initiates a Paystack subscription checkout
+// CheckAndIncrementQuota checks if an action is allowed under the tenant's plan limits and increments usage if requested
+func (h *SubscriptionHandler) CheckAndIncrementQuota(w http.ResponseWriter, r *http.Request) {
+	orgID := chi.URLParam(r, "orgId")
+	w.Header().Set("Content-Type", "application/json")
+
+	var req struct {
+		Action                 string  `json:"action"` // "EXTRACT_LEADS", "LAUNCH_CAMPAIGN", "INCREMENT_USAGE"
+		RequestedLeads         int     `json:"requested_leads"`
+		CurrentActiveCampaigns int     `json:"current_active_campaigns"`
+		EmailsSent             int     `json:"emails_sent"`
+		WhatsAppSent           int     `json:"whatsapp_sent"`
+		AITokensUsed           int64   `json:"ai_tokens_used"`
+		AICostUSD              float64 `json:"ai_cost_usd"`
+		CommitIncrement        bool    `json:"commit_increment"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if h.db == nil {
+		json.NewEncoder(w).Encode(map[string]interface{}{"allowed": true})
+		return
+	}
+
+	switch strings.ToUpper(req.Action) {
+	case "EXTRACT_LEADS":
+		allowed, err := h.subServ.CanExtractLeads(orgID, req.RequestedLeads)
+		if !allowed || err != nil {
+			w.WriteHeader(http.StatusPaymentRequired)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"allowed": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+		if req.CommitIncrement && req.RequestedLeads > 0 {
+			_ = h.subServ.IncrementUsage(orgID, req.RequestedLeads, 0, 0, req.AITokensUsed, req.AICostUSD)
+		}
+	case "LAUNCH_CAMPAIGN":
+		allowed, err := h.subServ.CanLaunchCampaign(orgID, req.CurrentActiveCampaigns)
+		if !allowed || err != nil {
+			w.WriteHeader(http.StatusPaymentRequired)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"allowed": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+	case "INCREMENT_USAGE":
+		if err := h.subServ.IncrementUsage(orgID, req.RequestedLeads, req.EmailsSent, req.WhatsAppSent, req.AITokensUsed, req.AICostUSD); err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	summary, _ := h.subServ.GetTenantSubscription(orgID)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"allowed":      true,
+		"subscription": summary,
+	})
+}
+
+// InitializeCheckout initiates a Paystack subscription checkout (calls live Paystack API when PAYSTACK_SECRET_KEY is set)
 func (h *SubscriptionHandler) InitializeCheckout(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgId")
 	var req CheckoutPlanRequest
@@ -414,23 +587,113 @@ func (h *SubscriptionHandler) InitializeCheckout(w http.ResponseWriter, r *http.
 		return
 	}
 
-	_ = subscription.GetLimitsForTier(req.PlanTier)
-	reference := fmt.Sprintf("sub_%s_%d", orgID[:8], time.Now().Unix())
+	if req.PlanTier == "" {
+		req.PlanTier = models.PlanGrowth
+	}
+	req.PlanTier = models.PlanTier(strings.ToUpper(strings.TrimSpace(string(req.PlanTier))))
 
-	// In real production, calls Paystack API: https://api.paystack.co/transaction/initialize
-	authURL := fmt.Sprintf("https://checkout.paystack.com/mock_%s?plan=%s&ref=%s", orgID, req.PlanTier, reference)
+	billingCycle := strings.ToUpper(strings.TrimSpace(req.BillingCycle))
+	if billingCycle == "" {
+		billingCycle = "MONTHLY"
+	}
+
+	limits := subscription.GetLimitsForTier(req.PlanTier)
+	amountNGN := limits.MonthlyPriceNGN
+	if billingCycle == "ANNUAL" || billingCycle == "YEARLY" {
+		amountNGN = limits.AnnualPriceNGN
+	}
+
+	cleanOrgPrefix := orgID
+	if len(cleanOrgPrefix) > 12 {
+		cleanOrgPrefix = cleanOrgPrefix[:12]
+	}
+	reference := fmt.Sprintf("ofia_sub_%s_%d", cleanOrgPrefix, time.Now().Unix())
+
+	email := strings.TrimSpace(req.Email)
+	if email == "" && h.db != nil {
+		var org models.Organization
+		if err := h.db.Preload("Owner").Where("id = ? OR LOWER(slug) = LOWER(?)", orgID, orgID).First(&org).Error; err == nil && org.Owner != nil {
+			email = org.Owner.Email
+		}
+	}
+	if email == "" {
+		email = "billing@ofia.ng"
+	}
+
+	paystackSecret := strings.TrimSpace(os.Getenv("PAYSTACK_SECRET_KEY"))
+	if paystackSecret != "" && amountNGN > 0 {
+		payload := map[string]interface{}{
+			"email":     email,
+			"amount":    int64(amountNGN * 100), // Paystack expects kobo
+			"reference": reference,
+			"currency":  "NGN",
+			"metadata": map[string]interface{}{
+				"org_id":        orgID,
+				"tenant_slug":   orgID,
+				"plan_tier":     string(req.PlanTier),
+				"billing_cycle": billingCycle,
+			},
+		}
+		if req.CallbackURL != "" {
+			payload["callback_url"] = req.CallbackURL
+		}
+
+		bodyBytes, _ := json.Marshal(payload)
+		httpReq, err := http.NewRequestWithContext(r.Context(), "POST", "https://api.paystack.co/transaction/initialize", bytes.NewReader(bodyBytes))
+		if err == nil {
+			httpReq.Header.Set("Authorization", "Bearer "+paystackSecret)
+			httpReq.Header.Set("Content-Type", "application/json")
+			client := &http.Client{Timeout: 10 * time.Second}
+			resp, err := client.Do(httpReq)
+			if err == nil {
+				defer resp.Body.Close()
+				var psResp struct {
+					Status  bool   `json:"status"`
+					Message string `json:"message"`
+					Data    struct {
+						AuthorizationURL string `json:"authorization_url"`
+						AccessCode       string `json:"access_code"`
+						Reference        string `json:"reference"`
+					} `json:"data"`
+				}
+				if json.NewDecoder(resp.Body).Decode(&psResp) == nil && psResp.Status && psResp.Data.AuthorizationURL != "" {
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(CheckoutResponse{
+						AuthorizationURL: psResp.Data.AuthorizationURL,
+						AccessCode:       psResp.Data.AccessCode,
+						Reference:        psResp.Data.Reference,
+						AmountNGN:        amountNGN,
+						PlanTier:         req.PlanTier,
+						BillingCycle:     billingCycle,
+						Mode:             "LIVE_PAYSTACK",
+					})
+					return
+				}
+			}
+		}
+	}
+
+	// Sandbox / Dev fallback when PAYSTACK_SECRET_KEY is not configured
+	callback := req.CallbackURL
+	if callback == "" {
+		callback = fmt.Sprintf("/tenant/billing?upgraded=%s&cycle=%s&ref=%s", req.PlanTier, billingCycle, reference)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(CheckoutResponse{
-		AuthorizationURL: authURL,
-		AccessCode:       "mock_acc_" + reference,
+		AuthorizationURL: callback,
+		AccessCode:       "sandbox_acc_" + reference,
 		Reference:        reference,
+		AmountNGN:        amountNGN,
+		PlanTier:         req.PlanTier,
+		BillingCycle:     billingCycle,
+		Mode:             "SANDBOX_DIRECT",
 	})
 }
 
-// HandlePaystackWebhook verifies Paystack HMAC signature and upgrades plan tier
+// HandlePaystackWebhook verifies Paystack HMAC-SHA512 signature and activates/updates the tenant's subscription & module matrix
 func (h *SubscriptionHandler) HandlePaystackWebhook(w http.ResponseWriter, r *http.Request) {
-	paystackSecret := os.Getenv("PAYSTACK_SECRET_KEY")
+	paystackSecret := strings.TrimSpace(os.Getenv("PAYSTACK_SECRET_KEY"))
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read body", http.StatusBadRequest)
@@ -448,241 +711,222 @@ func (h *SubscriptionHandler) HandlePaystackWebhook(w http.ResponseWriter, r *ht
 		}
 	}
 
-	var event map[string]interface{}
-	if err := json.Unmarshal(body, &event); err == nil {
-		eventType, _ := event["event"].(string)
-		if eventType == "charge.success" || eventType == "subscription.create" {
-			// Webhook charge handling logic
+	var payload struct {
+		Event string `json:"event"`
+		Data  struct {
+			Reference    string  `json:"reference"`
+			Amount       float64 `json:"amount"` // in kobo
+			Status       string  `json:"status"`
+			Customer     struct {
+				Email        string `json:"email"`
+				CustomerCode string `json:"customer_code"`
+			} `json:"customer"`
+			SubscriptionCode string `json:"subscription_code"`
+			Metadata         struct {
+				OrgID        string `json:"org_id"`
+				TenantSlug   string `json:"tenant_slug"`
+				PlanTier     string `json:"plan_tier"`
+				BillingCycle string `json:"billing_cycle"`
+			} `json:"metadata"`
+		} `json:"data"`
+	}
+
+	if err := json.Unmarshal(body, &payload); err == nil && h.db != nil {
+		orgIdentifier := strings.TrimSpace(payload.Data.Metadata.OrgID)
+		if orgIdentifier == "" {
+			orgIdentifier = strings.TrimSpace(payload.Data.Metadata.TenantSlug)
+		}
+
+		// Infer tier from metadata or fallback to amount in NGN
+		planTier := models.PlanTier(strings.ToUpper(strings.TrimSpace(payload.Data.Metadata.PlanTier)))
+		if planTier == "" {
+			amountNGN := payload.Data.Amount / 100.0
+			switch {
+			case amountNGN >= 600_000:
+				planTier = models.PlanEnterprise
+			case amountNGN >= 180_000:
+				planTier = models.PlanScale
+			case amountNGN >= 65_000:
+				planTier = models.PlanGrowth
+			default:
+				planTier = models.PlanStarter
+			}
+		}
+
+		billingCycle := strings.ToUpper(strings.TrimSpace(payload.Data.Metadata.BillingCycle))
+		if billingCycle == "" {
+			billingCycle = "MONTHLY"
+		}
+
+		switch payload.Event {
+		case "charge.success", "subscription.create":
+			if orgIdentifier != "" {
+				var org models.Organization
+				if err := h.db.Where("id = ? OR LOWER(slug) = LOWER(?)", orgIdentifier, orgIdentifier).First(&org).Error; err == nil {
+					periodEnd := time.Now().AddDate(0, 1, 0)
+					if billingCycle == "ANNUAL" || billingCycle == "YEARLY" {
+						periodEnd = time.Now().AddDate(1, 0, 0)
+					}
+
+					h.db.Model(&org).Updates(map[string]interface{}{
+						"plan_tier":     planTier,
+						"billing_cycle": billingCycle,
+						"status":        "ACTIVE",
+						"updated_at":    time.Now(),
+					})
+
+					var sub models.Subscription
+					if err := h.db.First(&sub, "organization_id = ?", org.ID).Error; err == nil {
+						h.db.Model(&sub).Updates(map[string]interface{}{
+							"plan_tier":                  planTier,
+							"billing_cycle":              billingCycle,
+							"status":                     "ACTIVE",
+							"paystack_subscription_code": payload.Data.SubscriptionCode,
+							"paystack_customer_code":     payload.Data.Customer.CustomerCode,
+							"current_period_start":       time.Now(),
+							"current_period_end":         periodEnd,
+							"updated_at":                 time.Now(),
+						})
+					} else {
+						h.db.Create(&models.Subscription{
+							ID:                       fmt.Sprintf("sub-%s-%d", org.ID, time.Now().Unix()),
+							OrganizationID:           org.ID,
+							PlanTier:                 planTier,
+							BillingCycle:             billingCycle,
+							PaystackSubscriptionCode: payload.Data.SubscriptionCode,
+							PaystackCustomerCode:     payload.Data.Customer.CustomerCode,
+							Status:                   "ACTIVE",
+							CurrentPeriodStart:       time.Now(),
+							CurrentPeriodEnd:         periodEnd,
+							CreatedAt:                time.Now(),
+							UpdatedAt:                time.Now(),
+						})
+					}
+
+					h.subServ.SyncTenantModulesForTier(&org, planTier, "ACTIVE")
+					h.invalidateRBACCache(r, &org, orgIdentifier)
+				}
+			}
+
+		case "subscription.disable", "invoice.payment_failed":
+			if orgIdentifier != "" {
+				var org models.Organization
+				if err := h.db.Where("id = ? OR LOWER(slug) = LOWER(?)", orgIdentifier, orgIdentifier).First(&org).Error; err == nil {
+					h.db.Model(&org).Updates(map[string]interface{}{
+						"status":     "PAST_DUE",
+						"updated_at": time.Now(),
+					})
+					h.db.Model(&models.Subscription{}).Where("organization_id = ?", org.ID).Updates(map[string]interface{}{
+						"status":     "PAST_DUE",
+						"updated_at": time.Now(),
+					})
+				}
+			}
 		}
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status": "processed"}`))
 }
 
 func getDefaultSeedPlans() []models.SubscriptionPlan {
 	return []models.SubscriptionPlan{
-		// OFIA AI
+		// UNIFIED OFIA PLATFORM TIERS
 		{
-			ID:            "ofia-ai-pilot",
-			Category:      "OFIA_AI",
-			CategoryLabel: "Ofia AI",
-			Tier:          models.PlanFreeTrial,
-			Name:          "Ofia AI Pilot",
-			PriceNGN:      0,
-			Period:        "14 Days",
-			Badge:         "14-Day Pilot",
-			Description:   "Sandbox for testing autonomous AI SDR agents and lead discovery.",
-			LeadsLimit:    250,
-			CampaignsLimit: 1,
-			TeamSeats:     2,
-			TokensLimit:   250000,
-			FeaturesJSON:  `["1 Autonomous AI Outreach Agent","250 Verified Enrichment Leads","250k Monthly AI Tokens Quota","Email Discovery Channel"]`,
-			IsActive:      true,
-		},
-		{
-			ID:            "ofia-ai-growth",
-			Category:      "OFIA_AI",
-			CategoryLabel: "Ofia AI",
-			Tier:          models.PlanStarter,
-			Name:          "Ofia AI Growth Swarm",
-			PriceNGN:      13000,
-			Period:        "Monthly",
-			Badge:         "Most Popular AI",
-			Description:   "Autonomous GTM swarm for multi-channel sales and WhatsApp agents.",
-			LeadsLimit:    5000,
-			CampaignsLimit: 5,
-			TeamSeats:     5,
-			TokensLimit:   10000000,
-			FeaturesJSON:  `["5 Autonomous AI Swarm Agents","5,000 Verified Enrichment Leads / mo","10M Monthly AI Tokens Quota","Email + WhatsApp SDR Pipelines","BYOK OpenAI & Anthropic"]`,
-			IsActive:      true,
-		},
-		{
-			ID:            "ofia-ai-scale",
-			Category:      "OFIA_AI",
-			CategoryLabel: "Ofia AI",
-			Tier:          models.PlanGrowth,
-			Name:          "Ofia AI Autonomous Scale",
-			PriceNGN:      36000,
-			Period:        "Monthly",
-			Badge:         "High Velocity AI",
-			Description:   "Enterprise swarm intelligence for high-velocity revenue generation.",
-			LeadsLimit:    25000,
-			CampaignsLimit: 20,
-			TeamSeats:     15,
-			TokensLimit:   50000000,
-			FeaturesJSON:  `["20 Autonomous Swarm Agents","25,000 Verified Leads / mo","50M Monthly AI Tokens Quota","LinkedIn + Meta Ads + Voice AI SDRs","Custom Brand Tone Fine-Tuning"]`,
-			IsActive:      true,
-		},
-		{
-			ID:            "ofia-ai-sovereign",
-			Category:      "OFIA_AI",
-			CategoryLabel: "Ofia AI",
-			Tier:          models.PlanEnterprise,
-			Name:          "Ofia AI Sovereign Cluster",
-			PriceNGN:      70000,
-			Period:        "Monthly",
-			Badge:         "Dedicated AI",
-			Description:   "Dedicated GPU clusters, unlimited AI agents, and private vector storage.",
-			LeadsLimit:    100000,
-			CampaignsLimit: 100,
-			TeamSeats:     50,
-			TokensLimit:   200000000,
-			FeaturesJSON:  `["Unlimited Autonomous AI Swarms","100,000 Verified Leads / mo","200M Monthly AI Tokens Quota","Dedicated Inference GPU Cluster","Private Vector Database & RAG"]`,
-			IsActive:      true,
-		},
-
-		// OFIA SHOP
-		{
-			ID:               "ofia-shop-starter",
-			Category:         "OFIA_SHOP",
-			CategoryLabel:    "Ofia Shop",
-			Tier:             models.PlanStarter,
-			Name:             "Ofia Shop Starter",
-			PriceNGN:         3000,
-			Period:           "Monthly",
-			Badge:            "Fast Launch",
-			Description:      "Deploy branded storefront on slug.ofia.shop with POS checkout.",
-			LeadsLimit:       500,
+			ID:               "ofia-tier-free-trial",
+			Category:         "OFIA_ENTERPRISE",
+			CategoryLabel:    "Ofia Unified Platform",
+			Tier:             models.PlanFreeTrial,
+			Name:             "Ofia Sandbox (14-Day Pilot)",
+			PriceNGN:         0,
+			PriceUSD:         0,
+			Period:           "14 Days",
+			Badge:            "14-Day Free Pilot",
+			Description:      "Risk-free onboarding to configure your storefront, import catalog SKUs, and test POS & CRM workflows.",
+			LeadsLimit:       250,
 			CampaignsLimit:   1,
 			TeamSeats:        2,
+			TokensLimit:      250000,
 			StorefrontsLimit: 1,
-			FeaturesJSON:     `["1 Custom Storefront on slug.ofia.shop","Up to 100 Products Listed","Integrated POS Terminal Checkout","Automated Paystack Payment Gateway","Standard Customer Support"]`,
+			FeaturesJSON:     `["1 Storefront on {slug}.ofia.shop","Up to 50 Products / SKUs","Single-Register Web POS","Basic CRM Pipeline (Up to 250 Leads)","250k AI Tokens Sandbox","2.5% Direct / 5.0% Escrow Checkout Fee"]`,
 			IsActive:         true,
 		},
 		{
-			ID:               "ofia-shop-pro",
+			ID:               "ofia-tier-starter",
 			Category:         "OFIA_SHOP",
-			CategoryLabel:    "Ofia Shop",
+			CategoryLabel:    "Ofia Launch",
+			Tier:             models.PlanStarter,
+			Name:             "Ofia Launch (Starter)",
+			PriceNGN:         25000,
+			PriceUSD:         20,
+			Period:           "Monthly",
+			Badge:            "Retail & Solo Merchants",
+			Description:      "Everything a single-branch retailer, restaurant, or service provider needs to sell online and in-store.",
+			LeadsLimit:       1500,
+			CampaignsLimit:   3,
+			TeamSeats:        5,
+			TokensLimit:      2000000,
+			StorefrontsLimit: 1,
+			FeaturesJSON:     `["1 Branded Storefront + 1 Custom Domain","Up to 500 Products & Service Listings","2 POS Terminal Registers + Barcode Checkout","Single-Location Inventory & Stock Alerts","CRM Pipeline (1,500 Leads/mo & 3 Campaigns)","2.0% Direct / 4.5% Escrow Checkout Fee"]`,
+			IsActive:         true,
+		},
+		{
+			ID:               "ofia-tier-growth",
+			Category:         "OFIA_ENTERPRISE",
+			CategoryLabel:    "Ofia Growth",
 			Tier:             models.PlanGrowth,
-			Name:             "Ofia Shop Merchant Pro",
-			PriceNGN:         9000,
+			Name:             "Ofia Growth (Business Pro)",
+			PriceNGN:         75000,
+			PriceUSD:         55,
 			Period:           "Monthly",
-			Badge:            "Commerce Scale",
-			Description:      "Custom domain connection, multi-branch POS, and logistics courier dispatch.",
-			LeadsLimit:       2000,
-			CampaignsLimit:   5,
-			TeamSeats:        10,
-			StorefrontsLimit: 3,
-			FeaturesJSON:     `["Custom Domain Connection + Wildcard","3 Storefront Subdomains","Multi-Branch POS Terminal Checkout","Automated Courier & Rider Dispatch","Inventory Sync (IMS Integration)"]`,
-			IsActive:         true,
-		},
-		{
-			ID:               "ofia-shop-empire",
-			Category:         "OFIA_SHOP",
-			CategoryLabel:    "Ofia Shop",
-			Tier:             models.PlanScale,
-			Name:             "Ofia Shop Multi-Brand Empire",
-			PriceNGN:         24000,
-			Period:           "Monthly",
-			Badge:            "Multi-Vendor",
-			Description:      "Multi-storefront empire architecture with automated warehouse fulfillment.",
+			Badge:            "Most Popular",
+			Description:      "Full back-office ERP (Accounting, HR, Multi-Warehouse IMS) + Multi-Branch Storefronts + AI Sales Agents.",
 			LeadsLimit:       10000,
-			CampaignsLimit:   15,
-			TeamSeats:        25,
-			StorefrontsLimit: 10,
-			FeaturesJSON:     `["10 Custom Storefront Subdomains","Multi-Vendor Sub-Account Routing","Automated Warehouse Fulfillment","Zero Commission Surcharge (0%)","24/7 Dedicated Support"]`,
+			CampaignsLimit:   10,
+			TeamSeats:        15,
+			TokensLimit:      10000000,
+			StorefrontsLimit: 3,
+			FeaturesJSON:     `["Up to 3 Storefronts + 3 Custom Domains","Up to 5,000 Products + Service Bookings","Double-Entry Financial Accounting & Tax","HR, Automated Payroll & Attendance","AI SDR Outreach Swarm (10M Tokens/mo + BYOK)","1.25% Direct / 3.5% Escrow Checkout Fee"]`,
 			IsActive:         true,
 		},
-
-		// OFIA ENTERPRISE SUITE
 		{
-			ID:            "ofia-ent-core",
-			Category:      "OFIA_ENTERPRISE",
-			CategoryLabel: "Ofia Enterprise Suite",
-			Tier:          models.PlanGrowth,
-			Name:          "Enterprise Core ERP",
-			PriceNGN:      24000,
-			Period:        "Monthly",
-			Badge:         "Core Operations",
-			Description:   "Full back-office ERP suite: CRM, Financial Accounting, IMS, and HR.",
-			LeadsLimit:    5000,
-			CampaignsLimit: 10,
-			TeamSeats:     15,
-			FeaturesJSON:  `["All 8 Core ERP Modules","Multi-Warehouse Inventory Control (IMS)","Double-Entry Financial Accounting","HRM Payroll & Attendance Logs","15 Concurrent User Seats"]`,
-			IsActive:      true,
+			ID:               "ofia-tier-scale",
+			Category:         "OFIA_ENTERPRISE",
+			CategoryLabel:    "Ofia Scale",
+			Tier:             models.PlanScale,
+			Name:             "Ofia Scale (Omni-Suite)",
+			PriceNGN:         200000,
+			PriceUSD:         145,
+			Period:           "Monthly",
+			Badge:            "High-Velocity Omni-Suite",
+			Description:      "Multi-brand retail empires, fleet/logistics operators, and high-velocity GTM teams running at scale.",
+			LeadsLimit:       50000,
+			CampaignsLimit:   30,
+			TeamSeats:        50,
+			TokensLimit:      50000000,
+			StorefrontsLimit: 10,
+			FeaturesJSON:     `["Up to 10 Storefronts & Unlimited Products","Unlimited POS Registers Across All Branches","Mobility, Fleet & Dispatch Operations Suite","Workforce Governance, KPIs & Granular RBAC","Full AI GTM + Voicebip AI PSTN Calling (50M Tokens)","0.5% Direct / 2.5% Escrow Checkout Fee"]`,
+			IsActive:         true,
 		},
 		{
-			ID:            "ofia-ent-omni",
-			Category:      "OFIA_ENTERPRISE",
-			CategoryLabel: "Ofia Enterprise Suite",
-			Tier:          models.PlanScale,
-			Name:          "Enterprise Omni-Suite",
-			PriceNGN:      48000,
-			Period:        "Monthly",
-			Badge:         "Full Ecosystem",
-			Description:   "Complete unified ecosystem: Full ERP Suite + Ofia Shop Storefronts + AI Swarms.",
-			LeadsLimit:    20000,
-			CampaignsLimit: 25,
-			TeamSeats:     30,
-			FeaturesJSON:  `["Full ERP + Shop Storefronts + AI Swarms","30 Concurrent User Seats","20,000 Leads Pipeline / month","Custom Role-Based RBAC Permissions","Integrated Fleet & Dispatch Logistics"]`,
-			IsActive:      true,
-		},
-		{
-			ID:            "ofia-ent-sovereign",
-			Category:      "OFIA_ENTERPRISE",
-			CategoryLabel: "Ofia Enterprise Suite",
-			Tier:          models.PlanEnterprise,
-			Name:          "Enterprise Sovereign SLA",
-			PriceNGN:      100000,
-			Period:        "Monthly",
-			Badge:         "Dedicated Cloud",
-			Description:   "Maximum throughput, dedicated cloud infrastructure, and 24/7 SLA.",
-			LeadsLimit:    50000,
-			CampaignsLimit: 100,
-			TeamSeats:     999,
-			FeaturesJSON:  `["Dedicated Neon Postgres & Redis Instances","99.99% Guaranteed SLA Uptime","Unlimited Seats & Workspaces","Custom Enterprise ERP Integrations","Dedicated Strategic Technical Lead"]`,
-			IsActive:      true,
-		},
-
-		// OFIA COMPASS
-		{
-			ID:            "ofia-compass-starter",
-			Category:      "OFIA_COMPASS",
-			CategoryLabel: "Ofia Compass",
-			Tier:          models.PlanStarter,
-			Name:          "Ofia Compass Essentials",
-			PriceNGN:      7000,
-			Period:        "Monthly",
-			Badge:         "Executive Radar",
-			Description:   "Real-time executive dashboards, anomaly tracking, and automated revenue digests.",
-			LeadsLimit:    1000,
-			CampaignsLimit: 2,
-			TeamSeats:     3,
-			FeaturesJSON:  `["Real-Time Executive KPI Dashboard","Automated Revenue & Churn Forecasts","Weekly AI Market Digest Reports","3 Executive / Leadership Seats"]`,
-			IsActive:      true,
-		},
-		{
-			ID:            "ofia-compass-pro",
-			Category:      "OFIA_COMPASS",
-			CategoryLabel: "Ofia Compass",
-			Tier:          models.PlanGrowth,
-			Name:          "Ofia Compass Strategic Pro",
-			PriceNGN:      19000,
-			Period:        "Monthly",
-			Badge:         "Predictive BI",
-			Description:   "Cross-organization predictive analytics, anomaly alerts, and market trend radar.",
-			LeadsLimit:    5000,
-			CampaignsLimit: 10,
-			TeamSeats:     10,
-			FeaturesJSON:  `["Cross-Channel Market Trend Radar","Automated Anomaly Detection & Alerts","Predictive Cash Flow & Supply Models","10 Executive Decision-Maker Seats","Custom Dashboard Metrics Builder"]`,
-			IsActive:      true,
-		},
-		{
-			ID:            "ofia-compass-sovereign",
-			Category:      "OFIA_COMPASS",
-			CategoryLabel: "Ofia Compass",
-			Tier:          models.PlanEnterprise,
-			Name:          "Ofia Compass Sovereign Radar",
-			PriceNGN:      50000,
-			Period:        "Monthly",
-			Badge:         "Boardroom Intelligence",
-			Description:   "Boardroom-ready automated presentations, strategic benchmarking, and dedicated BI analysts.",
-			LeadsLimit:    25000,
-			CampaignsLimit: 50,
-			TeamSeats:     50,
-			FeaturesJSON:  `["Board-Ready Automated Strategic Decks","Industry Competitor Benchmarking Radar","Dedicated Strategic BI Data Analyst","Unlimited Executive & Board Seats","24/7 Strategic Alert Notification"]`,
-			IsActive:      true,
+			ID:               "ofia-tier-enterprise",
+			Category:         "OFIA_ENTERPRISE",
+			CategoryLabel:    "Ofia Sovereign",
+			Tier:             models.PlanEnterprise,
+			Name:             "Ofia Sovereign (Enterprise)",
+			PriceNGN:         650000,
+			PriceUSD:         450,
+			Period:           "Monthly",
+			Badge:            "Dedicated Cloud & 0% Direct Fee",
+			Description:      "Dedicated Neon Postgres & Cloudinary infrastructure (BYODB/BYOS), zero direct gateway surcharge, and 99.99% SLA.",
+			LeadsLimit:       250000,
+			CampaignsLimit:   100,
+			TeamSeats:        999,
+			TokensLimit:      250000000,
+			StorefrontsLimit: 999,
+			FeaturesJSON:     `["Dedicated Neon PostgreSQL & Cloudinary Storage","Unlimited Storefronts, Seats & Warehouses","0.0% Direct Gateway Fee / 1.5% Escrow Fee","250,000 Leads/mo & 250M AI Tokens Quota","Custom ERP & Bank Reconciliation Webhooks","99.99% Uptime SLA & Dedicated Technical Lead"]`,
+			IsActive:         true,
 		},
 	}
 }
@@ -696,6 +940,7 @@ func seedDefaultSubscriptionPlans(db *gorm.DB) {
 		if err := db.First(&existing, "id = ?", p.ID).Error; err == nil {
 			db.Model(&existing).Updates(map[string]interface{}{
 				"price_ngn":         p.PriceNGN,
+				"price_usd":         p.PriceUSD,
 				"period":            p.Period,
 				"category":          p.Category,
 				"category_label":    p.CategoryLabel,

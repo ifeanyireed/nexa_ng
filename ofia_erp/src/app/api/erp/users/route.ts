@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantSql } from "@/lib/tenant-db-resolver";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
+import { enforceTeamSeatQuota } from "@/lib/subscription-enforcer";
 
 export const dynamic = "force-dynamic";
 
@@ -142,6 +143,31 @@ export async function POST(request: NextRequest) {
           assignedPages,
         },
       });
+    }
+
+    // Enforce subscription team seat limit before adding a new user
+    try {
+      const [seatCountRow] = await sql`
+        SELECT COUNT(*)::int AS cnt FROM "User"
+        WHERE LOWER("tenantSlug") = ${tenantSlug} OR "tenantSlug" = '' OR "tenantSlug" IS NULL;
+      `;
+      const currentSeats = Number(seatCountRow?.cnt || 0);
+      const quota = await enforceTeamSeatQuota(tenantSlug, currentSeats);
+      if (!quota.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: quota.error,
+            code: quota.code,
+            planTier: quota.planTier,
+            limit: quota.limit,
+            current: quota.current,
+          },
+          { status: quota.status }
+        );
+      }
+    } catch (qErr: any) {
+      console.warn("[Users POST] Seat quota check note:", qErr.message);
     }
 
     await sql`

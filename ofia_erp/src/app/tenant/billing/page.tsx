@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   CheckCircle2,
   CreditCard,
   Layers,
+  Loader2,
   Plus,
-  ShieldCheck,
-  Sparkles,
-  Zap,
+  RefreshCw,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -20,35 +19,174 @@ import {
   MODULE_ADDONS,
   PlanTierKey,
 } from "@/lib/pricing-plans";
+import { fetchTenantPermissionMatrix } from "@/lib/access-control";
+
+interface LiveUsage {
+  productsCount: number;
+  teamSeatsCount: number;
+  monthlyLeadsCount: number;
+  activeCampaignsCount: number;
+}
+
+function resolveActiveTenantSlug(): string {
+  if (typeof window === "undefined") return "default";
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const paramTenant = params.get("tenant") || params.get("slug");
+    if (paramTenant) return paramTenant.toLowerCase().trim();
+
+    const storedUser = localStorage.getItem("erp_current_user");
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      if (parsed?.tenantSlug) return String(parsed.tenantSlug).toLowerCase().trim();
+    }
+    const hostname = window.location.hostname.toLowerCase();
+    if (hostname.endsWith(".ofia.ng")) {
+      const sub = hostname.replace(".ofia.ng", "");
+      if (sub && sub !== "www" && sub !== "erp" && sub !== "app") return sub;
+    }
+  } catch {}
+  return "default";
+}
 
 export default function TenantBillingPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">("monthly");
   const [activeTier, setActiveTier] = useState<PlanTierKey>("GROWTH");
+  const [subStatus, setSubStatus] = useState<string>("ACTIVE");
   const [enabledAddons, setEnabledAddons] = useState<Record<string, boolean>>({});
+  const [usage, setUsage] = useState<LiveUsage>({
+    productsCount: 0,
+    teamSeatsCount: 1,
+    monthlyLeadsCount: 0,
+    activeCampaignsCount: 0,
+  });
+  const [loadingTier, setLoadingTier] = useState<PlanTierKey | null>(null);
+  const [statusBanner, setStatusBanner] = useState<string | null>(null);
 
-  const currentPlan = PLAN_TIERS[activeTier];
+  const currentPlan = PLAN_TIERS[activeTier] || PLAN_TIERS.GROWTH;
+
+  const loadSubscriptionState = async () => {
+    try {
+      const slug = resolveActiveTenantSlug();
+      const res = await fetch(`/api/tenant/subscription?tenant=${encodeURIComponent(slug)}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (data?.success && data.subscription) {
+        if (data.subscription.planTier && PLAN_TIERS[data.subscription.planTier as PlanTierKey]) {
+          setActiveTier(data.subscription.planTier as PlanTierKey);
+        }
+        if (data.subscription.billingCycle === "ANNUAL") {
+          setBillingCycle("annually");
+        }
+        if (data.subscription.status) {
+          setSubStatus(data.subscription.status);
+        }
+        if (data.usage) {
+          setUsage(data.usage);
+        }
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    loadSubscriptionState();
+  }, []);
+
+  const handleSelectTier = async (targetTier: PlanTierKey) => {
+    if (targetTier === activeTier || loadingTier) return;
+    setLoadingTier(targetTier);
+    setStatusBanner(null);
+
+    try {
+      const slug = resolveActiveTenantSlug();
+      const res = await fetch("/api/tenant/subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: slug,
+          planTier: targetTier,
+          billingCycle: billingCycle === "annually" ? "ANNUAL" : "MONTHLY",
+          action: "INITIALIZE_CHECKOUT",
+        }),
+      });
+      const data = await res.json();
+
+      if (data?.mode === "LIVE_PAYSTACK" && data.authorizationUrl) {
+        window.location.href = data.authorizationUrl;
+        return;
+      }
+
+      if (data?.success) {
+        setActiveTier(targetTier);
+        setSubStatus("ACTIVE");
+        setStatusBanner(
+          data.message ||
+            `Switched to ${PLAN_TIERS[targetTier].name} (${targetTier}). ERP & Storefront module entitlements synchronized.`
+        );
+        await fetchTenantPermissionMatrix(slug);
+        await loadSubscriptionState();
+      } else {
+        setStatusBanner(data?.error || "Could not update subscription plan.");
+      }
+    } catch (err: any) {
+      setStatusBanner("Error updating plan: " + err.message);
+    } finally {
+      setLoadingTier(null);
+    }
+  };
 
   const toggleAddon = (key: string) => {
     setEnabledAddons((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+
+  const maxProductsNum =
+    currentPlan.quotas.skuLimit === "Unlimited" ? 999999 : Number(currentPlan.quotas.skuLimit);
+  const maxSeatsNum =
+    currentPlan.seatsIncluded === "Unlimited" ? 999 : Number(currentPlan.seatsIncluded);
+  const maxLeadsNum = Number(currentPlan.quotas.leadsLimit);
+  const maxCampaignsNum = Number(currentPlan.quotas.campaignsLimit);
 
   return (
     <BusinessShell
       title="Subscription Plans, Add-Ons & Invoices"
       subtitle="Manage your organization's active tier, quota allowances, modular ERP extensions, Escrow take-rates, and Paystack billing."
       action={
-        <NexaButton
-          size="sm"
-          variant="primary"
-          leftIcon={<Plus className="w-3.5 h-3.5" />}
-          className="bg-[#0E9F6E] text-white"
-        >
-          Add Payment Card
-        </NexaButton>
+        <div className="flex items-center gap-2">
+          <NexaButton
+            size="sm"
+            variant="outline"
+            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+            onClick={loadSubscriptionState}
+          >
+            Sync Quotas
+          </NexaButton>
+          <NexaButton
+            size="sm"
+            variant="primary"
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
+            className="bg-[#0E9F6E] text-white"
+          >
+            Add Payment Card
+          </NexaButton>
+        </div>
       }
     >
       <div className="space-y-8">
-        {/* CURRENT SUBSCRIPTION SUMMARY */}
+        {statusBanner && (
+          <div className="p-3.5 rounded-xl bg-[#0E9F6E]/10 border border-[#0E9F6E]/30 text-xs font-bold text-[#0E9F6E] flex items-center justify-between">
+            <span>{statusBanner}</span>
+            <button
+              type="button"
+              onClick={() => setStatusBanner(null)}
+              className="text-[11px] underline ml-4"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* CURRENT SUBSCRIPTION SUMMARY & LIVE QUOTA ENFORCEMENT */}
         <NexaCard
           variant="glass"
           padding="lg"
@@ -56,23 +194,21 @@ export default function TenantBillingPage() {
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-lg font-black text-[var(--nexa-text-primary)]">
                   {currentPlan.name} Tier Subscription
                 </h3>
-                <NexaBadge variant="brand">Active Plan</NexaBadge>
+                <NexaBadge variant={subStatus === "ACTIVE" ? "brand" : "amber"}>
+                  {subStatus}
+                </NexaBadge>
                 <NexaBadge variant="green">
                   {currentPlan.takeRates.directCheckoutPct}% Direct /{" "}
                   {currentPlan.takeRates.escrowCheckoutPct}% Escrow Fee
                 </NexaBadge>
               </div>
               <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
-                Renews automatically on{" "}
-                <span className="font-bold text-[var(--nexa-text-primary)]">
-                  September 22, 2026
-                </span>{" "}
-                via Paystack • {currentPlan.dbIsolation} •{" "}
-                {currentPlan.domainEntitlement}
+                Billed {billingCycle === "monthly" ? "Monthly" : "Annually"} via Paystack •{" "}
+                {currentPlan.dbIsolation} • {currentPlan.domainEntitlement}
               </p>
             </div>
             <div className="text-right">
@@ -88,6 +224,47 @@ export default function TenantBillingPage() {
               <div className="text-[11px] text-[#0E9F6E] font-bold">
                 {currentPlan.seatsIncluded} Team Seats •{" "}
                 {currentPlan.quotas.leadsLabel}
+              </div>
+            </div>
+          </div>
+
+          {/* LIVE ENFORCED QUOTA TELEMETRY */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-[var(--nexa-border)]">
+            <div className="p-2.5 rounded-lg bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+              <div className="text-[10px] font-bold uppercase text-[var(--nexa-text-muted)]">
+                Catalog SKUs
+              </div>
+              <div className="text-sm font-black font-mono text-[var(--nexa-text-primary)] mt-0.5">
+                {usage.productsCount.toLocaleString()} /{" "}
+                {currentPlan.quotas.skuLimit === "Unlimited"
+                  ? "∞"
+                  : maxProductsNum.toLocaleString()}
+              </div>
+            </div>
+            <div className="p-2.5 rounded-lg bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+              <div className="text-[10px] font-bold uppercase text-[var(--nexa-text-muted)]">
+                Team Seats
+              </div>
+              <div className="text-sm font-black font-mono text-[var(--nexa-text-primary)] mt-0.5">
+                {usage.teamSeatsCount} /{" "}
+                {currentPlan.seatsIncluded === "Unlimited" ? "∞" : maxSeatsNum}
+              </div>
+            </div>
+            <div className="p-2.5 rounded-lg bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+              <div className="text-[10px] font-bold uppercase text-[var(--nexa-text-muted)]">
+                Monthly CRM Leads
+              </div>
+              <div className="text-sm font-black font-mono text-[var(--nexa-text-primary)] mt-0.5">
+                {usage.monthlyLeadsCount.toLocaleString()} /{" "}
+                {maxLeadsNum.toLocaleString()}
+              </div>
+            </div>
+            <div className="p-2.5 rounded-lg bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+              <div className="text-[10px] font-bold uppercase text-[var(--nexa-text-muted)]">
+                Active Campaigns
+              </div>
+              <div className="text-sm font-black font-mono text-[var(--nexa-text-primary)] mt-0.5">
+                {usage.activeCampaignsCount} / {maxCampaignsNum}
               </div>
             </div>
           </div>
@@ -137,6 +314,7 @@ export default function TenantBillingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {PUBLIC_PRICING_PLANS.map((t) => {
               const isCurrent = t.key === activeTier;
+              const isUpdatingThis = loadingTier === t.key;
               const displayPrice =
                 billingCycle === "monthly"
                   ? t.formattedMonthly
@@ -237,10 +415,18 @@ export default function TenantBillingPage() {
                       <NexaButton
                         size="sm"
                         variant="primary"
-                        onClick={() => setActiveTier(t.key)}
+                        disabled={Boolean(loadingTier)}
+                        leftIcon={
+                          isUpdatingThis ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <CreditCard className="w-3.5 h-3.5" />
+                          )
+                        }
+                        onClick={() => handleSelectTier(t.key)}
                         className="w-full bg-[#1A56DB] text-white justify-center"
                       >
-                        {t.ctaLabel}
+                        {isUpdatingThis ? "Provisioning..." : t.ctaLabel}
                       </NexaButton>
                     )}
                   </div>

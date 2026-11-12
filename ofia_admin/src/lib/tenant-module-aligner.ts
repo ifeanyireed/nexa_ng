@@ -67,10 +67,141 @@ export const ALL_ROLES = [
 ] as const;
 
 /**
- * Derives default module access based on the tenant's business vertical.
+ * Derives default module access based on the tenant's business vertical and optional subscription plan tier.
  */
-export function getDefaultModulesForVertical(vertical: string = "retail"): TenantModulePreset {
+export function getDefaultModulesForVertical(vertical: string = "retail", planTier?: string): TenantModulePreset {
   const norm = (vertical || "retail").toLowerCase().trim();
+  const normTier = (planTier || "").toUpperCase().trim();
+
+  // When a planTier is explicitly provided, gate advanced modules by tier
+  if (normTier === "FREE_TRIAL" || normTier === "STARTER") {
+    const isMobility = norm === "cars" || norm === "logistics" || norm === "transport" || norm === "fleet";
+    return {
+      erpModules: {
+        ai: false,
+        crm: true,
+        marketplace: true,
+        shop: !isMobility,
+        accounting: false,
+        hr: false,
+        workforce: false,
+        users: true,
+        mobility: isMobility,
+        dispatch: isMobility,
+      },
+      shopSubModules: {
+        pos: !isMobility,
+        inventory: !isMobility,
+        catalog: !isMobility,
+        services: false,
+        orders: !isMobility,
+        store: !isMobility,
+        referrals: false,
+      },
+      mobilitySubModules: {
+        ops: isMobility,
+        vehicles: isMobility,
+        drivers: isMobility,
+        maintenance: isMobility,
+        routes: isMobility,
+        finance: false,
+        shuttle: false,
+        interstate: false,
+        on_demand: isMobility,
+        rental: isMobility,
+        school: false,
+        staff: false,
+        mobility_ops: isMobility,
+        dispatch_ops: isMobility,
+      },
+    };
+  }
+
+  if (normTier === "GROWTH") {
+    const isMobility = norm === "cars" || norm === "logistics" || norm === "transport" || norm === "fleet";
+    return {
+      erpModules: {
+        ai: true,
+        crm: true,
+        marketplace: true,
+        shop: !isMobility,
+        accounting: true,
+        hr: true,
+        workforce: false,
+        users: true,
+        mobility: isMobility,
+        dispatch: isMobility,
+      },
+      shopSubModules: {
+        pos: !isMobility,
+        inventory: !isMobility,
+        catalog: !isMobility,
+        services: !isMobility,
+        orders: !isMobility,
+        store: !isMobility,
+        referrals: false,
+      },
+      mobilitySubModules: {
+        ops: isMobility,
+        vehicles: isMobility,
+        drivers: isMobility,
+        maintenance: isMobility,
+        routes: isMobility,
+        finance: isMobility,
+        shuttle: false,
+        interstate: false,
+        on_demand: isMobility,
+        rental: isMobility,
+        school: false,
+        staff: false,
+        mobility_ops: isMobility,
+        dispatch_ops: isMobility,
+      },
+    };
+  }
+
+  if (normTier === "SCALE" || normTier === "ENTERPRISE") {
+    const isMobility = norm === "cars" || norm === "logistics" || norm === "transport" || norm === "fleet";
+    return {
+      erpModules: {
+        ai: true,
+        crm: true,
+        marketplace: true,
+        shop: true,
+        accounting: true,
+        hr: true,
+        workforce: true,
+        users: true,
+        mobility: isMobility || normTier === "ENTERPRISE",
+        dispatch: true,
+      },
+      shopSubModules: {
+        pos: true,
+        inventory: true,
+        catalog: true,
+        services: true,
+        orders: true,
+        store: true,
+        referrals: true,
+      },
+      mobilitySubModules: {
+        ops: isMobility || normTier === "ENTERPRISE",
+        vehicles: isMobility || normTier === "ENTERPRISE",
+        drivers: isMobility || normTier === "ENTERPRISE",
+        maintenance: isMobility || normTier === "ENTERPRISE",
+        routes: isMobility || normTier === "ENTERPRISE",
+        finance: isMobility || normTier === "ENTERPRISE",
+        shuttle: isMobility || normTier === "ENTERPRISE",
+        interstate: isMobility || normTier === "ENTERPRISE",
+        on_demand: isMobility || normTier === "ENTERPRISE",
+        rental: isMobility || normTier === "ENTERPRISE",
+        school: isMobility || normTier === "ENTERPRISE",
+        staff: isMobility || normTier === "ENTERPRISE",
+        mobility_ops: isMobility || normTier === "ENTERPRISE",
+        dispatch_ops: true,
+      },
+    };
+  }
 
   // Retail, fashion, food, lifestyle & consumer service workspaces
   if (
@@ -459,7 +590,8 @@ export async function alignTenantModules(
     erpModules?: Record<string, boolean>;
     shopSubModules?: Record<string, boolean>;
     mobilitySubModules?: Record<string, boolean>;
-  }
+  },
+  planTierOverride?: string
 ): Promise<{
   success: boolean;
   tenantSlug: string;
@@ -477,9 +609,9 @@ export async function alignTenantModules(
 
   // 1. Fetch current tenant record from platform_tenants
   const rows = await masterSql`
-    SELECT id, name, slug, vertical, database_url, erp_modules, shop_sub_modules, mobility_sub_modules
+    SELECT id, name, slug, vertical, plan_tier, database_url, erp_modules, shop_sub_modules, mobility_sub_modules
     FROM platform_tenants
-    WHERE LOWER(slug) = ${cleanSlug}
+    WHERE LOWER(slug) = ${cleanSlug} OR id = ${tenantSlug}
     LIMIT 1;
   `;
 
@@ -488,33 +620,30 @@ export async function alignTenantModules(
   }
 
   const tenant = rows[0];
+  const canonicalSlug = (tenant.slug || cleanSlug).toLowerCase().trim();
   const vertical = tenant.vertical || "retail";
-  const defaultPreset = getDefaultModulesForVertical(vertical);
+  const effectiveTier = planTierOverride ? planTierOverride.toUpperCase().trim() : undefined;
+  const defaultPreset = getDefaultModulesForVertical(vertical, effectiveTier);
 
-  // 2. Resolve effective modules (custom override > configured in DB > vertical default)
-  let erpModules: Record<string, boolean> = {
-    ...defaultPreset.erpModules,
-    ...(tenant.erp_modules || {}),
-    ...(customModules?.erpModules || {}),
-  };
+  // 2. Resolve effective modules (when planTierOverride is set, use tier preset as baseline; otherwise merge existing DB config)
+  let erpModules: Record<string, boolean> = effectiveTier
+    ? { ...defaultPreset.erpModules, ...(customModules?.erpModules || {}) }
+    : { ...defaultPreset.erpModules, ...(tenant.erp_modules || {}), ...(customModules?.erpModules || {}) };
 
-  let shopSubModules: Record<string, boolean> = {
-    ...defaultPreset.shopSubModules,
-    ...(tenant.shop_sub_modules || {}),
-    ...(customModules?.shopSubModules || {}),
-  };
+  let shopSubModules: Record<string, boolean> = effectiveTier
+    ? { ...defaultPreset.shopSubModules, ...(customModules?.shopSubModules || {}) }
+    : { ...defaultPreset.shopSubModules, ...(tenant.shop_sub_modules || {}), ...(customModules?.shopSubModules || {}) };
 
-  let mobilitySubModules: Record<string, boolean> = {
-    ...defaultPreset.mobilitySubModules,
-    ...(tenant.mobility_sub_modules || {}),
-    ...(customModules?.mobilitySubModules || {}),
-  };
+  let mobilitySubModules: Record<string, boolean> = effectiveTier
+    ? { ...defaultPreset.mobilitySubModules, ...(customModules?.mobilitySubModules || {}) }
+    : { ...defaultPreset.mobilitySubModules, ...(tenant.mobility_sub_modules || {}), ...(customModules?.mobilitySubModules || {}) };
 
   // Guardrail: Enforce vertical boundaries if not explicitly customized
   const normVertical = vertical.toLowerCase().trim();
   if (
     (normVertical === "fashion" || normVertical === "retail" || normVertical === "supermarket") &&
-    !customModules?.erpModules?.mobility
+    !customModules?.erpModules?.mobility &&
+    effectiveTier !== "ENTERPRISE"
   ) {
     erpModules.mobility = false;
     erpModules.dispatch = false;
@@ -523,44 +652,55 @@ export async function alignTenantModules(
     });
   }
 
+  const tierMrrMap: Record<string, number> = {
+    FREE_TRIAL: 0,
+    STARTER: 25000,
+    GROWTH: 75000,
+    SCALE: 200000,
+    ENTERPRISE: 650000,
+  };
+  const nextMrr = effectiveTier && tierMrrMap[effectiveTier] !== undefined ? tierMrrMap[effectiveTier] : undefined;
+
   // 3. Update master registry platform_tenants table
   await masterSql`
     UPDATE platform_tenants
     SET erp_modules = ${JSON.stringify(erpModules)}::jsonb,
         shop_sub_modules = ${JSON.stringify(shopSubModules)}::jsonb,
         mobility_sub_modules = ${JSON.stringify(mobilitySubModules)}::jsonb,
+        plan_tier = COALESCE(${effectiveTier || null}, plan_tier),
+        mrr = COALESCE(${nextMrr ?? null}, mrr),
         updated_at = NOW()
-    WHERE LOWER(slug) = ${cleanSlug};
+    WHERE LOWER(slug) = ${canonicalSlug};
   `;
 
   // 4. Build granular permission matrix
-  const permissionRecords = buildRoleMatrix(cleanSlug, erpModules, shopSubModules, mobilitySubModules);
+  const permissionRecords = buildRoleMatrix(canonicalSlug, erpModules, shopSubModules, mobilitySubModules);
 
   // 5. Sync to dedicated tenant database
-  const dedicatedConfig = await getTenantDatabaseConfig(cleanSlug);
+  const dedicatedConfig = await getTenantDatabaseConfig(canonicalSlug);
   if (dedicatedConfig && dedicatedConfig.connectionString) {
     try {
       const dedicatedSql = neon(dedicatedConfig.connectionString);
-      await syncRecordsToDatabase(dedicatedSql, cleanSlug, permissionRecords);
+      await syncRecordsToDatabase(dedicatedSql, canonicalSlug, permissionRecords);
     } catch (err: any) {
-      console.warn(`[Module Aligner] Dedicated DB sync warning for '${cleanSlug}':`, err.message);
+      console.warn(`[Module Aligner] Dedicated DB sync warning for '${canonicalSlug}':`, err.message);
     }
   }
 
   // 6. Sync to central users database (service_users)
   try {
     const userSql = neon(USER_SERVICE_DB_URL);
-    await syncRecordsToDatabase(userSql, cleanSlug, permissionRecords);
+    await syncRecordsToDatabase(userSql, canonicalSlug, permissionRecords);
   } catch (err: any) {
-    console.warn(`[Module Aligner] Central Users DB sync warning for '${cleanSlug}':`, err.message);
+    console.warn(`[Module Aligner] Central Users DB sync warning for '${canonicalSlug}':`, err.message);
   }
 
   // Invalidate in-memory caches
-  invalidateTenantDbCache(cleanSlug);
+  invalidateTenantDbCache(canonicalSlug);
 
   return {
     success: true,
-    tenantSlug: cleanSlug,
+    tenantSlug: canonicalSlug,
     erpModules,
     shopSubModules,
     mobilitySubModules,

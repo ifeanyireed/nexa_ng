@@ -114,6 +114,7 @@ func main() {
 		r.Get("/organizations/{orgId}/subscription", subHandler.GetSubscriptionDetails)
 		r.Put("/organizations/{orgId}/subscription", subHandler.UpdateTenantSubscription)
 		r.Post("/organizations/{orgId}/subscription/override", subHandler.OverrideTenantQuotas)
+		r.Post("/organizations/{orgId}/subscription/usage", subHandler.CheckAndIncrementQuota)
 		r.Post("/organizations/{orgId}/subscription/checkout", subHandler.InitializeCheckout)
 
 		// CMS & Blog Engine

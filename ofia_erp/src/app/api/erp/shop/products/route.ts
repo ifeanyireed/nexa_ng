@@ -5,6 +5,7 @@ import {
   deleteErpProduct,
 } from "@/lib/commerce-products-store";
 import { VerticalKey } from "@/lib/verticals";
+import { enforceProductQuota } from "@/lib/subscription-enforcer";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,29 @@ export async function POST(request: NextRequest) {
         { success: false, error: "tenantSlug is required" },
         { status: 400 }
       );
+    }
+
+    const tenantSlug = String(body.tenantSlug).toLowerCase().trim();
+    if (!body.id) {
+      try {
+        const existingProducts = await getErpProducts(tenantSlug);
+        const quota = await enforceProductQuota(tenantSlug, existingProducts.length);
+        if (!quota.allowed) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: quota.error,
+              code: quota.code,
+              planTier: quota.planTier,
+              limit: quota.limit,
+              current: quota.current,
+            },
+            { status: quota.status }
+          );
+        }
+      } catch (qErr: any) {
+        console.warn("[Products POST] Quota check note:", qErr.message);
+      }
     }
 
     const saved = await saveErpProduct(body);

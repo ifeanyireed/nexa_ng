@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantSql } from "@/lib/tenant-db-resolver";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
+import { enforceCampaignQuota } from "@/lib/subscription-enforcer";
 
 export const dynamic = "force-dynamic";
 
@@ -125,6 +126,33 @@ export async function POST(request: NextRequest) {
 
     const sql = await getTenantSql(tenantSlug);
     await ensureCrmCampaignsTable(sql);
+
+    if (!body.id) {
+      try {
+        const [activeCountRow] = await sql`
+          SELECT COUNT(*)::int AS cnt FROM crm_campaigns
+          WHERE LOWER(tenant_slug) = ${tenantSlug}
+            AND UPPER(COALESCE(status, 'ACTIVE')) = 'ACTIVE';
+        `;
+        const activeCampaigns = Number(activeCountRow?.cnt || 0);
+        const quota = await enforceCampaignQuota(tenantSlug, activeCampaigns);
+        if (!quota.allowed) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: quota.error,
+              code: quota.code,
+              planTier: quota.planTier,
+              limit: quota.limit,
+              current: quota.current,
+            },
+            { status: quota.status }
+          );
+        }
+      } catch (qErr: any) {
+        console.warn("[CRM-Campaigns POST] Campaign quota check note:", qErr.message);
+      }
+    }
 
     const campaignId = body.id || `CMP-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const name = (body.name || body.campaignName || "Outreach Campaign").trim();

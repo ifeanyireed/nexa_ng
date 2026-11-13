@@ -1078,10 +1078,10 @@ export function ErpAdminShell({
     if (pathname.startsWith("/erp/admin/workforce")) {
       return [
         { label: "Command Center", href: "/erp/admin/workforce", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
+        { label: "People & Directory", href: "/erp/admin/workforce/people", icon: <Users className="w-3.5 h-3.5" />, badge: "Profiles" },
         { label: "Talent Pools & Squads", href: "/erp/admin/workforce/departments", icon: <Building2 className="w-3.5 h-3.5" />, badge: "Squads" },
         { label: "Recruitment", href: "/erp/admin/workforce/recruitment", icon: <Briefcase className="w-3.5 h-3.5" />, badge: "Hire" },
         { label: "Staff Onboarding", href: "/erp/admin/workforce/onboarding", icon: <UserCheck className="w-3.5 h-3.5" />, badge: "Intake" },
-        { label: "People & Directory", href: "/erp/admin/workforce/people", icon: <Users className="w-3.5 h-3.5" />, badge: "Profiles" },
         { label: "Talent Academy", href: "/erp/admin/workforce/academy", icon: <GraduationCap className="w-3.5 h-3.5" />, badge: "LMS" },
         { label: "Work & Tasks", href: "/erp/admin/workforce/tasks", icon: <CheckSquare className="w-3.5 h-3.5" /> },
         { label: "Time & Attendance", href: "/erp/admin/workforce/attendance", icon: <Clock className="w-3.5 h-3.5" /> },

@@ -23,6 +23,7 @@ import {
   Network,
   FileText,
   Plus,
+  Edit2,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -31,13 +32,76 @@ import { useWorkforceManager } from "@/lib/workforce-store";
 import { WorkforcePerson, WorkforceRoleCategory } from "@/lib/workforce-types";
 
 export default function PeopleDirectoryPage() {
-  const { people, addPerson } = useWorkforceManager();
+  const { people, addPerson, updatePersonProfile } = useWorkforceManager();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [departmentFilter, setDepartmentFilter] = useState<string>("ALL");
   const [selectedPerson, setSelectedPerson] = useState<WorkforcePerson | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "skills" | "deployment" | "history">("overview");
+
+  // Edit Profile State
+  const [editingPerson, setEditingPerson] = useState<WorkforcePerson | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editRole, setEditRole] = useState<WorkforceRoleCategory>("employee");
+  const [editDesignation, setEditDesignation] = useState("");
+  const [editDept, setEditDept] = useState("Technology");
+  const [editStatus, setEditStatus] = useState<"active" | "deployed" | "bench" | "leave" | "offboarded">("active");
+  const [editLocation, setEditLocation] = useState("Lagos Headquarters");
+  const [editManager, setEditManager] = useState("");
+
+  const handleOpenEdit = (p: WorkforcePerson) => {
+    setEditingPerson(p);
+    setEditName(p.name);
+    setEditEmail(p.email);
+    setEditPhone(p.phone);
+    setEditRole(p.role);
+    setEditDesignation(p.designation);
+    setEditDept(p.department);
+    setEditStatus(p.status);
+    setEditLocation(p.location);
+    setEditManager(p.managerName || "Department Head");
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPerson) return;
+
+    updatePersonProfile(editingPerson.id, {
+      name: editName,
+      email: editEmail,
+      phone: editPhone,
+      role: editRole,
+      designation: editDesignation,
+      department: editDept,
+      status: editStatus,
+      location: editLocation,
+      managerName: editManager,
+    });
+
+    if (selectedPerson && selectedPerson.id === editingPerson.id) {
+      setSelectedPerson((prev) =>
+        prev
+          ? {
+              ...prev,
+              name: editName,
+              email: editEmail,
+              phone: editPhone,
+              role: editRole,
+              designation: editDesignation,
+              department: editDept,
+              status: editStatus,
+              location: editLocation,
+              managerName: editManager,
+            }
+          : null
+      );
+    }
+
+    setEditingPerson(null);
+  };
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newName, setNewName] = useState("");
@@ -234,6 +298,18 @@ export default function PeopleDirectoryPage() {
                 <div className="pt-3 border-t border-nexa-border/60 flex items-center justify-between text-xs text-nexa-text-secondary">
                   <span>Score: {person.competencyScore}%</span>
                   <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(person);
+                      }}
+                      className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 font-medium transition-colors flex items-center gap-1 text-[11px]"
+                      title="Edit Staff Profile"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                      <span>Edit</span>
+                    </button>
                     <span className="text-blue-500 font-semibold group-hover:underline flex items-center gap-1">
                       Quick View
                     </span>
@@ -277,6 +353,15 @@ export default function PeopleDirectoryPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <NexaButton
+                    size="sm"
+                    variant="secondary"
+                    className="gap-1.5 text-xs"
+                    onClick={() => handleOpenEdit(selectedPerson)}
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    Edit Profile
+                  </NexaButton>
                   <Link
                     href={`/erp/admin/workforce/people/${selectedPerson.id}`}
                     className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
@@ -512,6 +597,151 @@ export default function PeopleDirectoryPage() {
                   </NexaButton>
                   <NexaButton type="submit" size="sm" variant="primary">
                     Save Person Profile
+                  </NexaButton>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* EDIT WORKFORCE PROFILE MODAL */}
+        {editingPerson && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-nexa-surface border border-nexa-border rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-nexa-border">
+                <div className="flex items-center gap-2">
+                  <Edit2 className="w-4 h-4 text-blue-500" />
+                  <h3 className="text-base font-bold text-nexa-text-primary">Edit Workforce Profile</h3>
+                </div>
+                <button
+                  onClick={() => setEditingPerson(null)}
+                  className="p-1 rounded-lg hover:bg-nexa-surface/80 text-nexa-text-secondary"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEdit} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-nexa-text-secondary mb-1">Full Legal Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-nexa-text-secondary mb-1">Work Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-nexa-text-secondary mb-1">Phone Number</label>
+                    <input
+                      type="text"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-nexa-text-secondary mb-1">Engagement Category</label>
+                    <select
+                      value={editRole}
+                      onChange={(e) => setEditRole(e.target.value as WorkforceRoleCategory)}
+                      className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="employee">Full-Time Employee</option>
+                      <option value="intern">Academy Intern</option>
+                      <option value="contractor">Specialist Contractor</option>
+                      <option value="consultant">Consultant</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-nexa-text-secondary mb-1">Department</label>
+                    <select
+                      value={editDept}
+                      onChange={(e) => setEditDept(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="Technology">Technology</option>
+                      <option value="Operations">Operations</option>
+                      <option value="Compliance Hub">Compliance Hub</option>
+                      <option value="Customer Success">Customer Success</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-nexa-text-secondary mb-1">Designation / Title</label>
+                    <input
+                      type="text"
+                      value={editDesignation}
+                      onChange={(e) => setEditDesignation(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-nexa-text-secondary mb-1">Status</label>
+                    <select
+                      value={editStatus}
+                      onChange={(e) => setEditStatus(e.target.value as any)}
+                      className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="active">Active</option>
+                      <option value="deployed">Deployed</option>
+                      <option value="bench">Bench</option>
+                      <option value="leave">On Leave</option>
+                      <option value="offboarded">Offboarded</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-nexa-text-secondary mb-1">Location</label>
+                    <input
+                      type="text"
+                      value={editLocation}
+                      onChange={(e) => setEditLocation(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-nexa-text-secondary mb-1">Reporting Manager</label>
+                    <input
+                      type="text"
+                      value={editManager}
+                      onChange={(e) => setEditManager(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-nexa-surface border border-nexa-border text-nexa-text-primary focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-nexa-border flex justify-end gap-2">
+                  <NexaButton
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setEditingPerson(null)}
+                  >
+                    Cancel
+                  </NexaButton>
+                  <NexaButton type="submit" size="sm" variant="primary">
+                    Update Profile
                   </NexaButton>
                 </div>
               </form>

@@ -224,10 +224,10 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
         <div className="flex items-center gap-2 border-b border-nexa-border pb-2 overflow-x-auto text-sm">
           <button
             onClick={() => setActiveTab("matcher")}
-            className={`px-4 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-lg text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === "matcher"
-                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                : "text-nexa-text-secondary hover:text-nexa-text-primary hover:bg-nexa-surface"
+                ? "bg-emerald-600 text-white shadow-xs font-semibold"
+                : "text-nexa-text-secondary hover:text-nexa-text-primary hover:bg-nexa-surface font-medium"
             }`}
           >
             <Bot className="w-3.5 h-3.5" />
@@ -235,10 +235,10 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
           </button>
           <button
             onClick={() => setActiveTab("parser")}
-            className={`px-4 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-lg text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === "parser"
-                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                : "text-nexa-text-secondary hover:text-nexa-text-primary hover:bg-nexa-surface"
+                ? "bg-emerald-600 text-white shadow-xs font-semibold"
+                : "text-nexa-text-secondary hover:text-nexa-text-primary hover:bg-nexa-surface font-medium"
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
@@ -246,10 +246,10 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
           </button>
           <button
             onClick={() => setActiveTab("briefing")}
-            className={`px-4 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-lg text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === "briefing"
-                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                : "text-nexa-text-secondary hover:text-nexa-text-primary hover:bg-nexa-surface"
+                ? "bg-emerald-600 text-white shadow-xs font-semibold"
+                : "text-nexa-text-secondary hover:text-nexa-text-primary hover:bg-nexa-surface font-medium"
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -257,10 +257,10 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
           </button>
           <button
             onClick={() => setActiveTab("integrations")}
-            className={`px-4 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-lg text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === "integrations"
-                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                : "text-nexa-text-secondary hover:text-nexa-text-primary hover:bg-nexa-surface"
+                ? "bg-emerald-600 text-white shadow-xs font-semibold"
+                : "text-nexa-text-secondary hover:text-nexa-text-primary hover:bg-nexa-surface font-medium"
             }`}
           >
             <Radio className="w-3.5 h-3.5" />
@@ -275,7 +275,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-nexa-text-primary flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-emerald-400" />
+                    <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     Semantic Workforce Matcher
                   </h3>
                   <p className="text-xs text-nexa-text-secondary mt-0.5">
@@ -298,7 +298,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                       setMatchQuery(chip);
                       handleRunMatch(chip);
                     }}
-                    className="text-[11px] px-2.5 py-1 rounded-full bg-nexa-base hover:bg-nexa-surface text-nexa-text-secondary border border-nexa-border transition"
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-nexa-base hover:bg-nexa-surface hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/30 text-nexa-text-secondary border border-nexa-border transition"
                   >
                     &ldquo;{chip}&rdquo;
                   </button>
@@ -311,7 +311,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                   value={matchQuery}
                   onChange={(e) => setMatchQuery(e.target.value)}
                   placeholder="e.g. Find 2 senior full-stack engineers with TypeScript in Lagos"
-                  className="flex-1 bg-nexa-base border border-nexa-border rounded-lg px-4 py-2.5 text-xs text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                  className="flex-1 bg-nexa-base border border-nexa-border rounded-lg px-4 py-2.5 text-xs text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:bg-nexa-surface transition-colors"
                 />
                 <NexaButton
                   variant="primary"
@@ -339,7 +339,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                   {matchResults.map((res) => (
                     <div
                       key={res.personId}
-                      className="p-5 bg-nexa-surface border border-nexa-border rounded-xl space-y-3 hover:border-nexa-brand/40 transition"
+                      className="p-5 bg-nexa-surface border border-nexa-border rounded-xl space-y-3 hover:border-emerald-500/40 transition"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -347,7 +347,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                           <p className="text-xs text-nexa-text-secondary">{res.designation}</p>
                         </div>
                         <div className="text-right">
-                          <span className="text-lg font-bold text-emerald-500">{res.matchScorePercent}%</span>
+                          <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{res.matchScorePercent}%</span>
                           <div className="text-[10px] text-nexa-text-secondary uppercase">Match</div>
                         </div>
                       </div>
@@ -358,9 +358,9 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                         <span
                           className={`px-2 py-0.5 rounded font-medium text-[10px] ${
                             res.availabilityStatus === "available"
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20"
+                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
                               : res.availabilityStatus === "deployed"
-                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20"
+                              ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
                               : "bg-nexa-base text-nexa-text-secondary border border-nexa-border"
                           }`}
                         >
@@ -377,7 +377,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                           {res.matchedSkills.map((sk, idx) => (
                             <span
                               key={idx}
-                              className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300"
+                              className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium"
                             >
                               ✓ {sk}
                             </span>
@@ -388,7 +388,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                       <div className="pt-2 border-t border-nexa-border flex justify-end">
                         <Link
                           href={`/erp/admin/workforce/people/${res.personId}`}
-                          className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium inline-flex items-center gap-1"
+                          className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline font-medium inline-flex items-center gap-1"
                         >
                           <span>View Full Dossier</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -410,19 +410,19 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
               <div className="p-6 bg-nexa-surface border border-nexa-border rounded-xl space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-nexa-text-primary flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-emerald-500" />
+                    <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     Raw Resume / CV Input
                   </h3>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setResumeText(sampleResumeDevOps)}
-                      className="text-[10px] px-2 py-1 rounded bg-nexa-base hover:bg-nexa-surface text-nexa-text-secondary border border-nexa-border transition"
+                      className="text-[10px] px-2 py-1 rounded bg-nexa-base hover:bg-nexa-surface hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/30 text-nexa-text-secondary border border-nexa-border transition"
                     >
                       DevOps Sample
                     </button>
                     <button
                       onClick={() => setResumeText(sampleResumeBiometric)}
-                      className="text-[10px] px-2 py-1 rounded bg-nexa-base hover:bg-nexa-surface text-nexa-text-secondary border border-nexa-border transition"
+                      className="text-[10px] px-2 py-1 rounded bg-nexa-base hover:bg-nexa-surface hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/30 text-nexa-text-secondary border border-nexa-border transition"
                     >
                       Biometrics Sample
                     </button>
@@ -434,7 +434,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                   value={resumeText}
                   onChange={(e) => setResumeText(e.target.value)}
                   placeholder="Paste unstructured candidate CV text or applicant profile here..."
-                  className="w-full bg-nexa-base border border-nexa-border rounded-lg p-3.5 text-xs text-nexa-text-primary placeholder:text-nexa-text-muted font-mono focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface leading-relaxed transition-colors"
+                  className="w-full bg-nexa-base border border-nexa-border rounded-lg p-3.5 text-xs text-nexa-text-primary placeholder:text-nexa-text-muted font-mono focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:bg-nexa-surface leading-relaxed transition-colors"
                 />
 
                 <div className="flex justify-end">
@@ -454,13 +454,13 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
               {/* Right Column: Extracted Structured Candidate Dossier */}
               <div className="p-6 bg-nexa-surface border border-nexa-border rounded-xl space-y-4">
                 <h3 className="text-sm font-bold text-nexa-text-primary flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-emerald-400" />
+                  <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   Structured Candidate Dossier
                 </h3>
 
                 {importedSuccessMsg && (
-                  <div className="p-3 rounded-lg bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>{importedSuccessMsg}</span>
                   </div>
                 )}
@@ -474,7 +474,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                           <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{parsedCandidate.appliedRole}</p>
                         </div>
                         <div className="text-right">
-                          <div className="text-xl font-bold text-emerald-500">{parsedCandidate.score}%</div>
+                          <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{parsedCandidate.score}%</div>
                           <div className="text-[10px] text-nexa-text-muted uppercase">Fit Score</div>
                         </div>
                       </div>
@@ -503,9 +503,9 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                         {parsedCandidate.skills.map((sk, idx) => (
                           <span
                             key={idx}
-                            className="px-2.5 py-0.5 rounded text-[11px] bg-nexa-base text-nexa-text-secondary border border-nexa-border"
+                            className="px-2.5 py-0.5 rounded text-[11px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-medium"
                           >
-                            {sk}
+                            ✓ {sk}
                           </span>
                         ))}
                       </div>
@@ -561,7 +561,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
 
                   <div className="flex items-center gap-3">
                     <div className="bg-nexa-base p-3.5 rounded-xl border border-nexa-border text-center">
-                      <div className="text-2xl font-bold text-emerald-500">{briefing.operationalHealthScore}%</div>
+                      <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{briefing.operationalHealthScore}%</div>
                       <div className="text-[10px] text-nexa-text-muted uppercase tracking-wider font-semibold">
                         Health Score
                       </div>
@@ -588,7 +588,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                     <ul className="space-y-2 text-xs text-nexa-text-secondary">
                       {briefing.keyHighlights.map((hl, idx) => (
                         <li key={idx} className="p-3 rounded-lg bg-nexa-base border border-nexa-border flex items-start gap-2">
-                          <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                           <span>{hl}</span>
                         </li>
                       ))}
@@ -603,8 +603,8 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                     </h4>
                     <ul className="space-y-2 text-xs text-nexa-text-secondary">
                       {briefing.slaRisksAndAlerts.map((rk, idx) => (
-                        <li key={idx} className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 text-amber-800 dark:text-amber-200 flex items-start gap-2">
-                          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                        <li key={idx} className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                           <span>{rk}</span>
                         </li>
                       ))}
@@ -623,7 +623,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                         className="p-3.5 rounded-xl bg-nexa-base border border-nexa-border flex items-center justify-between text-xs"
                       >
                         <span className="text-nexa-text-primary">{act}</span>
-                        <ArrowRight className="w-4 h-4 text-emerald-500 shrink-0 ml-2" />
+                        <ArrowRight className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 ml-2" />
                       </div>
                     ))}
                   </div>
@@ -642,7 +642,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
               <div className="p-6 bg-nexa-surface border border-nexa-border rounded-xl space-y-4">
                 <div>
                   <h3 className="text-sm font-bold text-nexa-text-primary flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-emerald-400" />
+                    <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     CRM Closed-Won Deal Auto-Conversion
                   </h3>
                   <p className="text-xs text-nexa-text-secondary mt-0.5">
@@ -651,8 +651,8 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                 </div>
 
                 {crmSyncResult && (
-                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300 text-xs flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>{crmSyncResult}</span>
                   </div>
                 )}
@@ -665,7 +665,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                       required
                       value={crmDealCompany}
                       onChange={(e) => setCrmDealCompany(e.target.value)}
-                      className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                      className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:bg-nexa-surface transition-colors"
                     />
                   </div>
 
@@ -676,7 +676,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                       required
                       value={crmDealTitle}
                       onChange={(e) => setCrmDealTitle(e.target.value)}
-                      className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                      className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:bg-nexa-surface transition-colors"
                     />
                   </div>
 
@@ -687,7 +687,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                         type="text"
                         value={crmDealValue}
                         onChange={(e) => setCrmDealValue(e.target.value)}
-                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:bg-nexa-surface transition-colors"
                       />
                     </div>
                     <div>
@@ -696,7 +696,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                         type="text"
                         value={crmDealOwner}
                         onChange={(e) => setCrmDealOwner(e.target.value)}
-                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:bg-nexa-surface transition-colors"
                       />
                     </div>
                   </div>
@@ -719,7 +719,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
               <div className="p-6 bg-nexa-surface border border-nexa-border rounded-xl space-y-4">
                 <div>
                   <h3 className="text-sm font-bold text-nexa-text-primary flex items-center gap-2">
-                    <Send className="w-4 h-4 text-emerald-500" />
+                    <Send className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     Multi-Channel Dispatch Engine
                   </h3>
                   <p className="text-xs text-nexa-text-secondary mt-0.5">
@@ -728,8 +728,8 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                 </div>
 
                 {dispatchSuccessMsg && (
-                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300 text-xs flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>{dispatchSuccessMsg}</span>
                   </div>
                 )}
@@ -741,12 +741,12 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                       <select
                         value={dispatchChannel}
                         onChange={(e) => setDispatchChannel(e.target.value as any)}
-                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary focus:outline-none focus:border-emerald-500 transition-colors"
+                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:bg-nexa-surface transition-colors"
                       >
-                        <option value="whatsapp">WhatsApp Business</option>
-                        <option value="email">Corporate Email</option>
-                        <option value="sms">Direct SMS</option>
-                        <option value="webhook">Outbound Webhook</option>
+                        <option value="whatsapp" className="bg-nexa-surface text-nexa-text-primary dark:bg-gray-900 dark:text-white">WhatsApp Business</option>
+                        <option value="email" className="bg-nexa-surface text-nexa-text-primary dark:bg-gray-900 dark:text-white">Corporate Email</option>
+                        <option value="sms" className="bg-nexa-surface text-nexa-text-primary dark:bg-gray-900 dark:text-white">Direct SMS</option>
+                        <option value="webhook" className="bg-nexa-surface text-nexa-text-primary dark:bg-gray-900 dark:text-white">Outbound Webhook</option>
                       </select>
                     </div>
 
@@ -757,7 +757,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                         required
                         value={dispatchRecipient}
                         onChange={(e) => setDispatchRecipient(e.target.value)}
-                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                        className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:bg-nexa-surface transition-colors"
                       />
                     </div>
                   </div>
@@ -769,7 +769,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                       required
                       value={dispatchMessage}
                       onChange={(e) => setDispatchMessage(e.target.value)}
-                      className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                      className="w-full bg-nexa-base border border-nexa-border rounded-lg px-3 py-2 text-nexa-text-primary placeholder:text-nexa-text-muted focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:bg-nexa-surface transition-colors"
                     />
                   </div>
 
@@ -813,7 +813,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                   </thead>
                   <tbody className="divide-y divide-nexa-border">
                     {notifications.map((notif) => (
-                      <tr key={notif.id} className="hover:bg-nexa-surface-hover transition">
+                      <tr key={notif.id} className="hover:bg-nexa-surface/80 transition-colors">
                         <td className="py-2.5 px-3 font-mono font-medium text-emerald-600 dark:text-emerald-400">{notif.eventType}</td>
                         <td className="py-2.5 px-3">
                           <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-nexa-base text-nexa-text-secondary border border-nexa-border uppercase font-mono">
@@ -823,7 +823,7 @@ Skills: Biometrics, Quality Assurance, Hardware Troubleshooting, Network Enginee
                         <td className="py-2.5 px-3 font-mono text-nexa-text-secondary">{notif.recipient}</td>
                         <td className="py-2.5 px-3 text-nexa-text-secondary max-w-md truncate">{notif.message}</td>
                         <td className="py-2.5 px-3">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300">
                             {notif.status.toUpperCase()}
                           </span>
                         </td>

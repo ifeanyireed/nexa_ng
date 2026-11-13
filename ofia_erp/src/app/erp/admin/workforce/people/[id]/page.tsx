@@ -234,7 +234,7 @@ export default function IndividualPersonDossierPage() {
               variant="primary"
               size="sm"
               onClick={openEditModal}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
+              className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium"
             >
               <Edit2 className="w-3.5 h-3.5 mr-1.5" />
               Edit Personnel Profile
@@ -246,7 +246,7 @@ export default function IndividualPersonDossierPage() {
         <div className="rounded-2xl bg-nexa-surface border border-nexa-border p-6 shadow-xs relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-center font-bold text-xl text-emerald-500 shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30 flex items-center justify-center font-bold text-xl text-blue-600 dark:text-blue-400 shrink-0">
                 {person.avatar ? (
                   <img src={person.avatar} alt={person.name} className="w-full h-full object-cover rounded-2xl" />
                 ) : (
@@ -272,7 +272,7 @@ export default function IndividualPersonDossierPage() {
                     {person.role}
                   </span>
                   {person.cohort && (
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">
                       {person.cohort}
                     </span>
                   )}
@@ -305,7 +305,7 @@ export default function IndividualPersonDossierPage() {
             <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-nexa-border pt-4 md:pt-0 md:pl-6">
               <div className="text-center px-3">
                 <p className="text-[10px] uppercase tracking-wider text-nexa-text-muted">Competency</p>
-                <p className="text-xl font-bold text-emerald-500 mt-0.5">{person.competencyScore}%</p>
+                <p className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-0.5">{person.competencyScore}%</p>
                 <p className="text-[10px] text-nexa-text-muted">Verified</p>
               </div>
 
@@ -317,7 +317,7 @@ export default function IndividualPersonDossierPage() {
 
               <div className="text-center px-3">
                 <p className="text-[10px] uppercase tracking-wider text-nexa-text-muted">Attendance</p>
-                <p className="text-xl font-bold text-emerald-500 mt-0.5">{person.attendanceRate}%</p>
+                <p className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-0.5">{person.attendanceRate}%</p>
                 <p className="text-[10px] text-nexa-text-muted">90-Day Rate</p>
               </div>
             </div>
@@ -343,7 +343,7 @@ export default function IndividualPersonDossierPage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
                   activeTab === tab.key
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold"
                     : "text-nexa-text-secondary hover:text-nexa-text-primary hover:bg-nexa-surface border border-transparent"
                 }`}
               >
@@ -351,7 +351,7 @@ export default function IndividualPersonDossierPage() {
                 {typeof tab.count === "number" && (
                   <span
                     className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                      activeTab === tab.key ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300" : "bg-nexa-base text-nexa-text-muted border border-nexa-border"
+                      activeTab === tab.key ? "bg-blue-500/20 text-blue-600 dark:text-blue-300" : "bg-nexa-base text-nexa-text-muted border border-nexa-border"
                     }`}
                   >
                     {tab.count}
@@ -368,7 +368,7 @@ export default function IndividualPersonDossierPage() {
             <div className="md:col-span-2 space-y-6">
               <div className="rounded-xl bg-nexa-surface border border-nexa-border p-5 shadow-xs space-y-4">
                 <h3 className="font-semibold text-nexa-text-primary text-sm flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-emerald-500" />
+                  <UserCheck className="w-4 h-4 text-blue-500" />
                   Executive Personnel Summary
                 </h3>
                 <p className="text-xs text-nexa-text-secondary leading-relaxed">
@@ -389,7 +389,7 @@ export default function IndividualPersonDossierPage() {
                   <div className="p-3 rounded-lg bg-nexa-base border border-nexa-border">
                     <span className="text-nexa-text-muted block text-[11px]">Facility Base</span>
                     <span className="font-medium text-nexa-text-primary mt-1 block">{person.location}</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 block text-[11px] mt-0.5 font-medium">Verified Geofenced Facility</span>
+                    <span className="text-blue-600 dark:text-blue-400 block text-[11px] mt-0.5 font-medium">Verified Geofenced Facility</span>
                   </div>
                 </div>
               </div>
@@ -421,7 +421,7 @@ export default function IndividualPersonDossierPage() {
                           Project: {t.project} · Deadline: {t.deadline}
                         </p>
                       </div>
-                      <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
+                      <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-semibold">
                         {t.status}
                       </span>
                     </div>
@@ -498,7 +498,7 @@ export default function IndividualPersonDossierPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="rounded-xl bg-nexa-surface border border-nexa-border p-6 shadow-xs space-y-4">
               <h3 className="font-semibold text-nexa-text-primary text-sm flex items-center gap-2 border-b border-nexa-border pb-3">
-                <User className="w-4 h-4 text-emerald-500" />
+                <User className="w-4 h-4 text-blue-500" />
                 Contact & Identity Details
               </h3>
 
@@ -567,7 +567,7 @@ export default function IndividualPersonDossierPage() {
         {activeTab === "employment" && (
           <div className="rounded-xl bg-nexa-surface border border-nexa-border p-6 shadow-xs space-y-6">
             <h3 className="font-semibold text-nexa-text-primary text-sm flex items-center gap-2 border-b border-nexa-border pb-3">
-              <Briefcase className="w-4 h-4 text-emerald-500" />
+              <Briefcase className="w-4 h-4 text-blue-500" />
               Organizational Employment Timeline
             </h3>
 
@@ -575,7 +575,7 @@ export default function IndividualPersonDossierPage() {
               <div className="p-4 rounded-xl bg-nexa-base border border-nexa-border space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-nexa-text-primary text-sm">{person.designation}</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono uppercase font-bold text-[10px]">
+                  <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono uppercase font-bold text-[10px]">
                     Current Engagement
                   </span>
                 </div>
@@ -617,7 +617,7 @@ export default function IndividualPersonDossierPage() {
               </div>
 
               <div className="p-4 rounded-xl bg-nexa-base border border-nexa-border space-y-2">
-                <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-bold">
                   Professional Diploma
                 </span>
                 <h4 className="font-bold text-nexa-text-primary text-sm mt-1">National Information Technology Academy</h4>
@@ -670,7 +670,7 @@ export default function IndividualPersonDossierPage() {
         {activeTab === "training" && (
           <div className="rounded-xl bg-nexa-surface border border-nexa-border p-6 shadow-xs space-y-6">
             <h3 className="font-semibold text-nexa-text-primary text-sm flex items-center gap-2 border-b border-nexa-border pb-3">
-              <GraduationCap className="w-4 h-4 text-emerald-500" />
+              <GraduationCap className="w-4 h-4 text-blue-500" />
               Talent Academy Courses & Examination Certifications
             </h3>
 
@@ -682,7 +682,7 @@ export default function IndividualPersonDossierPage() {
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
+                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-bold">
                         {c.code}
                       </span>
                       <h4 className="font-semibold text-nexa-text-primary text-sm">{c.title}</h4>
@@ -693,7 +693,7 @@ export default function IndividualPersonDossierPage() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium">
+                    <span className="px-2.5 py-1 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">
                       Status: Certified
                     </span>
                   </div>
@@ -715,7 +715,7 @@ export default function IndividualPersonDossierPage() {
               <div className="p-4 rounded-xl bg-nexa-base border border-nexa-border space-y-2">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-nexa-text-primary text-sm">Core ERP Platform Engineering</h4>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-bold">
                     Active
                   </span>
                 </div>
@@ -743,7 +743,7 @@ export default function IndividualPersonDossierPage() {
         {activeTab === "tasks" && (
           <div className="rounded-xl bg-nexa-surface border border-nexa-border p-6 shadow-xs space-y-6">
             <h3 className="font-semibold text-nexa-text-primary text-sm flex items-center gap-2 border-b border-nexa-border pb-3">
-              <CheckSquare className="w-4 h-4 text-emerald-500" />
+              <CheckSquare className="w-4 h-4 text-blue-500" />
               Assigned Operational Tasks ({personTasks.length})
             </h3>
 
@@ -755,7 +755,7 @@ export default function IndividualPersonDossierPage() {
                   <div key={t.id} className="p-4 rounded-xl bg-nexa-base border border-nexa-border space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-nexa-text-primary text-sm">{t.title}</h4>
-                      <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
+                      <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-bold">
                         {t.status}
                       </span>
                     </div>
@@ -766,7 +766,7 @@ export default function IndividualPersonDossierPage() {
                       </div>
                     )}
                     {t.feedback && (
-                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                      <p className="text-[11px] text-blue-600 dark:text-blue-400">
                         <strong>Supervisor Feedback ({t.score}/100):</strong> {t.feedback}
                       </p>
                     )}
@@ -821,14 +821,14 @@ export default function IndividualPersonDossierPage() {
         {activeTab === "performance" && (
           <div className="rounded-xl bg-nexa-surface border border-nexa-border p-6 shadow-xs space-y-6">
             <h3 className="font-semibold text-nexa-text-primary text-sm flex items-center gap-2 border-b border-nexa-border pb-3">
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
+              <TrendingUp className="w-4 h-4 text-blue-500" />
               Performance Scorecard & Appraisal History
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               <div className="p-4 rounded-xl bg-nexa-base border border-nexa-border text-center space-y-1">
                 <span className="text-nexa-text-muted uppercase text-[10px] font-semibold">Overall Rating</span>
-                <p className="text-3xl font-bold text-emerald-500">{person.competencyScore}%</p>
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{person.competencyScore}%</p>
                 <p className="text-[10px] text-nexa-text-muted">Exceeds Expectations</p>
               </div>
 
@@ -858,7 +858,7 @@ export default function IndividualPersonDossierPage() {
         {activeTab === "promotions" && (
           <div className="rounded-xl bg-nexa-surface border border-nexa-border p-6 shadow-xs space-y-6">
             <h3 className="font-semibold text-nexa-text-primary text-sm flex items-center gap-2 border-b border-nexa-border pb-3">
-              <Award className="w-4 h-4 text-emerald-500" />
+              <Award className="w-4 h-4 text-blue-500" />
               Promotion Nominations & Career Progression
             </h3>
 
@@ -876,7 +876,7 @@ export default function IndividualPersonDossierPage() {
                     <div>
                       <p className="font-bold text-nexa-text-primary text-sm">
                         {pr.currentDesignation} &rarr;{" "}
-                        <span className="text-emerald-600 dark:text-emerald-400">{pr.proposedDesignation}</span>
+                        <span className="text-blue-600 dark:text-blue-400 font-semibold">{pr.proposedDesignation}</span>
                       </p>
                       <p className="text-[11px] text-nexa-text-muted mt-1">
                         Nominated by: {pr.nominatedBy} · Tenure: {pr.tenureMonths} mos · Rating: {pr.competencyRating}%
@@ -1031,7 +1031,7 @@ export default function IndividualPersonDossierPage() {
         {activeTab === "activity" && (
           <div className="rounded-xl bg-nexa-surface border border-nexa-border p-6 shadow-xs space-y-6">
             <h3 className="font-semibold text-nexa-text-primary text-sm flex items-center gap-2 border-b border-nexa-border pb-3">
-              <History className="w-4 h-4 text-emerald-500" />
+              <History className="w-4 h-4 text-blue-500" />
               Immutable Activity & Security Audit Trail
             </h3>
 
@@ -1047,7 +1047,7 @@ export default function IndividualPersonDossierPage() {
                     className="p-3 rounded-lg bg-nexa-base border border-nexa-border flex items-center justify-between"
                   >
                     <div>
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-[11px]">{log.action}</span>
+                      <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-[11px]">{log.action}</span>
                       <p className="text-nexa-text-secondary mt-0.5">Executed by: {log.actorName}</p>
                       {log.changes && Object.keys(log.changes).length > 0 && (
                         <p className="text-[10px] text-nexa-text-muted font-mono mt-0.5">
@@ -1151,7 +1151,7 @@ export default function IndividualPersonDossierPage() {
             <div className="bg-nexa-surface border border-nexa-border rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between border-b border-nexa-border pb-3">
                 <h3 className="font-semibold text-nexa-text-primary flex items-center gap-2 text-sm">
-                  <Edit2 className="w-4 h-4 text-emerald-500" />
+                  <Edit2 className="w-4 h-4 text-blue-500" />
                   Edit Personnel Record
                 </h3>
                 <button
@@ -1171,7 +1171,7 @@ export default function IndividualPersonDossierPage() {
                       required
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                      className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-blue-500 focus:bg-nexa-surface transition-colors"
                     />
                   </div>
 
@@ -1182,7 +1182,7 @@ export default function IndividualPersonDossierPage() {
                       required
                       value={editPhone}
                       onChange={(e) => setEditPhone(e.target.value)}
-                      className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                      className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-blue-500 focus:bg-nexa-surface transition-colors"
                     />
                   </div>
                 </div>
@@ -1194,7 +1194,7 @@ export default function IndividualPersonDossierPage() {
                     required
                     value={editEmail}
                     onChange={(e) => setEditEmail(e.target.value)}
-                    className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                    className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-blue-500 focus:bg-nexa-surface transition-colors"
                   />
                 </div>
 
@@ -1206,7 +1206,7 @@ export default function IndividualPersonDossierPage() {
                       required
                       value={editDesignation}
                       onChange={(e) => setEditDesignation(e.target.value)}
-                      className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                      className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-blue-500 focus:bg-nexa-surface transition-colors"
                     />
                   </div>
 
@@ -1215,7 +1215,7 @@ export default function IndividualPersonDossierPage() {
                     <select
                       value={editDepartment}
                       onChange={(e) => setEditDepartment(e.target.value)}
-                      className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-emerald-500 transition-colors"
+                      className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-blue-500 transition-colors"
                     >
                       {departments.map((d) => (
                         <option key={d.id} value={d.name}>
@@ -1232,7 +1232,7 @@ export default function IndividualPersonDossierPage() {
                     type="text"
                     value={editLocation}
                     onChange={(e) => setEditLocation(e.target.value)}
-                    className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                    className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-blue-500 focus:bg-nexa-surface transition-colors"
                   />
                 </div>
 
@@ -1242,7 +1242,7 @@ export default function IndividualPersonDossierPage() {
                     type="text"
                     value={editAddress}
                     onChange={(e) => setEditAddress(e.target.value)}
-                    className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                    className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-blue-500 focus:bg-nexa-surface transition-colors"
                   />
                 </div>
 
@@ -1256,7 +1256,7 @@ export default function IndividualPersonDossierPage() {
                         type="text"
                         value={editKinName}
                         onChange={(e) => setEditKinName(e.target.value)}
-                        className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                        className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-blue-500 focus:bg-nexa-surface transition-colors"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1265,7 +1265,7 @@ export default function IndividualPersonDossierPage() {
                         type="text"
                         value={editKinRel}
                         onChange={(e) => setEditKinRel(e.target.value)}
-                        className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                        className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-blue-500 focus:bg-nexa-surface transition-colors"
                       />
                     </div>
                   </div>
@@ -1276,7 +1276,7 @@ export default function IndividualPersonDossierPage() {
                       type="text"
                       value={editKinPhone}
                       onChange={(e) => setEditKinPhone(e.target.value)}
-                      className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-emerald-500 focus:bg-nexa-surface transition-colors"
+                      className="w-full px-3 py-2 bg-nexa-base border border-nexa-border rounded-lg text-nexa-text-primary focus:outline-none focus:border-blue-500 focus:bg-nexa-surface transition-colors"
                     />
                   </div>
                 </div>
@@ -1295,7 +1295,7 @@ export default function IndividualPersonDossierPage() {
                     type="submit"
                     variant="primary"
                     size="sm"
-                    className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-xs"
+                    className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-xs"
                   >
                     Save Changes
                   </NexaButton>

@@ -223,15 +223,15 @@ export default function RestrictedClientPortalPage() {
       <header className="border-b border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/95 backdrop-blur sticky top-0 z-30 px-4 lg:px-8 py-3.5">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-xs">
               <ShieldCheck className="w-6 h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
                   Restricted Client Portal
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 font-mono">
                   SLA Active
                 </span>
               </div>
@@ -277,7 +277,7 @@ export default function RestrictedClientPortalPage() {
 
             {/* Stakeholder Identity */}
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs text-[var(--nexa-text-secondary)]">
-              <BadgeCheck className="w-4 h-4 text-emerald-500" />
+              <BadgeCheck className="w-4 h-4 text-blue-500" />
               <span>{stakeholderName}</span>
             </div>
 
@@ -299,9 +299,9 @@ export default function RestrictedClientPortalPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 space-y-6">
         {/* Toast alert */}
         {signedToast && (
-          <div className="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-between shadow-lg animate-in fade-in">
+          <div className="p-3.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs flex items-center justify-between shadow-lg animate-in fade-in">
             <div className="flex items-center gap-2 font-medium">
-              <Check className="w-4 h-4 text-emerald-500" />
+              <Check className="w-4 h-4 text-blue-500" />
               {signedToast}
             </div>
             <button onClick={() => setSignedToast(null)} className="text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)]">
@@ -312,12 +312,12 @@ export default function RestrictedClientPortalPage() {
 
         {/* Client Executive Header Banner */}
         <section className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-2xl p-6 relative overflow-hidden shadow-xs">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2.5">
-                <span className="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400">
                   {activeClient.industry}
                 </span>
                 <span className="text-xs text-[var(--nexa-text-secondary)]">Account Lead: {activeClient.accountManager}</span>
@@ -333,7 +333,7 @@ export default function RestrictedClientPortalPage() {
               <div className="bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] p-3.5 rounded-xl text-center">
                 <div className="text-xs text-[var(--nexa-text-secondary)] uppercase tracking-wider font-semibold">Specialists</div>
                 <div className="text-xl font-bold text-[var(--nexa-text-primary)] mt-1">{clientSpecialists.length || activeClient.deployedStaffCount}</div>
-                <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">100% Deployed</div>
+                <div className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5 font-medium">100% Deployed</div>
               </div>
               <div className="bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] p-3.5 rounded-xl text-center">
                 <div className="text-xs text-[var(--nexa-text-secondary)] uppercase tracking-wider font-semibold">SLA Target</div>
@@ -357,7 +357,7 @@ export default function RestrictedClientPortalPage() {
             onClick={() => setActiveTab("overview")}
             className={`px-4 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition flex items-center gap-2 ${
               activeTab === "overview"
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold"
                 : "text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-bg-surface)]"
             }`}
           >
@@ -368,7 +368,7 @@ export default function RestrictedClientPortalPage() {
             onClick={() => setActiveTab("tickets")}
             className={`px-4 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition flex items-center gap-2 ${
               activeTab === "tickets"
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold"
                 : "text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-bg-surface)]"
             }`}
           >
@@ -379,7 +379,7 @@ export default function RestrictedClientPortalPage() {
             onClick={() => setActiveTab("timesheets")}
             className={`px-4 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition flex items-center gap-2 ${
               activeTab === "timesheets"
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold"
                 : "text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-bg-surface)]"
             }`}
           >
@@ -390,7 +390,7 @@ export default function RestrictedClientPortalPage() {
             onClick={() => setActiveTab("deliverables")}
             className={`px-4 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition flex items-center gap-2 ${
               activeTab === "deliverables"
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold"
                 : "text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-bg-surface)]"
             }`}
           >
@@ -401,7 +401,7 @@ export default function RestrictedClientPortalPage() {
             onClick={() => setActiveTab("csat")}
             className={`px-4 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition flex items-center gap-2 ${
               activeTab === "csat"
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold"
                 : "text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-bg-surface)]"
             }`}
           >
@@ -437,11 +437,11 @@ export default function RestrictedClientPortalPage() {
                   return (
                     <div
                       key={person.id}
-                      className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] hover:border-emerald-500/40 rounded-xl p-5 space-y-4 transition shadow-xs"
+                      className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] hover:border-blue-500/40 rounded-xl p-5 space-y-4 transition shadow-xs"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center font-bold text-sm text-emerald-600 dark:text-emerald-400">
+                          <div className="w-11 h-11 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center font-bold text-sm text-blue-600 dark:text-blue-400">
                             {person.name
                               .split(" ")
                               .map((n) => n[0])
@@ -452,7 +452,7 @@ export default function RestrictedClientPortalPage() {
                             <p className="text-xs text-[var(--nexa-text-secondary)]">{person.designation}</p>
                           </div>
                         </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400">
                           {alloc?.allocationPercent || 100}% Allocation
                         </span>
                       </div>
@@ -508,7 +508,7 @@ export default function RestrictedClientPortalPage() {
               </div>
               <button
                 onClick={() => setIsTicketModalOpen(true)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition shadow-xs"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Log Incident Ticket
@@ -541,7 +541,7 @@ export default function RestrictedClientPortalPage() {
                     <tbody className="divide-y divide-[var(--nexa-border)]">
                       {clientTickets.map((t) => (
                         <tr key={t.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition">
-                          <td className="py-3 px-4 font-mono font-medium text-emerald-600 dark:text-emerald-400">{t.ticketNumber}</td>
+                          <td className="py-3 px-4 font-mono font-medium text-blue-600 dark:text-blue-400">{t.ticketNumber}</td>
                           <td className="py-3 px-4 font-medium text-[var(--nexa-text-primary)]">{t.subject}</td>
                           <td className="py-3 px-4">
                             <span
@@ -630,7 +630,7 @@ export default function RestrictedClientPortalPage() {
                       </div>
                       <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">{log.summary}</p>
                       {log.clientSignedOff && (
-                        <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono flex items-center gap-1.5 pt-1">
+                        <div className="text-[11px] text-blue-600 dark:text-blue-400 font-mono flex items-center gap-1.5 pt-1">
                           <BadgeCheck className="w-3.5 h-3.5" />
                           <span>
                             Corporate Sign-off: {log.clientSignedBy || "Client Representative"} (
@@ -650,7 +650,7 @@ export default function RestrictedClientPortalPage() {
                       ) : (
                         <button
                           onClick={() => handleSignOffTimesheet(log.id)}
-                          className="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition shadow-xs"
+                          className="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition shadow-xs"
                         >
                           <FileCheck2 className="w-3.5 h-3.5" />
                           <span>Sign Off Timesheet</span>
@@ -689,11 +689,11 @@ export default function RestrictedClientPortalPage() {
                 {clientDeliverables.map((deliv) => (
                   <div
                     key={deliv.id}
-                    className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-xl p-5 space-y-3 hover:border-emerald-500/40 transition shadow-xs"
+                    className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-xl p-5 space-y-3 hover:border-blue-500/40 transition shadow-xs"
                   >
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
-                        <div className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">{deliv.projectTitle || "Active Initiative"}</div>
+                        <div className="text-[11px] font-mono text-blue-600 dark:text-blue-400">{deliv.projectTitle || "Active Initiative"}</div>
                         <h4 className="text-sm font-semibold text-[var(--nexa-text-primary)]">{deliv.title}</h4>
                       </div>
                       <span
@@ -724,7 +724,7 @@ export default function RestrictedClientPortalPage() {
                         href={deliv.fileUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+                        className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>Download Artifact</span>
@@ -749,7 +749,7 @@ export default function RestrictedClientPortalPage() {
               </div>
               <button
                 onClick={() => setIsCsatModalOpen(true)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition shadow-xs"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Submit Monthly CSAT Review
@@ -773,12 +773,12 @@ export default function RestrictedClientPortalPage() {
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">Cycle: {review.month}</div>
+                        <div className="text-[11px] font-mono text-blue-600 dark:text-blue-400">Cycle: {review.month}</div>
                         <h4 className="text-sm font-semibold text-[var(--nexa-text-primary)]">{review.stakeholderName}</h4>
                         <div className="text-xs text-[var(--nexa-text-secondary)]">{review.stakeholderEmail}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{review.overallScorePercent}%</div>
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{review.overallScorePercent}%</div>
                         <div className="text-[10px] text-[var(--nexa-text-secondary)] uppercase tracking-wider">Quality Index</div>
                       </div>
                     </div>
@@ -821,7 +821,7 @@ export default function RestrictedClientPortalPage() {
           <div className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-[var(--nexa-border)]">
               <h3 className="text-base font-bold text-[var(--nexa-text-primary)] flex items-center gap-2">
-                <Headphones className="w-5 h-5 text-emerald-500" />
+                <Headphones className="w-5 h-5 text-blue-500" />
                 Log Incident or Service Request
               </h3>
               <button
@@ -851,7 +851,7 @@ export default function RestrictedClientPortalPage() {
                   placeholder="e.g. Courier WebSocket ping timeouts on mainland cluster"
                   value={ticketSubject}
                   onChange={(e) => setTicketSubject(e.target.value)}
-                  className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-emerald-500 transition-colors"
+                  className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
 
@@ -861,7 +861,7 @@ export default function RestrictedClientPortalPage() {
                   <select
                     value={ticketPriority}
                     onChange={(e) => setTicketPriority(e.target.value as any)}
-                    className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-blue-500 transition-colors"
                   >
                     <option value="P1">Critical P1 (1h SLA)</option>
                     <option value="P2">High P2 (2h SLA)</option>
@@ -874,7 +874,7 @@ export default function RestrictedClientPortalPage() {
                   <select
                     value={ticketSpecialist}
                     onChange={(e) => setTicketSpecialist(e.target.value)}
-                    className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-blue-500 transition-colors"
                   >
                     <option value="">Auto-Triage Desk</option>
                     {clientSpecialists.map((p) => (
@@ -896,7 +896,7 @@ export default function RestrictedClientPortalPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-xs transition-colors"
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-xs transition-colors"
                 >
                   Submit Incident
                 </button>
@@ -932,7 +932,7 @@ export default function RestrictedClientPortalPage() {
                     required
                     value={stakeholderName}
                     onChange={(e) => setStakeholderName(e.target.value)}
-                    className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
                 <div>
@@ -942,7 +942,7 @@ export default function RestrictedClientPortalPage() {
                     required
                     value={stakeholderEmail}
                     onChange={(e) => setStakeholderEmail(e.target.value)}
-                    className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
               </div>
@@ -953,7 +953,7 @@ export default function RestrictedClientPortalPage() {
                   type="month"
                   value={csatMonth}
                   onChange={(e) => setCsatMonth(e.target.value)}
-                  className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-emerald-500 transition-colors"
+                  className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
 
@@ -961,7 +961,7 @@ export default function RestrictedClientPortalPage() {
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-[var(--nexa-text-primary)] font-medium">Technical Competence & Execution:</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{ratingTech} / 5</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-bold">{ratingTech} / 5</span>
                 </div>
                 <input
                   type="range"
@@ -970,7 +970,7 @@ export default function RestrictedClientPortalPage() {
                   step="1"
                   value={ratingTech}
                   onChange={(e) => setRatingTech(Number(e.target.value))}
-                  className="w-full accent-emerald-500 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
               </div>
 
@@ -978,7 +978,7 @@ export default function RestrictedClientPortalPage() {
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-[var(--nexa-text-primary)] font-medium">Punctuality & Communication:</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{ratingPunct} / 5</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-bold">{ratingPunct} / 5</span>
                 </div>
                 <input
                   type="range"
@@ -987,7 +987,7 @@ export default function RestrictedClientPortalPage() {
                   step="1"
                   value={ratingPunct}
                   onChange={(e) => setRatingPunct(Number(e.target.value))}
-                  className="w-full accent-emerald-500 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
               </div>
 
@@ -995,7 +995,7 @@ export default function RestrictedClientPortalPage() {
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-[var(--nexa-text-primary)] font-medium">SLA Resolution & Incident Speed:</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{ratingSla} / 5</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-bold">{ratingSla} / 5</span>
                 </div>
                 <input
                   type="range"
@@ -1004,14 +1004,14 @@ export default function RestrictedClientPortalPage() {
                   step="1"
                   value={ratingSla}
                   onChange={(e) => setRatingSla(Number(e.target.value))}
-                  className="w-full accent-emerald-500 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
               </div>
 
               {/* Computed Score */}
               <div className="p-3 rounded-lg bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between">
                 <span className="text-[var(--nexa-text-secondary)]">Computed Overall Quality Score:</span>
-                <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="text-base font-bold text-blue-600 dark:text-blue-400">
                   {Math.round(((ratingTech + ratingPunct + ratingSla) / 15) * 100)}%
                 </span>
               </div>
@@ -1023,7 +1023,7 @@ export default function RestrictedClientPortalPage() {
                   placeholder="Commendations, specific areas of focus, or commendations for deployed personnel..."
                   value={csatFeedback}
                   onChange={(e) => setCsatFeedback(e.target.value)}
-                  className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-emerald-500 transition-colors"
+                  className="w-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg px-3 py-2 text-[var(--nexa-text-primary)] focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
 
@@ -1037,7 +1037,7 @@ export default function RestrictedClientPortalPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-xs transition-colors"
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-xs transition-colors"
                 >
                   Submit CSAT Rating
                 </button>

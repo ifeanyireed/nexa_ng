@@ -32,10 +32,10 @@ const LinkedinIcon = ({ className }: { className?: string }) => (
 
 export const Footer = () => {
   const socials = [
-    { icon: <TwitterIcon className="w-5 h-5" />, href: "#" },
-    { icon: <InstagramIcon className="w-5 h-5" />, href: "#" },
-    { icon: <FacebookIcon className="w-5 h-5" />, href: "#" },
-    { icon: <LinkedinIcon className="w-5 h-5" />, href: "#" },
+    { icon: <TwitterIcon className="w-5 h-5" />, href: "https://x.com/ofiangofficial" },
+    { icon: <InstagramIcon className="w-5 h-5" />, href: "https://instagram.com/ofiangofficial" },
+    { icon: <FacebookIcon className="w-5 h-5" />, href: "https://facebook.com/ofiangofficial" },
+    { icon: <LinkedinIcon className="w-5 h-5" />, href: "https://linkedin.com/company/ofiangofficial" },
   ];
 
   return (

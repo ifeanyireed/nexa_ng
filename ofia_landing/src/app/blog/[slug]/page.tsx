@@ -309,8 +309,8 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      site: '@Ofia_ng',
-      creator: '@Ofia_ng',
+      site: '@ofiangofficial',
+      creator: '@ofiangofficial',
       images: [ogImage],
     },
     robots: {

@@ -39,6 +39,8 @@ export const metadata: Metadata = {
     title: "Ofia Compass | Nigeria's #1 Business & Service Discovery Marketplace",
     description:
       "Nigeria's #1 business discovery and navigation platform. Empowering local businesses and consumers to navigate commercial opportunities.",
+    site: "@ofiangofficial",
+    creator: "@ofiangofficial",
     images: ["https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"],
   },
   icons: {

@@ -34,10 +34,10 @@ export const Footer = () => {
   };
 
   const socials = [
-    { icon: <IconBrandX className="w-4 h-4" />, href: "#", name: "X (Twitter)" },
-    { icon: <IconBrandInstagram className="w-4 h-4" />, href: "#", name: "Instagram" },
-    { icon: <IconBrandFacebook className="w-4 h-4" />, href: "#", name: "Facebook" },
-    { icon: <IconBrandLinkedin className="w-4 h-4" />, href: "#", name: "LinkedIn" },
+    { icon: <IconBrandX className="w-4 h-4" />, href: "https://x.com/ofiangofficial", name: "X (Twitter)" },
+    { icon: <IconBrandInstagram className="w-4 h-4" />, href: "https://instagram.com/ofiangofficial", name: "Instagram" },
+    { icon: <IconBrandFacebook className="w-4 h-4" />, href: "https://facebook.com/ofiangofficial", name: "Facebook" },
+    { icon: <IconBrandLinkedin className="w-4 h-4" />, href: "https://linkedin.com/company/ofiangofficial", name: "LinkedIn" },
   ];
 
   return (

@@ -32,7 +32,8 @@ export const metadata: Metadata = {
     title: 'Ofia Journal & Engineering Blog',
     description:
       'Engineering breakthroughs, commerce playbooks, and autonomous AI innovations across the Ofia ecosystem.',
-    site: '@Ofia_ng',
+    site: '@ofiangofficial',
+    creator: '@ofiangofficial',
     images: ['https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png'],
   },
 };

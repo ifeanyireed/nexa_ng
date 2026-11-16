@@ -12,10 +12,10 @@ import { NexaButton } from "./NexaButton";
 
 export const Footer = () => {
   const socials = [
-    { icon: <IconBrandX className="w-5 h-5" />, href: "#" },
-    { icon: <IconBrandInstagram className="w-5 h-5" />, href: "#" },
-    { icon: <IconBrandFacebook className="w-5 h-5" />, href: "#" },
-    { icon: <IconBrandLinkedin className="w-5 h-5" />, href: "#" },
+    { icon: <IconBrandX className="w-5 h-5" />, href: "https://x.com/ofiangofficial" },
+    { icon: <IconBrandInstagram className="w-5 h-5" />, href: "https://instagram.com/ofiangofficial" },
+    { icon: <IconBrandFacebook className="w-5 h-5" />, href: "https://facebook.com/ofiangofficial" },
+    { icon: <IconBrandLinkedin className="w-5 h-5" />, href: "https://linkedin.com/company/ofiangofficial" },
   ];
 
   return (

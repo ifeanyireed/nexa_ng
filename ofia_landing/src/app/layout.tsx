@@ -15,6 +15,33 @@ export const metadata: Metadata = {
   title: "Ofia | The Multi-Tenant Business Operating System",
   description:
     "Storefront, ERP, Autonomous AI, Logistics, and Discovery all in one unified platform for Nigerian and African businesses.",
+  metadataBase: new URL("https://ofia.ng"),
+  openGraph: {
+    title: "Ofia | The Multi-Tenant Business Operating System",
+    description:
+      "Storefront, ERP, Autonomous AI, Logistics, and Discovery all in one unified platform for Nigerian and African businesses.",
+    url: "https://ofia.ng",
+    siteName: "Ofia",
+    images: [
+      {
+        url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
+        width: 1200,
+        height: 630,
+        alt: "Ofia Logo",
+      },
+    ],
+    locale: "en_NG",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ofia | The Multi-Tenant Business Operating System",
+    description:
+      "Storefront, ERP, Autonomous AI, Logistics, and Discovery all in one unified platform for Nigerian and African businesses.",
+    site: "@ofiangofficial",
+    creator: "@ofiangofficial",
+    images: ["https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },

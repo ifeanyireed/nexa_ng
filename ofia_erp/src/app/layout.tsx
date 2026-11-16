@@ -40,6 +40,8 @@ export const metadata: Metadata = {
     title: "Ofia ERP | Unified African Enterprise & Commerce Operating System",
     description:
       "The unified multi-tenant enterprise business operating system for African trade. Run storefronts, ERP operations, autonomous AI lead generation, and nationwide logistics from a single login.",
+    site: "@ofiangofficial",
+    creator: "@ofiangofficial",
     images: ["https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"],
   },
   icons: {

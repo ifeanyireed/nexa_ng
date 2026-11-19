@@ -102,7 +102,7 @@ export default function PropertyStorefrontView() {
               highlightText="· Serviced Luxury Villas & Short-Lets"
               description={store.description || "Curated luxury penthouses, private villas, and high-yield residences across prime corridors with verified land titles and 24/7 concierge service."}
               ctaLabel={canBookServices ? "Schedule Private Viewing" : "Explore Property Listings"}
-              ctaHref={canBookServices ? `/property/schedule-viewing/${properties[0]?.id || "prp-001"}${tenantQuery}` : `/property/listings${tenantQuery}`}
+              ctaHref={canBookServices ? (properties[0]?.id ? `/property/schedule-viewing/${properties[0].id}${tenantQuery}` : `/property/listings${tenantQuery}`) : `/property/listings${tenantQuery}`}
               footnote="Verified Governor's Consent / C-of-O · 24/7 Shoreline Power"
               image={store.coverImage || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686504/ofia_ng_assets/wuuq3envwns5v2hbkjr3.jpg"}
               imageAlt={`${store.name} Prime Portfolio`}

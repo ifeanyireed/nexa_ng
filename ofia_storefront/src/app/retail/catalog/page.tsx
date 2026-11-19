@@ -3,9 +3,11 @@
 import { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Search,
   Filter,
@@ -21,8 +23,11 @@ function RetailCatalogContent() {
   const searchParams = useSearchParams();
   const initialDept = searchParams.get("dept") || "all";
 
-  const store = MOCK_STORES["retail"];
-  const products = MOCK_PRODUCTS.filter((p) => p.vertical === "retail");
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.retail;
+  const { products: liveProducts } = useStorefrontProducts("retail");
+  const products = liveProducts || [];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDept, setSelectedDept] = useState<string>("all");
@@ -164,7 +169,7 @@ function RetailCatalogContent() {
                       {meta?.authorOrBrand || prod.category}
                     </span>
 
-                    <Link href={`/retail/product/${prod.id}`}>
+                    <Link href={`/retail/product/${prod.id}${tenantQuery}`}>
                       <h3 className="font-extrabold text-base text-slate-900 line-clamp-1 hover:text-purple-700 transition-colors">
                         {prod.title}
                       </h3>

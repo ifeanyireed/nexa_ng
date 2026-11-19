@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Laptop,
   Smartphone,
@@ -16,8 +18,11 @@ import {
 } from "lucide-react";
 
 export default function GadgetsCatalogPage() {
-  const store = MOCK_STORES.gadgets;
-  const allGadgets = MOCK_PRODUCTS.filter((p) => p.vertical === "gadgets");
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.gadgets;
+  const { products: liveGadgets } = useStorefrontProducts("gadgets");
+  const allGadgets = liveGadgets || [];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("All");
@@ -270,7 +275,7 @@ export default function GadgetsCatalogPage() {
                     </div>
 
                     <Link
-                      href={`/gadgets/product/${gadget.id}`}
+                      href={`/gadgets/product/${gadget.id}${tenantQuery}`}
                       className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 transition-colors flex items-center gap-2 shadow-xs"
                     >
                       <Cpu className="w-4 h-4" />

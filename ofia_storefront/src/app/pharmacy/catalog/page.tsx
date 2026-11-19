@@ -3,10 +3,12 @@
 import { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import { Product } from "@/types/storefront";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { useCart } from "@/context/CartContext";
 import {
   Search,
@@ -24,8 +26,11 @@ function PharmacyCatalogContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") || "all";
 
-  const store = MOCK_STORES["pharmacy"];
-  const products = MOCK_PRODUCTS.filter((p) => p.vertical === "pharmacy");
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.pharmacy;
+  const { products: liveProducts } = useStorefrontProducts("pharmacy");
+  const products = liveProducts || [];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedForm, setSelectedForm] = useState<string>("all");
@@ -216,7 +221,7 @@ function PharmacyCatalogContent() {
                       <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider">
                         {prod.category}
                       </span>
-                      <Link href={`/pharmacy/product/${prod.id}`}>
+                      <Link href={`/pharmacy/product/${prod.id}${tenantQuery}`}>
                         <h3 className="font-extrabold text-base text-teal-950 line-clamp-1 hover:text-teal-700 transition-colors">
                           {prod.title}
                         </h3>
@@ -251,7 +256,7 @@ function PharmacyCatalogContent() {
                     </div>
 
                     <Link
-                      href={`/pharmacy/product/${prod.id}`}
+                      href={`/pharmacy/product/${prod.id}${tenantQuery}`}
                       className="px-5 py-2.5 rounded-full text-xs font-bold bg-teal-700 hover:bg-teal-800 text-white transition-colors flex items-center gap-1.5 shadow-xs"
                     >
                       <span>View Medication</span>

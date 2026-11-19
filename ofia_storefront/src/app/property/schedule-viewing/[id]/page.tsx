@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
-import { MOCK_PRODUCTS, MOCK_STORES } from "@/data/mockStores";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -25,14 +26,12 @@ export default function ScheduleViewingPage() {
   const params = useParams();
   const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.property;
+  const { products: liveProperties, isLoading } = useStorefrontProducts("property");
 
-  const propertyId = (params?.id as string) || "prp-001";
-  const property =
-    MOCK_PRODUCTS.find((p) => p.id === propertyId && p.vertical === "property") ||
-    MOCK_PRODUCTS.find((p) => p.vertical === "property") ||
-    MOCK_PRODUCTS[0];
+  const propertyId = (params?.id as string) || "";
+  const property = liveProperties.find((p) => p.id === propertyId);
 
-  const meta = property.propertyMeta;
+  const meta = property?.propertyMeta;
   const canUseServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
@@ -49,6 +48,39 @@ export default function ScheduleViewingPage() {
   const [confirmed, setConfirmed] = useState(false);
   const [viewingRef, setViewingRef] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+          <p className="text-xs text-stone-500">Loading viewing details...</p>
+        </div>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
+
+  if (!property) {
+    return (
+      <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <main className="max-w-md mx-auto my-20 p-8 rounded-3xl border border-dashed border-stone-300 text-center space-y-4">
+          <p className="text-base font-bold text-slate-900">Residence Not Found</p>
+          <p className="text-xs text-stone-500">
+            Cannot schedule viewing because this property is not in the active listings.
+          </p>
+          <Link
+            href={`/property/listings${tenantQuery}`}
+            className="inline-block px-5 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition"
+          >
+            Explore Active Properties
+          </Link>
+        </main>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
 
   const timeSlots = [
     "10:00 AM - 11:00 AM",

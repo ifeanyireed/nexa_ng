@@ -29,7 +29,6 @@ import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant } from "@/lib/tenant-context";
 import {
   VERTICAL_DEFINITIONS,
-  getDefaultProductsForVertical,
   CommerceProductItem,
   VerticalKey,
 } from "@/lib/verticals";
@@ -64,28 +63,7 @@ export default function VerticalInventoryPage() {
     }
   }, [activeTenant?.vertical, verticalKey, router]);
 
-  const initialRows: InventoryRow[] = useMemo(() => {
-    const products = getDefaultProductsForVertical(verticalKey);
-    const depots = ["Ikeja Central Hub", "Lekki Distribution Depot", "Abuja Regional Facility"];
-    return products.map((p, idx) => {
-      const stock = p.stock || 15;
-      const minStock = 5;
-      return {
-        id: p.id,
-        sku: p.sku || `SKU-${verticalKey.toUpperCase().slice(0, 3)}-${idx + 101}`,
-        name: p.name,
-        category: p.category,
-        warehouse: depots[idx % depots.length],
-        currentStock: stock,
-        minStock,
-        unitCost: Math.round(p.price * 0.65),
-        unitPrice: p.price,
-        status: stock === 0 ? "DEPLETED" : stock <= minStock ? "LOW" : "OPTIMAL",
-      };
-    });
-  }, [verticalKey]);
-
-  const [rows, setRows] = useState<InventoryRow[]>(initialRows);
+  const [rows, setRows] = useState<InventoryRow[]>([]);
   const [search, setSearch] = useState("");
   const [warehouseFilter, setWarehouseFilter] = useState("ALL");
   const [adjustingItem, setAdjustingItem] = useState<InventoryRow | null>(null);
@@ -102,7 +80,7 @@ export default function VerticalInventoryPage() {
         cache: "no-store",
       });
       const data = await res.json().catch(() => null);
-      if (data && Array.isArray(data.inventory) && data.inventory.length > 0) {
+      if (data && Array.isArray(data.inventory)) {
         const mapped: InventoryRow[] = data.inventory.map((i: any) => ({
           id: i.id || i.productId,
           sku: i.sku,

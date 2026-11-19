@@ -196,7 +196,7 @@ export default function StickySidebarNav() {
         };
       case "cars":
         return {
-          href: "/cars/book-test-drive/car-001",
+          href: "/cars/listings",
           label: "Book Showroom Test-Drive",
           shortLabel: "Test Drive",
         };
@@ -208,7 +208,7 @@ export default function StickySidebarNav() {
         };
       case "property":
         return {
-          href: "/property/schedule-viewing/prp-001",
+          href: "/property/listings",
           label: "Schedule In-Person / Video Tour",
           shortLabel: "Viewing",
         };

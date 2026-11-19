@@ -82,16 +82,15 @@ export async function getTenantInventory(tenantSlug: string): Promise<ShopInvent
                unit_cost, unit_price, status, supplier, updated_at
         FROM shop_inventory
         WHERE LOWER(tenant_slug) = ${clean}
+           OR REPLACE(LOWER(tenant_slug), '-', '') = ${clean.replace(/-/g, "")}
         ORDER BY status = 'OUT_OF_STOCK' DESC, status = 'LOW_STOCK' DESC, product_name ASC
       `;
 
-      if (rows && rows.length > 0) {
-        const items = rows.map(mapRowToInventory);
-        try {
-          fs.writeFileSync(INVENTORY_FILE, JSON.stringify(items, null, 2), "utf8");
-        } catch {}
-        return items;
-      }
+      const items = (rows || []).map(mapRowToInventory);
+      try {
+        fs.writeFileSync(INVENTORY_FILE, JSON.stringify(items, null, 2), "utf8");
+      } catch {}
+      return items;
     } catch (err) {
       console.warn("[Inventory Store] Neon query failed:", err);
     }

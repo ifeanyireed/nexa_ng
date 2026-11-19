@@ -105,7 +105,7 @@ export default function CarsStorefrontView() {
               highlightText={config?.hero?.highlightText !== undefined ? config.hero.highlightText : "· Direct German Imports & Pre-Owned"}
               description={config?.hero?.description || store.description || "Curated luxury and executive fleet. Every vehicle undergoes a 150-point diagnostic audit with verified clean customs title and at-home valet test-drives."}
               ctaLabel={config?.hero?.ctaLabel || (canBookServices ? "Book Valet Test-Drive" : "Explore Fleet Catalog")}
-              ctaHref={config?.hero?.ctaHref || (canBookServices ? "/cars/book-test-drive/car-001" : "/cars/listings")}
+              ctaHref={config?.hero?.ctaHref || (canBookServices ? (carProducts[0]?.id ? `/cars/book-test-drive/${carProducts[0].id}` : "/cars/listings") : "/cars/listings")}
               footnote={config?.hero?.footnote || "150-Point Valet Audit Verified · Clean Customs Clearance"}
               image={config?.hero?.image || store.coverImage || "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Certified Luxury Fleet`}
@@ -289,7 +289,7 @@ export default function CarsStorefrontView() {
             defaultHeadline={inspectionService?.title || "150-Point Diagnostic Inspection"}
             defaultDescription={inspectionService?.description || "Book a comprehensive multi-point mechanical inspection with our certified diagnostic technicians before purchase."}
             defaultCtaLabel="Book Inspection Slot"
-            defaultCtaHref={`/cars/book-test-drive/${carProducts[0]?.id || "car-001"}`}
+            defaultCtaHref={carProducts[0]?.id ? `/cars/book-test-drive/${carProducts[0].id}` : "/cars/listings"}
             defaultImage="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80"
             bgClassName="bg-slate-900 text-white border-slate-800"
             accentTextClassName="text-blue-400"

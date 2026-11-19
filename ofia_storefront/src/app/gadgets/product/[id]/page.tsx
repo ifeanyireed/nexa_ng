@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import SwipeableImageGallery from "@/components/common/SwipeableImageGallery";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   ShieldCheck,
   Cpu,
@@ -22,16 +24,16 @@ import {
 
 export default function GadgetProductDetailPage() {
   const params = useParams();
-  const store = MOCK_STORES.gadgets;
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.gadgets;
+  const { products: liveProducts, isLoading } = useStorefrontProducts("gadgets");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
   const { addToCart, setIsCartOpen } = useCart();
 
-  const productId = (params?.id as string) || "gdt-001";
-  const product =
-    MOCK_PRODUCTS.find((p) => p.id === productId && p.vertical === "gadgets") ||
-    MOCK_PRODUCTS.find((p) => p.vertical === "gadgets") ||
-    MOCK_PRODUCTS[0];
+  const productId = (params?.id as string) || "";
+  const product = liveProducts.find((p) => p.id === productId);
 
-  const meta = product.gadgetMeta;
+  const meta = product?.gadgetMeta;
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedStorage, setSelectedStorage] = useState(
@@ -49,7 +51,40 @@ export default function GadgetProductDetailPage() {
     return 0;
   };
 
-  const finalPrice = product.price + getStorageDelta(selectedStorage);
+  const finalPrice = (product?.price || 0) + getStorageDelta(selectedStorage);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white text-[#0F172A] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+          <p className="text-xs text-stone-500">Loading device specifications...</p>
+        </div>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-white text-[#0F172A] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <main className="max-w-md mx-auto my-20 p-8 rounded-3xl border border-dashed border-slate-200 text-center space-y-4">
+          <p className="text-base font-bold text-slate-900">Device Not Found</p>
+          <p className="text-xs text-stone-500">
+            This tech model is no longer available in the active catalog.
+          </p>
+          <Link
+            href={`/gadgets/catalog${tenantQuery}`}
+            className="inline-block px-5 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition"
+          >
+            Explore Tech Catalog
+          </Link>
+        </main>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
 
   const handleAddToCart = () => {
     addToCart({

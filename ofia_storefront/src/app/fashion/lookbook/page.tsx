@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   ArrowRight,
   ChevronLeft,
@@ -13,8 +15,11 @@ import {
 } from "lucide-react";
 
 export default function FashionLookbookPage() {
-  const store = MOCK_STORES["fashion"];
-  const products = MOCK_PRODUCTS.filter((p) => p.vertical === "fashion");
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.fashion;
+  const { products: liveProducts } = useStorefrontProducts("fashion");
+  const products = liveProducts || [];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const editorialLooks = [
     {
@@ -23,7 +28,7 @@ export default function FashionLookbookPage() {
       season: "Harmattan / Winter Haute Couture",
       image: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1200&q=80",
       description: "Structured raw silk tunic over tailored cigarette trousers. Accented with brass filigree cuff links and midnight black patent leather brogues.",
-      productId: "fsh-001",
+      targetHref: products[0]?.id ? `/fashion/product/${products[0].id}${tenantQuery}` : `/fashion/catalog${tenantQuery}`,
     },
     {
       id: "look-02",
@@ -31,7 +36,7 @@ export default function FashionLookbookPage() {
       season: "Resort & Architectural Leisure",
       image: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1200&q=80",
       description: "Breathable Italian-milled double-breasted cream linen blazer paired with relaxed pleated trousers and woven calfskin loafers.",
-      productId: "fsh-002",
+      targetHref: products[1]?.id ? `/fashion/product/${products[1].id}${tenantQuery}` : `/fashion/catalog${tenantQuery}`,
     },
     {
       id: "look-03",
@@ -39,7 +44,7 @@ export default function FashionLookbookPage() {
       season: "Trans-Seasonal Tailoring",
       image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80",
       description: "Minimalist asymmetrical kimono silhouette crafted from organic Nigerian hand-dyed adire cotton with horn buttons.",
-      productId: "fsh-003",
+      targetHref: products[2]?.id ? `/fashion/product/${products[2].id}${tenantQuery}` : `/fashion/catalog${tenantQuery}`,
     },
   ];
 
@@ -114,7 +119,7 @@ export default function FashionLookbookPage() {
 
                 <div className="pt-2">
                   <Link
-                    href={`/fashion/product/${look.productId}`}
+                    href={look.targetHref}
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs shadow-md transition-all"
                   >
                     <span>View Garment Details</span>

@@ -2,10 +2,12 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Search,
   Filter,
@@ -16,8 +18,11 @@ import {
 } from "lucide-react";
 
 export default function BeautyProductsPage() {
-  const store = MOCK_STORES.beauty;
-  const allProducts = MOCK_PRODUCTS.filter((p) => p.vertical === "beauty");
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.beauty;
+  const { products: liveProducts } = useStorefrontProducts("beauty");
+  const allProducts = liveProducts || [];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
   const { addToCart, setIsCartOpen } = useCart();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -203,7 +208,7 @@ export default function BeautyProductsPage() {
                       <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider">
                         {prod.category}
                       </span>
-                      <Link href={`/beauty/product/${prod.id}`}>
+                      <Link href={`/beauty/product/${prod.id}${tenantQuery}`}>
                         <h3 className="font-dropa text-lg font-bold text-zinc-900 mt-0.5 line-clamp-1 group-hover:text-rose-600 transition-colors">
                           {prod.title}
                         </h3>

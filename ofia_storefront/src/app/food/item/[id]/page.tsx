@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   UtensilsCrossed,
   Clock,
@@ -21,21 +23,21 @@ import {
 
 export default function FoodItemDetailPage() {
   const params = useParams();
-  const store = MOCK_STORES.food;
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.food;
+  const { products: liveProducts, isLoading } = useStorefrontProducts("food");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
   const { addToCart, setIsCartOpen } = useCart();
 
-  const itemId = (params?.id as string) || "food-001";
-  const item =
-    MOCK_PRODUCTS.find((p) => p.id === itemId && p.vertical === "food") ||
-    MOCK_PRODUCTS.find((p) => p.vertical === "food") ||
-    MOCK_PRODUCTS[0];
+  const itemId = (params?.id as string) || "";
+  const item = liveProducts.find((p) => p.id === itemId);
 
-  const meta = item.foodMeta;
+  const meta = item?.foodMeta;
 
   // Selected portion size
   const defaultPortion = meta?.portionSizes?.[0] || {
     name: "Regular Portion",
-    price: item.price,
+    price: item?.price || 0,
     serves: "1 Person",
   };
   const [selectedPortion, setSelectedPortion] = useState(defaultPortion);
@@ -49,6 +51,39 @@ export default function FoodItemDetailPage() {
   // Quantity
   const [quantity, setQuantity] = useState(1);
   const [addedSuccess, setAddedSuccess] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-stone-50 text-[#1A1A1A] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+          <p className="text-xs text-stone-500">Loading culinary item...</p>
+        </div>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
+
+  if (!item) {
+    return (
+      <div className="min-h-screen bg-stone-50 text-[#1A1A1A] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <main className="max-w-md mx-auto my-20 p-8 rounded-3xl border border-dashed border-stone-300 text-center space-y-4">
+          <p className="text-base font-bold text-zinc-900">Item Not Found</p>
+          <p className="text-xs text-stone-500">
+            This dining item is no longer available on our menu.
+          </p>
+          <Link
+            href={`/food/menu${tenantQuery}`}
+            className="inline-block px-5 py-2 rounded-full bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition"
+          >
+            Explore Full Menu
+          </Link>
+        </main>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
 
   // Compute calculated unit price
   const addOnsTotal = (meta?.addOns || [])

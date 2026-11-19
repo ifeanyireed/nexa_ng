@@ -44,7 +44,6 @@ import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant } from "@/lib/tenant-context";
 import {
   VERTICAL_DEFINITIONS,
-  getDefaultProductsForVertical,
   CommerceProductItem,
   ProductVariant,
   ApparelAccessoryItem,

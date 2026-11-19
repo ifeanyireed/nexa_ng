@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   UtensilsCrossed,
   Search,
@@ -17,8 +19,11 @@ import {
 } from "lucide-react";
 
 export default function FoodMenuPage() {
-  const store = MOCK_STORES.food;
-  const allFood = MOCK_PRODUCTS.filter((p) => p.vertical === "food");
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.food;
+  const { products: liveProducts } = useStorefrontProducts("food");
+  const allFood = liveProducts || [];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedDietary, setSelectedDietary] = useState("All");
@@ -246,7 +251,7 @@ export default function FoodMenuPage() {
                     </div>
 
                     <Link
-                      href={`/food/item/${dish.id}`}
+                      href={`/food/item/${dish.id}${tenantQuery}`}
                       className="px-5 py-2.5 rounded-full text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 transition-colors flex items-center gap-1.5 shadow-xs"
                     >
                       <ShoppingBag className="w-3.5 h-3.5" />

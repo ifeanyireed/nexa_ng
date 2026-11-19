@@ -71,7 +71,7 @@ export default async function Home() {
       heroAction: "Product catalog & bespoke fitting",
       keyScreens: [
         { label: "Product Catalog", path: "/fashion/catalog" },
-        { label: "Size/Color Selector & Guide", path: "/fashion/product/fsh-001" },
+        { label: "Haute Couture Lookbook", path: "/fashion/lookbook" },
         { label: "Bespoke Tailoring Request", path: "/fashion/custom-tailoring" },
       ],
       cover: MOCK_STORES.fashion.coverImage,
@@ -86,8 +86,8 @@ export default async function Home() {
       heroAction: "Listings, 150-point audit & test-drives",
       keyScreens: [
         { label: "Vehicle Fleet Inventory", path: "/cars/listings" },
-        { label: "Inspection Report & Inquiry", path: "/cars/listing/car-001" },
-        { label: "Valet & Showroom Test-Drive", path: "/cars/book-test-drive/car-001" },
+        { label: "Inspection & Diagnostics", path: "/cars/inspection" },
+        { label: "Valet & Showroom Test-Drive", path: "/cars/listings" },
       ],
       cover: MOCK_STORES.cars.coverImage,
     },
@@ -101,8 +101,8 @@ export default async function Home() {
       heroAction: "Menu ordering & live prep tracking",
       keyScreens: [
         { label: "Dietary-Filterable Menu", path: "/food/menu" },
-        { label: "Portion Sizes & Toppings", path: "/food/item/food-001" },
-        { label: "Custom Cakes & Catering", path: "/food/custom-order" },
+        { label: "Portion Sizes & Custom Orders", path: "/food/custom-order" },
+        { label: "Order Tracking", path: "/order-tracking" },
       ],
       cover: MOCK_STORES.food.coverImage,
     },
@@ -116,8 +116,8 @@ export default async function Home() {
       heroAction: "Listings, floor plans & 4K tours",
       keyScreens: [
         { label: "Residences & Short-Lets", path: "/property/listings" },
-        { label: "Amenities & Broker Inquiry", path: "/property/listing/prp-001" },
-        { label: "Schedule 4K / In-Person Tour", path: "/property/schedule-viewing/prp-001" },
+        { label: "Schedule In-Person / 4K Tour", path: "/property/listings" },
+        { label: "Concierge & Relocation", path: "/property" },
       ],
       cover: MOCK_STORES.property.coverImage,
     },
@@ -131,7 +131,7 @@ export default async function Home() {
       heroAction: "Tech catalog, specs & 2-year warranty",
       keyScreens: [
         { label: "Hardware Catalog", path: "/gadgets/catalog" },
-        { label: "Storage Variants & Warranty", path: "/gadgets/product/gdt-001" },
+        { label: "Storage Variants & Warranty", path: "/gadgets/catalog" },
         { label: "Compare Specs & Repair Clinic", path: "/gadgets/compare" },
       ],
       cover: MOCK_STORES.gadgets.coverImage,
@@ -161,7 +161,7 @@ export default async function Home() {
       heroAction: "Visual catalog & white-glove assembly",
       keyScreens: [
         { label: "Furniture Room Catalog", path: "/home-living/catalog" },
-        { label: "Blueprint Dimensions & Finishes", path: "/home-living/product/hom-001" },
+        { label: "Room & Material Filters", path: "/home-living/catalog" },
         { label: "Assembly & Bespoke Carpentry", path: "/home-living/services" },
       ],
       cover: MOCK_STORES["home-living"].coverImage,
@@ -206,7 +206,7 @@ export default async function Home() {
       heroAction: "Dynamic attributes, registries & engraving",
       keyScreens: [
         { label: "Multi-Department Catalog", path: "/retail/catalog" },
-        { label: "Free Laser Engraving", path: "/retail/product/rtl-001" },
+        { label: "Custom Engraving & Gift Wrap", path: "/retail/catalog" },
         { label: "Artisan Gift Registry", path: "/retail/customization" },
       ],
       cover: MOCK_STORES.retail.coverImage,

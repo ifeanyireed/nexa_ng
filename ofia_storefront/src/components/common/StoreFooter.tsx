@@ -54,10 +54,10 @@ const VERTICAL_FOOTER_CONFIG: Record<
   cars: {
     servicesHeading: "VIP Dealership Workflows",
     services: [
-      { label: "Dealership Showroom Test-Drive", href: "/cars/book-test-drive/car-001", badge: "VIP" },
-      { label: "At-Home Valet Test-Drive", href: "/cars/book-test-drive/car-001" },
-      { label: "150-Point Mechanic Inspection", href: "/cars/book-test-drive/car-001", badge: "Certified" },
-      { label: "Vehicle Sourcing & Concierge", href: "/cars/book-test-drive/car-001" },
+      { label: "Dealership Showroom Test-Drive", href: "/cars/listings", badge: "VIP" },
+      { label: "At-Home Valet Test-Drive", href: "/cars/listings" },
+      { label: "150-Point Mechanic Inspection", href: "/cars/inspection", badge: "Certified" },
+      { label: "Vehicle Sourcing & Concierge", href: "/cars/listings" },
     ],
     pagesHeading: "Showroom & Fleet",
     pages: [
@@ -88,10 +88,10 @@ const VERTICAL_FOOTER_CONFIG: Record<
   property: {
     servicesHeading: "Residency & Viewing Workflows",
     services: [
-      { label: "In-Person Guided Property Tour", href: "/property/schedule-viewing/prp-001", badge: "Private" },
-      { label: "Live 4K Video Walkthrough", href: "/property/schedule-viewing/prp-001" },
-      { label: "Move-In Deep Cleaning Service", href: "/property/schedule-viewing/prp-001" },
-      { label: "Relocation & Logistics Support", href: "/property/schedule-viewing/prp-001" },
+      { label: "In-Person Guided Property Tour", href: "/property/listings", badge: "Private" },
+      { label: "Live 4K Video Walkthrough", href: "/property/listings" },
+      { label: "Move-In Deep Cleaning Service", href: "/property/listings" },
+      { label: "Relocation & Logistics Support", href: "/property/listings" },
     ],
     pagesHeading: "Listings & Estates",
     pages: [

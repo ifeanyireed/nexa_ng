@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Search,
   Filter,
@@ -19,8 +21,11 @@ import {
 } from "lucide-react";
 
 export default function CarsListingsPage() {
-  const store = MOCK_STORES.cars;
-  const allCars = MOCK_PRODUCTS.filter((p) => p.vertical === "cars");
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.cars;
+  const { products: liveCars } = useStorefrontProducts("cars");
+  const allCars = liveCars || [];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMake, setSelectedMake] = useState<string>("All");
@@ -320,7 +325,7 @@ export default function CarsListingsPage() {
                     </div>
 
                     <Link
-                      href={`/cars/listing/${car.id}`}
+                      href={`/cars/listing/${car.id}${tenantQuery}`}
                       className="px-4 py-2 rounded-full text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 transition-colors flex items-center gap-1.5 shadow-xs"
                     >
                       <Car className="w-3.5 h-3.5" />

@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Car,
   Calendar,
@@ -27,14 +28,13 @@ export default function BookTestDrivePage() {
   const params = useParams();
   const { tenantSlug, store: dynamicStore } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.cars;
+  const { products: liveCars, isLoading } = useStorefrontProducts("cars");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
-  const vehicleId = (params?.id as string) || "car-001";
-  const vehicle =
-    MOCK_PRODUCTS.find((p) => p.id === vehicleId && p.vertical === "cars") ||
-    MOCK_PRODUCTS.find((p) => p.vertical === "cars") ||
-    MOCK_PRODUCTS[0];
+  const vehicleId = (params?.id as string) || "";
+  const vehicle = liveCars.find((p) => p.id === vehicleId);
 
-  const meta = vehicle.carMeta;
+  const meta = vehicle?.carMeta;
 
   // Booking Flow State (Blueprint Section 2 & 3: Test drive, inspection, mechanic booking, vehicle sourcing)
   const [driveType, setDriveType] = useState<
@@ -49,6 +49,39 @@ export default function BookTestDrivePage() {
   const [licenseNumber, setLicenseNumber] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+          <p className="text-xs text-stone-500">Loading test-drive details...</p>
+        </div>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
+
+  if (!vehicle) {
+    return (
+      <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <main className="max-w-md mx-auto my-20 p-8 rounded-3xl border border-dashed border-stone-300 text-center space-y-4">
+          <p className="text-base font-bold text-slate-900">Vehicle Not Found</p>
+          <p className="text-xs text-stone-500">
+            Cannot book test-drive because this vehicle is not available in the active showroom.
+          </p>
+          <Link
+            href={`/cars/listings${tenantQuery}`}
+            className="inline-block px-5 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition"
+          >
+            Browse Available Vehicles
+          </Link>
+        </main>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
 
   const timeSlots = [
     "09:30 AM - 10:30 AM",

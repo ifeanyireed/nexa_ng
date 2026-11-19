@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import SwipeableImageGallery from "@/components/common/SwipeableImageGallery";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   ShieldCheck,
   AlertTriangle,
@@ -27,18 +29,51 @@ import {
 
 export default function PharmacyProductDetailPage() {
   const params = useParams();
-  const store = MOCK_STORES["pharmacy"];
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.pharmacy;
+  const { products: liveProducts, isLoading } = useStorefrontProducts("pharmacy");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
   const { addToCart, setIsCartOpen } = useCart();
 
-  const productId = (params?.id as string) || "phm-001";
-  const product =
-    MOCK_PRODUCTS.find((p) => p.id === productId && p.vertical === "pharmacy") ||
-    MOCK_PRODUCTS.find((p) => p.vertical === "pharmacy") ||
-    MOCK_PRODUCTS[0];
+  const productId = (params?.id as string) || "";
+  const product = liveProducts.find((p) => p.id === productId);
 
-  const meta = product.pharmacyMeta;
+  const meta = product?.pharmacyMeta;
   const [selectedImage, setSelectedImage] = useState(0);
   const [addedSuccess, setAddedSuccess] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white text-[#13221C] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+          <p className="text-xs text-stone-500">Loading medication details...</p>
+        </div>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-white text-[#13221C] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <main className="max-w-md mx-auto my-20 p-8 rounded-3xl border border-dashed border-teal-200 text-center space-y-4">
+          <p className="text-base font-bold text-teal-950">Medication Not Found</p>
+          <p className="text-xs text-stone-500">
+            This medication is no longer listed in the active pharmacy inventory.
+          </p>
+          <Link
+            href={`/pharmacy/catalog${tenantQuery}`}
+            className="inline-block px-5 py-2 rounded-full bg-teal-800 hover:bg-teal-700 text-white text-xs font-bold transition"
+          >
+            Return to Pharmacy Catalog
+          </Link>
+        </main>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
 
   const handleAddToCart = () => {
     addToCart({

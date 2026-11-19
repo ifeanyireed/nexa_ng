@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import SwipeableImageGallery from "@/components/common/SwipeableImageGallery";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Ruler,
   ShoppingBag,
@@ -23,22 +25,55 @@ import {
 
 export default function HomeLivingProductDetailPage() {
   const params = useParams();
-  const store = MOCK_STORES["home-living"];
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES["home-living"];
+  const { products: liveProducts, isLoading } = useStorefrontProducts("home-living");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
   const { addToCart, setIsCartOpen } = useCart();
 
-  const productId = (params?.id as string) || "hom-001";
-  const product =
-    MOCK_PRODUCTS.find((p) => p.id === productId && p.vertical === "home-living") ||
-    MOCK_PRODUCTS.find((p) => p.vertical === "home-living") ||
-    MOCK_PRODUCTS[0];
+  const productId = (params?.id as string) || "";
+  const product = liveProducts.find((p) => p.id === productId);
 
-  const meta = product.homeLivingMeta;
+  const meta = product?.homeLivingMeta;
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedFinish, setSelectedFinish] = useState(
     meta?.finishes?.[0]?.name || "Cream Cloud Bouclé"
   );
   const [addedSuccess, setAddedSuccess] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white text-[#1C1917] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+          <p className="text-xs text-stone-500">Loading architectural piece...</p>
+        </div>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-white text-[#1C1917] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <main className="max-w-md mx-auto my-20 p-8 rounded-3xl border border-dashed border-stone-300 text-center space-y-4">
+          <p className="text-base font-bold text-stone-900">Piece Not Found</p>
+          <p className="text-xs text-stone-500">
+            This piece of furniture is no longer listed in the active catalog.
+          </p>
+          <Link
+            href={`/home-living/catalog${tenantQuery}`}
+            className="inline-block px-5 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition"
+          >
+            Return to Living Catalog
+          </Link>
+        </main>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
 
   const handleAddToCart = () => {
     addToCart({

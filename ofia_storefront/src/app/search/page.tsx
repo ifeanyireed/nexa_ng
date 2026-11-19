@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS, MOCK_SERVICES } from "@/data/mockStores";
+import { MOCK_STORES, MOCK_SERVICES } from "@/data/mockStores";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { VerticalType, Product, StoreService } from "@/types/storefront";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
@@ -30,10 +31,38 @@ function SearchContent() {
   const [activeTab, setActiveTab] = useState<"all" | "products" | "services">("all");
   const [sortBy, setSortBy] = useState<"relevance" | "price-asc" | "price-desc">("relevance");
 
+  const { tenantSlug, store: dynamicStore } = useStorefrontTenant();
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function load() {
+      if (!tenantSlug) return;
+      try {
+        const res = await fetch(`/api/storefront/products?tenant=${encodeURIComponent(tenantSlug)}`, {
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && Array.isArray(data.products)) {
+            setAllProducts(data.products);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantSlug]);
+
   const currentStore =
-    selectedVertical !== "all" && MOCK_STORES[selectedVertical as VerticalType]
+    dynamicStore ||
+    (selectedVertical !== "all" && MOCK_STORES[selectedVertical as VerticalType]
       ? MOCK_STORES[selectedVertical as VerticalType]
-      : MOCK_STORES["fashion"];
+      : MOCK_STORES["fashion"]);
 
   const { addToCart, setIsCartOpen } = useCart();
   const [addedId, setAddedId] = useState<string | null>(null);
@@ -55,7 +84,7 @@ function SearchContent() {
   };
 
   const filteredProducts = useMemo(() => {
-    return MOCK_PRODUCTS.filter((prod) => {
+    return allProducts.filter((prod) => {
       const matchesVertical = selectedVertical === "all" || prod.vertical === selectedVertical;
       const q = query.toLowerCase().trim();
       const matchesQuery =

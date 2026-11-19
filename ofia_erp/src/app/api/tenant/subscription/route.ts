@@ -3,7 +3,12 @@ import { getTenantSql } from "@/lib/tenant-db-resolver";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 import {
   getTenantSubscriptionState,
+  getTenantBillingDetails,
   syncTenantTierAndModules,
+  recordTenantInvoice,
+  updateTenantRenewalOrAutoRenew,
+  toggleTenantAddon,
+  manageTenantPaymentMethod,
 } from "@/lib/subscription-enforcer";
 import { PLAN_TIERS, normalizePlanTier, PlanTierKey } from "@/lib/pricing-plans";
 
@@ -31,11 +36,13 @@ export async function GET(request: NextRequest) {
     const tenantSlug = rawTenant.toLowerCase().trim();
 
     const state = await getTenantSubscriptionState(tenantSlug);
+    const billingDetails = await getTenantBillingDetails(tenantSlug, state);
 
     let productsCount = 0;
     let teamSeatsCount = 1;
     let monthlyLeadsCount = 0;
     let activeCampaignsCount = 0;
+    let dailyEmailsSent = 0;
 
     try {
       const sql = await getTenantSql(tenantSlug);
@@ -71,11 +78,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       subscription: state,
+      paymentMethods: billingDetails.paymentMethods,
+      invoices: billingDetails.invoices,
       usage: {
         productsCount,
         teamSeatsCount,
         monthlyLeadsCount,
         activeCampaignsCount,
+        dailyEmailsSent,
       },
     });
   } catch (err: any) {
@@ -95,6 +105,104 @@ export async function POST(request: NextRequest) {
       getValidatedTenantSlug(request, body) ||
       "default";
     const tenantSlug = String(rawTenant).toLowerCase().trim();
+    const action = String(body.action || "INITIALIZE_CHECKOUT").toUpperCase().trim();
+
+    if (action === "TOGGLE_AUTO_RENEW" || action === "RENEW_NOW") {
+      const updatedState = await updateTenantRenewalOrAutoRenew({
+        tenantSlug,
+        action: action as "RENEW_NOW" | "TOGGLE_AUTO_RENEW",
+        cancelAtPeriodEnd:
+          typeof body.cancelAtPeriodEnd === "boolean" ? body.cancelAtPeriodEnd : undefined,
+      });
+      const billingDetails = await getTenantBillingDetails(tenantSlug, updatedState);
+
+      if (USER_BASE) {
+        fetch(`${USER_BASE}/organizations/${encodeURIComponent(tenantSlug)}/subscription`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            plan_tier: updatedState.planTier,
+            billing_cycle: updatedState.billingCycle,
+            status: updatedState.status,
+            cancel_at_period_end: updatedState.cancelAtPeriodEnd,
+          }),
+          signal: AbortSignal.timeout(5000),
+        }).catch(() => null);
+      }
+
+      return NextResponse.json({
+        success: true,
+        subscription: updatedState,
+        paymentMethods: billingDetails.paymentMethods,
+        invoices: billingDetails.invoices,
+        message:
+          action === "RENEW_NOW"
+            ? `Subscription renewed for ${updatedState.plan.name} Tier (${updatedState.billingCycle}). Both ${tenantSlug}.ofia.ng and ${tenantSlug}.ofia.shop extended through ${new Date(updatedState.currentPeriodEnd).toLocaleDateString()}.`
+            : updatedState.cancelAtPeriodEnd
+            ? "Auto-renew paused. Your subscription will remain active until the end of the current billing period."
+            : "Auto-renew enabled. Your unified ERP & Shopfront subscription will automatically renew at period end.",
+      });
+    }
+
+    if (action === "TOGGLE_ADDON") {
+      const addonKey = String(body.addonKey || "").trim();
+      if (!addonKey) {
+        return NextResponse.json({ success: false, error: "Missing addonKey" }, { status: 400 });
+      }
+      const updatedState = await toggleTenantAddon({
+        tenantSlug,
+        addonKey,
+        enabled: typeof body.enabled === "boolean" ? body.enabled : undefined,
+      });
+      const billingDetails = await getTenantBillingDetails(tenantSlug, updatedState);
+      const isNowEnabled = Boolean(updatedState.enabledAddons[addonKey]);
+
+      return NextResponse.json({
+        success: true,
+        subscription: updatedState,
+        paymentMethods: billingDetails.paymentMethods,
+        invoices: billingDetails.invoices,
+        message: isNowEnabled
+          ? `Modular add-on activated and provisioned on ${tenantSlug}.ofia.ng.`
+          : `Modular add-on removed from ${tenantSlug}.ofia.ng.`,
+      });
+    }
+
+    if (
+      action === "ADD_PAYMENT_METHOD" ||
+      action === "SET_DEFAULT_PAYMENT_METHOD" ||
+      action === "REMOVE_PAYMENT_METHOD"
+    ) {
+      const op =
+        action === "ADD_PAYMENT_METHOD"
+          ? "ADD"
+          : action === "SET_DEFAULT_PAYMENT_METHOD"
+          ? "SET_DEFAULT"
+          : "REMOVE";
+      const billingDetails = await manageTenantPaymentMethod({
+        tenantSlug,
+        operation: op,
+        cardId: body.cardId,
+        brand: body.brand,
+        last4: body.last4,
+        expMonth: body.expMonth,
+        expYear: body.expYear,
+        cardholderName: body.cardholderName,
+        bank: body.bank,
+      });
+
+      return NextResponse.json({
+        success: true,
+        paymentMethods: billingDetails.paymentMethods,
+        invoices: billingDetails.invoices,
+        message:
+          op === "ADD"
+            ? "Payment card authorized and set as default for Paystack subscription billing."
+            : op === "SET_DEFAULT"
+            ? "Default payment method updated."
+            : "Saved payment card removed.",
+      });
+    }
 
     const tierKey = normalizePlanTier(body.planTier || body.plan_tier || "GROWTH");
     const targetPlan = PLAN_TIERS[tierKey];
@@ -160,6 +268,20 @@ export async function POST(request: NextRequest) {
       status: "ACTIVE",
     });
 
+    await recordTenantInvoice({
+      tenantSlug,
+      description: `${targetPlan.name} Tier Subscription (${billingCycle}) — Unified ERP (${tenantSlug}.ofia.ng) & Shopfront (${tenantSlug}.ofia.shop)`,
+      planTier: targetPlan.key as PlanTierKey,
+      billingCycle,
+      amountNGN,
+      status: "PAID",
+      paystackReference: reference,
+      periodStart: updatedState.currentPeriodStart,
+      periodEnd: updatedState.currentPeriodEnd,
+    });
+
+    const billingDetails = await getTenantBillingDetails(tenantSlug, updatedState);
+
     // 3. Non-blocking sync to service_users microservice
     if (USER_BASE) {
       fetch(`${USER_BASE}/organizations/${encodeURIComponent(tenantSlug)}/subscription`, {
@@ -180,7 +302,9 @@ export async function POST(request: NextRequest) {
       reference,
       amountNGN,
       subscription: updatedState,
-      message: `Workspace upgraded to ${targetPlan.name} (${targetPlan.key}). Module entitlements synchronized.`,
+      paymentMethods: billingDetails.paymentMethods,
+      invoices: billingDetails.invoices,
+      message: `Workspace upgraded to ${targetPlan.name} (${targetPlan.key}). Unified ERP (${tenantSlug}.ofia.ng) & Shopfront (${tenantSlug}.ofia.shop) entitlements synchronized.`,
     });
   } catch (err: any) {
     return NextResponse.json(

@@ -52,7 +52,7 @@ export default async function TemplatesDirectoryPage() {
       screens: [
         { name: "Editorial Lookbook Home", href: "/fashion" },
         { name: "Product Collection Catalog", href: "/fashion/catalog" },
-        { name: "Size & Color Selector with Size Guide", href: "/fashion/product/fsh-001" },
+        { name: "Haute Couture Lookbook Archive", href: "/fashion/lookbook" },
         { name: "Bespoke Made-to-Measure Fitting", href: "/fashion/custom-tailoring" },
       ],
       features: [
@@ -74,8 +74,8 @@ export default async function TemplatesDirectoryPage() {
       screens: [
         { name: "Showroom Fleet Home", href: "/cars" },
         { name: "Filterable Inventory & Listings", href: "/cars/listings" },
-        { name: "Vehicle Specs & 150-Point Audit Report", href: "/cars/listing/car-001" },
-        { name: "Showroom & At-Home Valet Test-Drive", href: "/cars/book-test-drive/car-001" },
+        { name: "Vehicle 150-Point Audit Inspection", href: "/cars/inspection" },
+        { name: "Showroom & At-Home Valet Test-Drive", href: "/cars/listings" },
       ],
       features: [
         "150-Point mechanical checklist",
@@ -96,7 +96,7 @@ export default async function TemplatesDirectoryPage() {
       screens: [
         { name: "Bistro Live Ticker Home", href: "/food" },
         { name: "Dietary-Filterable Menu", href: "/food/menu" },
-        { name: "Portion Sizing & Add-On Toppings", href: "/food/item/food-001" },
+        { name: "Order Tracking & Delivery", href: "/order-tracking" },
         { name: "Custom Celebration Cake & Catering Request", href: "/food/custom-order" },
       ],
       features: [
@@ -118,8 +118,8 @@ export default async function TemplatesDirectoryPage() {
       screens: [
         { name: "Waterfront Portfolio Home", href: "/property" },
         { name: "Filterable Residences Catalog", href: "/property/listings" },
-        { name: "Architectural Specs & Amenities Matrix", href: "/property/listing/prp-001" },
-        { name: "In-Person & Live 4K Video Tour Booking", href: "/property/schedule-viewing/prp-001" },
+        { name: "Architectural Specs & Amenities Matrix", href: "/property/listings" },
+        { name: "In-Person & Live 4K Video Tour Booking", href: "/property/listings" },
       ],
       features: [
         "Floorplan & square-footage matrix",
@@ -140,7 +140,7 @@ export default async function TemplatesDirectoryPage() {
       screens: [
         { name: "Dark Silicon Storefront Home", href: "/gadgets" },
         { name: "Filterable Tech Hardware Catalog", href: "/gadgets/catalog" },
-        { name: "Storage Tiers, Specs & Warranty Details", href: "/gadgets/product/gdt-001" },
+        { name: "Storage Tiers, Specs & Warranty Details", href: "/gadgets/catalog" },
         { name: "Side-by-Side Spec Matrix & Repair Diagnostics", href: "/gadgets/compare" },
       ],
       features: [
@@ -184,7 +184,7 @@ export default async function TemplatesDirectoryPage() {
       screens: [
         { name: "Architectural Studio Home", href: "/home-living" },
         { name: "Visual Furniture & Room Catalog", href: "/home-living/catalog" },
-        { name: "Exact Dimensions Blueprint & Finishes", href: "/home-living/product/hom-001" },
+        { name: "Exact Dimensions Blueprint & Finishes", href: "/home-living/catalog" },
         { name: "White-Glove Assembly & Custom Furniture", href: "/home-living/services" },
         { name: "White-Glove Delivery Tiers", href: "/home-living/delivery-options" },
       ],
@@ -207,7 +207,6 @@ export default async function TemplatesDirectoryPage() {
       screens: [
         { name: "Clinical Dispensary Flagship", href: "/pharmacy" },
         { name: "Medication & Wellness Catalog", href: "/pharmacy/catalog" },
-        { name: "NAFDAC & Active Ingredient Details", href: "/pharmacy/product/phm-001" },
         { name: "Doctor Prescription (Rx) Upload", href: "/pharmacy/prescription" },
         { name: "Pharmacist Therapy Consultation Booking", href: "/pharmacy/consultation" },
       ],
@@ -230,7 +229,6 @@ export default async function TemplatesDirectoryPage() {
       screens: [
         { name: "Industrial & Solar Flagship", href: "/hardware" },
         { name: "Technical Equipment Spec Catalog", href: "/hardware/catalog" },
-        { name: "Engineering Spec Matrix & Installation Addon", href: "/hardware/product/hdw-001" },
         { name: "Solar Load & Inverter Sizing Calculator", href: "/hardware/calculator" },
         { name: "COREN Field Inspection & Contractor RFQ", href: "/hardware/services" },
       ],
@@ -253,7 +251,6 @@ export default async function TemplatesDirectoryPage() {
       screens: [
         { name: "Multi-Department Emporium", href: "/retail" },
         { name: "Department & Brand Filter Catalog", href: "/retail/catalog" },
-        { name: "Dynamic Attributes & Engraving Preview", href: "/retail/product/rtl-001" },
         { name: "Specialty Gift Registry & Atelier", href: "/retail/customization" },
       ],
       features: [

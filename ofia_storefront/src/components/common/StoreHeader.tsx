@@ -61,7 +61,7 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
         return [
           { label: "Showroom", href: "/cars" },
           { label: "Vehicle Listings", href: "/cars/listings" },
-          { label: "Book Test-Drive", href: "/cars/book-test-drive/car-001" },
+          { label: "Book Test-Drive", href: "/cars/listings" },
         ];
       case "food":
         return [
@@ -73,7 +73,7 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
         return [
           { label: "Residences", href: "/property" },
           { label: "Available Listings", href: "/property/listings" },
-          { label: "Schedule Viewing", href: "/property/schedule-viewing/prp-001" },
+          { label: "Schedule Viewing", href: "/property/listings" },
         ];
       case "gadgets":
         return [
@@ -123,8 +123,8 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
     switch (store.vertical) {
       case "cars":
         return {
-          label: "Book Test-Drive",
-          href: "/cars/book-test-drive/car-001",
+          label: "Explore Fleet",
+          href: "/cars/listings",
           icon: Car,
         };
       case "food":
@@ -135,8 +135,8 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
         };
       case "property":
         return {
-          label: "Schedule Viewing",
-          href: "/property/schedule-viewing/prp-001",
+          label: "View Residences",
+          href: "/property/listings",
           icon: Calendar,
         };
       case "beauty":

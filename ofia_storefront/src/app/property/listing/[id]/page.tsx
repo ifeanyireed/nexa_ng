@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Building2,
   Bed,
@@ -26,15 +28,15 @@ import {
 
 export default function PropertyDetailPage() {
   const params = useParams();
-  const store = MOCK_STORES.property;
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.property;
+  const { products: liveProperties, isLoading } = useStorefrontProducts("property");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
-  const propertyId = (params?.id as string) || "prp-001";
-  const property =
-    MOCK_PRODUCTS.find((p) => p.id === propertyId && p.vertical === "property") ||
-    MOCK_PRODUCTS.find((p) => p.vertical === "property") ||
-    MOCK_PRODUCTS[0];
+  const propertyId = (params?.id as string) || "";
+  const property = liveProperties.find((p) => p.id === propertyId);
 
-  const meta = property.propertyMeta;
+  const meta = property?.propertyMeta;
   const [selectedImage, setSelectedImage] = useState(0);
 
   // Inquiry form
@@ -43,7 +45,7 @@ export default function PropertyDetailPage() {
   const [email, setEmail] = useState("");
   const [leaseDuration, setLeaseDuration] = useState("1 Year");
   const [message, setMessage] = useState(
-    `Hello, I would like to inquire about the lease terms for ${property.title}.`
+    property ? `Hello, I would like to inquire about the lease terms for ${property.title}.` : ""
   );
   const [inquirySent, setInquirySent] = useState(false);
 
@@ -52,6 +54,39 @@ export default function PropertyDetailPage() {
     if (!fullName || !phone) return;
     setInquirySent(true);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+          <p className="text-xs text-stone-500">Loading residence details...</p>
+        </div>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
+
+  if (!property) {
+    return (
+      <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <main className="max-w-md mx-auto my-20 p-8 rounded-3xl border border-dashed border-stone-300 text-center space-y-4">
+          <p className="text-base font-bold text-slate-900">Residence Not Found</p>
+          <p className="text-xs text-stone-500">
+            This residence is no longer available in the active property listings.
+          </p>
+          <Link
+            href={`/property/listings${tenantQuery}`}
+            className="inline-block px-5 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition"
+          >
+            Browse Active Listings
+          </Link>
+        </main>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">

@@ -1,8 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   CheckCircle2,
+  CreditCard,
+  Activity,
   Copy,
   Globe,
   Save,
@@ -1231,6 +1234,23 @@ export default function TenantSettingsPage() {
             <span>Ofia AI & BYOK Keys</span>
             <NexaBadge variant="purple">AI Vault</NexaBadge>
           </button>
+
+          <Link
+            href="/tenant/billing"
+            className="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer text-[var(--nexa-text-secondary)] hover:text-[#0E9F6E] hover:bg-[#0E9F6E]/10"
+          >
+            <CreditCard className="w-3.5 h-3.5 text-[#0E9F6E]" />
+            <span>Billing & Subscription</span>
+            <NexaBadge variant="green">Plan</NexaBadge>
+          </Link>
+
+          <Link
+            href="/tenant/usage"
+            className="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] hover:bg-[#1A56DB]/10"
+          >
+            <Activity className="w-3.5 h-3.5 text-[#1A56DB]" />
+            <span>Quota & Usage</span>
+          </Link>
         </div>
 
         {/* TAB 1: PROFILE, BRANDING & EXTENSIONS */}

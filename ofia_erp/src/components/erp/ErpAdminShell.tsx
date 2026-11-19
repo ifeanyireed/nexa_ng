@@ -74,6 +74,7 @@ import {
   CheckSquare,
   Headphones,
   ExternalLink,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -1302,6 +1303,17 @@ export function ErpAdminShell({
       return tabs;
     }
 
+    if (pathname.startsWith("/tenant")) {
+      return [
+        { label: "Workspace Hub", href: "/tenant", icon: <Building2 className="w-3.5 h-3.5" /> },
+        { label: "Workspace Settings", href: "/tenant/settings", icon: <Settings className="w-3.5 h-3.5" /> },
+        { label: "Billing & Subscription", href: "/tenant/billing", icon: <CreditCard className="w-3.5 h-3.5" />, badge: "Plan" },
+        { label: "Quota & Usage", href: "/tenant/usage", icon: <Activity className="w-3.5 h-3.5" /> },
+        { label: "Team Seats", href: "/tenant/team", icon: <Users className="w-3.5 h-3.5" /> },
+        { label: "BYOK AI Vault", href: "/tenant/byok", icon: <Key className="w-3.5 h-3.5" /> },
+      ];
+    }
+
     return [];
   };
 
@@ -1907,31 +1919,65 @@ export function ErpAdminShell({
           </div>
 
           {currentRole === "admin" && (
-            <Link href="/tenant/settings">
-              <button
-                type="button"
-                className={cn(
-                  "w-full flex items-center p-3 rounded-full transition-all group cursor-pointer",
-                  isSidebarOpen ? "gap-3.5 justify-start" : "justify-center",
-                  pathname === "/tenant/settings"
-                    ? "bg-nexa-brand text-white shadow-md shadow-nexa-brand/20 font-bold"
-                    : "text-nexa-text-secondary hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
-                )}
-                title={!isSidebarOpen ? "Workspace Settings" : undefined}
-              >
-                <div
+            <div className="space-y-1">
+              <Link href="/tenant/billing">
+                <button
+                  type="button"
                   className={cn(
-                    "transition-transform group-hover:scale-110",
-                    pathname === "/tenant/settings"
-                      ? "text-white"
-                      : "text-nexa-text-muted group-hover:text-nexa-brand transition-colors"
+                    "w-full flex items-center p-3 rounded-full transition-all group cursor-pointer",
+                    isSidebarOpen ? "gap-3.5 justify-start" : "justify-center",
+                    pathname.startsWith("/tenant/billing") || pathname.startsWith("/tenant/usage")
+                      ? "bg-[#0E9F6E] text-white shadow-md shadow-[#0E9F6E]/20 font-bold"
+                      : "text-nexa-text-secondary hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
                   )}
+                  title={!isSidebarOpen ? "Billing & Subscription" : undefined}
                 >
-                  <Settings className="w-6 h-6" />
-                </div>
-                {isSidebarOpen && <span className="font-bold text-xs">Workspace Settings</span>}
-              </button>
-            </Link>
+                  <div
+                    className={cn(
+                      "transition-transform group-hover:scale-110",
+                      pathname.startsWith("/tenant/billing") || pathname.startsWith("/tenant/usage")
+                        ? "text-white"
+                        : "text-[#0E9F6E] group-hover:text-[#0E9F6E] transition-colors"
+                    )}
+                  >
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  {isSidebarOpen && (
+                    <div className="flex-1 flex items-center justify-between text-left">
+                      <span className="font-bold text-xs">Billing & Subscription</span>
+                      <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-[#0E9F6E]/15 text-[#0E9F6E]">
+                        Plan
+                      </span>
+                    </div>
+                  )}
+                </button>
+              </Link>
+              <Link href="/tenant/settings">
+                <button
+                  type="button"
+                  className={cn(
+                    "w-full flex items-center p-3 rounded-full transition-all group cursor-pointer",
+                    isSidebarOpen ? "gap-3.5 justify-start" : "justify-center",
+                    pathname === "/tenant/settings"
+                      ? "bg-nexa-brand text-white shadow-md shadow-nexa-brand/20 font-bold"
+                      : "text-nexa-text-secondary hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
+                  )}
+                  title={!isSidebarOpen ? "Workspace Settings" : undefined}
+                >
+                  <div
+                    className={cn(
+                      "transition-transform group-hover:scale-110",
+                      pathname === "/tenant/settings"
+                        ? "text-white"
+                        : "text-nexa-text-muted group-hover:text-nexa-brand transition-colors"
+                    )}
+                  >
+                    <Settings className="w-6 h-6" />
+                  </div>
+                  {isSidebarOpen && <span className="font-bold text-xs">Workspace Settings</span>}
+                </button>
+              </Link>
+            </div>
           )}
           <div className="flex items-center gap-1.5 justify-between">
             <button
@@ -2035,6 +2081,7 @@ export function ErpAdminShell({
                     if (tab.href === "/erp/admin/departments") return pathname.startsWith("/erp/admin/departments");
                     if (tab.href === "/erp/admin/mobility") return pathname === "/erp/admin/mobility";
                     if (tab.href === "/erp/admin/workforce") return pathname === "/erp/admin/workforce";
+                    if (tab.href === "/tenant") return pathname === "/tenant";
                     if (
                       tab.href === "/erp/admin" ||
                       tab.href === "/erp/admin/ai" ||

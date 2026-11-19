@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Armchair,
   Search,
@@ -15,8 +17,11 @@ import {
 } from "lucide-react";
 
 export default function HomeLivingCatalogPage() {
-  const store = MOCK_STORES["home-living"];
-  const allHomeProducts = MOCK_PRODUCTS.filter((p) => p.vertical === "home-living");
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES["home-living"];
+  const { products: liveProducts } = useStorefrontProducts("home-living");
+  const allHomeProducts = liveProducts || [];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoom, setSelectedRoom] = useState("All");
@@ -231,7 +236,7 @@ export default function HomeLivingCatalogPage() {
                   </div>
 
                   <Link
-                    href={`/home-living/product/${prod.id}`}
+                    href={`/home-living/product/${prod.id}${tenantQuery}`}
                     className="px-4 py-2.5 rounded-full text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 transition-colors flex items-center gap-1.5 shadow-xs"
                   >
                     <Ruler className="w-3.5 h-3.5 text-amber-400" />

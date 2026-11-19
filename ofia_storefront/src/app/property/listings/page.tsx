@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Building2,
   Bed,
@@ -18,8 +20,11 @@ import {
 } from "lucide-react";
 
 export default function PropertyListingsPage() {
-  const store = MOCK_STORES.property;
-  const allProperties = MOCK_PRODUCTS.filter((p) => p.vertical === "property");
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.property;
+  const { products: liveProperties } = useStorefrontProducts("property");
+  const allProperties = liveProperties || [];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("All");
@@ -302,7 +307,7 @@ export default function PropertyListingsPage() {
                     </div>
 
                     <Link
-                      href={`/property/listing/${item.id}`}
+                      href={`/property/listing/${item.id}${tenantQuery}`}
                       className="px-4 py-2 rounded-full text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 transition-colors flex items-center gap-1.5 shadow-xs"
                     >
                       <Calendar className="w-3.5 h-3.5" />

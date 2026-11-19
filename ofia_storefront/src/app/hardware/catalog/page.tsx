@@ -3,9 +3,11 @@
 import { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Search,
   Zap,
@@ -23,8 +25,11 @@ function HardwareCatalogContent() {
   const searchParams = useSearchParams();
   const initialSystem = searchParams.get("system") || "all";
 
-  const store = MOCK_STORES["hardware"];
-  const products = MOCK_PRODUCTS.filter((p) => p.vertical === "hardware");
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.hardware;
+  const { products: liveProducts } = useStorefrontProducts("hardware");
+  const products = liveProducts || [];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
@@ -193,7 +198,7 @@ function HardwareCatalogContent() {
                       </span>
                     </div>
 
-                    <Link href={`/hardware/product/${prod.id}`}>
+                    <Link href={`/hardware/product/${prod.id}${tenantQuery}`}>
                       <h3 className="font-extrabold text-base text-slate-900 line-clamp-1 hover:text-amber-700 transition-colors">
                         {prod.title}
                       </h3>
@@ -227,7 +232,7 @@ function HardwareCatalogContent() {
                   </div>
 
                   <Link
-                    href={`/hardware/product/${prod.id}`}
+                    href={`/hardware/product/${prod.id}${tenantQuery}`}
                     className="px-5 py-2.5 rounded-full text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition-colors flex items-center gap-1.5 shadow-xs"
                   >
                     <span>View Specs</span>

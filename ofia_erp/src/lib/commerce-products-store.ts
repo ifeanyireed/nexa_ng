@@ -591,13 +591,23 @@ export async function deleteErpProduct(id: string, tenantSlug?: string): Promise
 
   if (tenantSlug) {
     const cleanSlug = tenantSlug.toLowerCase().trim();
+    const noHyphenSlug = cleanSlug.replace(/-/g, "");
     try {
       const sql = await getTenantSql(cleanSlug);
       if (sql) {
         await sql`
           DELETE FROM shop_inventory
-          WHERE (id = ${id} OR product_id = ${id} OR sku = ${id})
-            AND LOWER(tenant_slug) = ${cleanSlug};
+          WHERE (
+            id = ${id}
+            OR product_id = ${id}
+            OR sku = ${id}
+            OR metadata->>'parentId' = ${id}
+            OR metadata->>'parentSku' = ${id}
+          )
+          AND (
+            LOWER(tenant_slug) = ${cleanSlug}
+            OR REPLACE(LOWER(tenant_slug), '-', '') = ${noHyphenSlug}
+          );
         `;
       }
     } catch (err: any) {
@@ -618,9 +628,20 @@ export async function deleteErpProduct(id: string, tenantSlug?: string): Promise
   }
 
   const prevLen = allProducts.length;
+  const targetSlug = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
+  const targetNoHyphen = targetSlug ? targetSlug.replace(/-/g, "") : null;
+
   allProducts = allProducts.filter((p) => {
-    if (p.id !== id && p.sku !== id) return true;
-    if (tenantSlug && p.storeSlug?.toLowerCase() !== tenantSlug.toLowerCase().trim()) return true;
+    const isTarget = p.id === id || p.sku === id || (p as any).productId === id;
+    if (!isTarget) return true;
+    if (targetSlug) {
+      const pSlug = (p.storeSlug || p.tenantSlug || "").toLowerCase().trim();
+      const pNoHyphen = pSlug.replace(/-/g, "");
+      if (pSlug === targetSlug || pNoHyphen === targetNoHyphen) {
+        return false; // delete this item
+      }
+      return true;
+    }
     return false;
   });
 
@@ -629,8 +650,28 @@ export async function deleteErpProduct(id: string, tenantSlug?: string): Promise
     try {
       fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(allProducts, null, 2), "utf-8");
     } catch {}
-    return true;
   }
+
+  // Also clean corresponding items from inventory file cache
+  try {
+    const invFile = path.join(SYNC_DIR, "inventory.json");
+    if (fs.existsSync(invFile)) {
+      const rawInv = fs.readFileSync(invFile, "utf-8");
+      const invItems = JSON.parse(rawInv);
+      if (Array.isArray(invItems)) {
+        const cleanedInv = invItems.filter((i: any) => {
+          const isItem = i.id === id || i.productId === id || i.sku === id;
+          if (!isItem) return true;
+          if (targetSlug) {
+            const iSlug = (i.tenantSlug || "").toLowerCase().trim();
+            return iSlug !== targetSlug && iSlug.replace(/-/g, "") !== targetNoHyphen;
+          }
+          return false;
+        });
+        fs.writeFileSync(invFile, JSON.stringify(cleanedInv, null, 2), "utf-8");
+      }
+    }
+  } catch {}
 
   return true;
 }

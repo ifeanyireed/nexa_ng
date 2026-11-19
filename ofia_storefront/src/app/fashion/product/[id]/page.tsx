@@ -180,6 +180,31 @@ export default function FashionProductDetailPage() {
     }
   }, [matchingVariant?.image, product?.images]);
 
+  const accessories: ApparelAccessoryItem[] = useMemo(() => {
+    const raw =
+      product?.accessories ||
+      (product as any)?.attributes?.accessories ||
+      (product as any)?.metadata?.accessories;
+    return Array.isArray(raw) ? raw : [];
+  }, [product]);
+
+  const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
+  const [previewAccessory, setPreviewAccessory] = useState<ApparelAccessoryItem | null>(null);
+
+  const toggleAccessory = (accId: string) => {
+    setSelectedAccessories((prev) =>
+      prev.includes(accId) ? prev.filter((id) => id !== accId) : [...prev, accId]
+    );
+  };
+
+  const selectedAccessoriesData = useMemo(() => {
+    return accessories.filter((acc) => selectedAccessories.includes(acc.id));
+  }, [accessories, selectedAccessories]);
+
+  const accessoriesTotal = useMemo(() => {
+    return selectedAccessoriesData.reduce((sum, acc) => sum + (Number(acc.price) || 0), 0);
+  }, [selectedAccessoriesData]);
+
   if (productsError) {
     return (
       <div className="min-h-screen bg-white text-[#1A1A1A] flex flex-col justify-between">
@@ -239,31 +264,6 @@ export default function FashionProductDetailPage() {
       </div>
     );
   }
-
-  const accessories: ApparelAccessoryItem[] = useMemo(() => {
-    const raw =
-      product?.accessories ||
-      (product as any)?.attributes?.accessories ||
-      (product as any)?.metadata?.accessories;
-    return Array.isArray(raw) ? raw : [];
-  }, [product]);
-
-  const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
-  const [previewAccessory, setPreviewAccessory] = useState<ApparelAccessoryItem | null>(null);
-
-  const toggleAccessory = (accId: string) => {
-    setSelectedAccessories((prev) =>
-      prev.includes(accId) ? prev.filter((id) => id !== accId) : [...prev, accId]
-    );
-  };
-
-  const selectedAccessoriesData = useMemo(() => {
-    return accessories.filter((acc) => selectedAccessories.includes(acc.id));
-  }, [accessories, selectedAccessories]);
-
-  const accessoriesTotal = useMemo(() => {
-    return selectedAccessoriesData.reduce((sum, acc) => sum + (Number(acc.price) || 0), 0);
-  }, [selectedAccessoriesData]);
 
   const basePrice = matchingVariant?.price || product.price;
   const effectivePrice = basePrice + accessoriesTotal;

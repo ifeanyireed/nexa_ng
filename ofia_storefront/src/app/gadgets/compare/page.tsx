@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Cpu,
   SlidersHorizontal,
@@ -18,14 +20,17 @@ import {
 } from "lucide-react";
 
 export default function GadgetsComparePage() {
-  const store = MOCK_STORES.gadgets;
-  const gadgetProducts = MOCK_PRODUCTS.filter((p) => p.vertical === "gadgets");
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.gadgets;
+  const { products: liveGadgets, isLoading } = useStorefrontProducts("gadgets");
+  const gadgetProducts = liveGadgets || [];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
-  const [deviceAId, setDeviceAId] = useState(gadgetProducts[0]?.id || "gdt-001");
-  const [deviceBId, setDeviceBId] = useState(gadgetProducts[1]?.id || "gdt-002");
+  const [deviceAId, setDeviceAId] = useState("");
+  const [deviceBId, setDeviceBId] = useState("");
 
-  const devA = gadgetProducts.find((p) => p.id === deviceAId) || gadgetProducts[0];
-  const devB = gadgetProducts.find((p) => p.id === deviceBId) || gadgetProducts[1] || gadgetProducts[0];
+  const devA = gadgetProducts.find((p) => p.id === (deviceAId || gadgetProducts[0]?.id)) || gadgetProducts[0];
+  const devB = gadgetProducts.find((p) => p.id === (deviceBId || gadgetProducts[1]?.id)) || gadgetProducts[1] || gadgetProducts[0];
 
   // Diagnostic form state
   const [repairDevice, setRepairDevice] = useState("Apple iPhone 15 / 16 Series");
@@ -72,6 +77,24 @@ export default function GadgetsComparePage() {
             </p>
           </div>
 
+          {(!devA || !devB) ? (
+            <div className="p-12 rounded-3xl bg-white border border-dashed border-slate-300 text-center space-y-4">
+              <Cpu className="w-12 h-12 text-slate-400 mx-auto" />
+              <p className="font-dropa text-lg font-bold text-slate-900">
+                Not Enough Devices for Comparison
+              </p>
+              <p className="text-sm text-slate-500 max-w-md mx-auto">
+                Comparison requires at least two gadget models active in the tech inventory.
+              </p>
+              <Link
+                href={`/gadgets/catalog${tenantQuery}`}
+                className="inline-block px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs"
+              >
+                Browse Available Tech
+              </Link>
+            </div>
+          ) : (
+            <>
           {/* Device Pickers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-2.5">
@@ -176,7 +199,7 @@ export default function GadgetsComparePage() {
                 <span className="font-semibold text-slate-500">Actions</span>
                 <div className="text-center">
                   <Link
-                    href={`/gadgets/product/${devA.id}`}
+                    href={`/gadgets/product/${devA.id}${tenantQuery}`}
                     className="inline-block px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-xs"
                   >
                     View Device
@@ -184,7 +207,7 @@ export default function GadgetsComparePage() {
                 </div>
                 <div className="text-center">
                   <Link
-                    href={`/gadgets/product/${devB.id}`}
+                    href={`/gadgets/product/${devB.id}${tenantQuery}`}
                     className="inline-block px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-xs"
                   >
                     View Device
@@ -193,6 +216,8 @@ export default function GadgetsComparePage() {
               </div>
             </div>
           </div>
+          </>
+          )}
         </div>
 
         {/* Section 2: Certified Hardware Diagnostic & Repair Clinic */}

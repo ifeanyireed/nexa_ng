@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import SwipeableImageGallery from "@/components/common/SwipeableImageGallery";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   ShoppingBag,
   Check,
@@ -24,22 +26,55 @@ import {
 
 export default function BeautyProductDetailPage() {
   const params = useParams();
-  const store = MOCK_STORES["beauty"];
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.beauty;
+  const { products: liveProducts, isLoading } = useStorefrontProducts("beauty");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
   const { addToCart, setIsCartOpen } = useCart();
 
-  const productId = (params?.id as string) || "bty-001";
-  const product =
-    MOCK_PRODUCTS.find((p) => p.id === productId && p.vertical === "beauty") ||
-    MOCK_PRODUCTS.find((p) => p.vertical === "beauty") ||
-    MOCK_PRODUCTS[0];
+  const productId = (params?.id as string) || "";
+  const product = liveProducts.find((p) => p.id === productId);
 
-  const meta = product.beautyMeta;
+  const meta = product?.beautyMeta;
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedShade, setSelectedShade] = useState(
     meta?.shadeOptions?.[0]?.name || "Universal Nude"
   );
   const [addedSuccess, setAddedSuccess] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white text-[#18181B] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+          <p className="text-xs text-stone-500">Loading beauty formulation...</p>
+        </div>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-white text-[#18181B] flex flex-col justify-between">
+        <StoreHeader store={store} />
+        <main className="max-w-md mx-auto my-20 p-8 rounded-3xl border border-dashed border-rose-200 text-center space-y-4">
+          <p className="text-base font-bold text-zinc-900">Product Not Found</p>
+          <p className="text-xs text-stone-500">
+            This skincare or cosmetic formula is no longer listed in the active catalog.
+          </p>
+          <Link
+            href={`/beauty/products${tenantQuery}`}
+            className="inline-block px-5 py-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition"
+          >
+            Return to Beauty Catalog
+          </Link>
+        </main>
+        <StoreFooter store={store} />
+      </div>
+    );
+  }
 
   const handleAddToCart = () => {
     addToCart({

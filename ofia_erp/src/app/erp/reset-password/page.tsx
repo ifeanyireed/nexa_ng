@@ -21,7 +21,7 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
-import { useActiveTenant, DEFAULT_TENANT_BRANDING } from "@/lib/tenant-context";
+import { useActiveTenant, DEFAULT_TENANT_BRANDING, extractSubdomainOrParam } from "@/lib/tenant-context";
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -29,8 +29,26 @@ function ResetPasswordContent() {
 
   const tokenParam = (searchParams.get("token") || "").trim();
   const emailParam = (searchParams.get("email") || "").trim();
+  const tenantParam = (
+    searchParams.get("tenant") ||
+    searchParams.get("tenant_slug") ||
+    searchParams.get("slug") ||
+    ""
+  ).trim().toLowerCase();
 
-  const { activeTenant } = useActiveTenant();
+  const { activeTenant } = useActiveTenant(null, tenantParam || undefined);
+
+  const resolveEffectiveTenantSlug = () => {
+    return (
+      tenantParam ||
+      activeTenant?.slug ||
+      extractSubdomainOrParam(tenantParam || undefined) ||
+      ""
+    ).trim().toLowerCase();
+  };
+
+  const loginHref = tenantParam ? `/login?tenant=${encodeURIComponent(tenantParam)}` : "/login";
+  const requestResetHref = tenantParam ? `/erp/reset-password?tenant=${encodeURIComponent(tenantParam)}` : "/erp/reset-password";
 
   // Mode: "request" (enter email) vs "update" (token present)
   const isUpdateMode = Boolean(tokenParam && emailParam);
@@ -60,9 +78,11 @@ function ResetPasswordContent() {
         setIsVerifyingToken(true);
         setTokenError(null);
         try {
-          const res = await fetch(
-            `/api/auth/reset-password?token=${encodeURIComponent(tokenParam)}&email=${encodeURIComponent(emailParam)}`
-          );
+          const effectiveSlug = resolveEffectiveTenantSlug();
+          const verifyUrl = `/api/auth/reset-password?token=${encodeURIComponent(tokenParam)}&email=${encodeURIComponent(emailParam)}${effectiveSlug ? `&tenant=${encodeURIComponent(effectiveSlug)}` : ""}`;
+          const res = await fetch(verifyUrl, {
+            headers: effectiveSlug ? { "x-tenant-slug": effectiveSlug } : undefined,
+          });
           const data = await res.json();
           if (!res.ok || !data.valid) {
             setTokenError(data.error || "This password reset link is invalid or has expired.");
@@ -75,7 +95,7 @@ function ResetPasswordContent() {
       }
       verifyToken();
     }
-  }, [isUpdateMode, tokenParam, emailParam]);
+  }, [isUpdateMode, tokenParam, emailParam, tenantParam, activeTenant?.slug]);
 
   // Request Reset Email Handler
   const handleRequestReset = async (e: React.FormEvent) => {
@@ -90,12 +110,17 @@ function ResetPasswordContent() {
     setErrorMsg(null);
 
     try {
+      const effectiveSlug = resolveEffectiveTenantSlug();
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(effectiveSlug ? { "x-tenant-slug": effectiveSlug } : {}),
+        },
         body: JSON.stringify({
           email: cleanEmail,
-          tenantSlug: activeTenant?.slug || undefined,
+          tenantSlug: effectiveSlug || undefined,
+          tenant: effectiveSlug || undefined,
         }),
       });
 
@@ -131,13 +156,19 @@ function ResetPasswordContent() {
     setIsLoading(true);
 
     try {
+      const effectiveSlug = resolveEffectiveTenantSlug();
       const res = await fetch("/api/auth/reset-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(effectiveSlug ? { "x-tenant-slug": effectiveSlug } : {}),
+        },
         body: JSON.stringify({
           token: tokenParam,
           email: emailParam,
           newPassword,
+          tenantSlug: effectiveSlug || undefined,
+          tenant: effectiveSlug || undefined,
         }),
       });
 
@@ -159,13 +190,13 @@ function ResetPasswordContent() {
     <div className="min-h-screen bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] flex flex-col justify-between p-4 sm:p-6 font-sans select-none">
       {/* Top Header */}
       <header className="max-w-6xl mx-auto w-full flex items-center justify-between py-4">
-        <Link href="/login" className="flex items-center gap-3">
+        <Link href={loginHref} className="flex items-center gap-3">
           <img src={tenantLogo} alt={tenantName} className="h-8 w-auto object-contain" />
           <span className="font-extrabold text-sm text-[var(--nexa-text-primary)] tracking-tight">
             {tenantName}
           </span>
         </Link>
-        <Link href="/login">
+        <Link href={loginHref}>
           <span className="text-xs font-bold text-[#1A56DB] hover:underline flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Sign In
           </span>
@@ -221,7 +252,7 @@ function ResetPasswordContent() {
                     {tokenError}
                   </p>
                 </div>
-                <Link href="/erp/reset-password" className="block pt-2">
+                <Link href={requestResetHref} className="block pt-2">
                   <NexaButton variant="primary" className="w-full justify-center text-xs">
                     Request a New Reset Link
                   </NexaButton>
@@ -241,7 +272,7 @@ function ResetPasswordContent() {
                     Your new password has been saved securely in the platform directory.
                   </p>
                 </div>
-                <Link href="/login" className="block pt-2">
+                <Link href={loginHref} className="block pt-2">
                   <NexaButton variant="primary" className="w-full justify-center text-xs gap-2">
                     <span>Proceed to Sign In</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -279,7 +310,7 @@ function ResetPasswordContent() {
                   >
                     Didn't receive it? Try another email
                   </button>
-                  <Link href="/login" className="block">
+                  <Link href={loginHref} className="block">
                     <NexaButton variant="outline" size="sm" className="w-full justify-center text-xs">
                       Back to Sign In
                     </NexaButton>
@@ -410,7 +441,7 @@ function ResetPasswordContent() {
                 </NexaButton>
 
                 <div className="pt-2 text-center">
-                  <Link href="/login" className="text-xs text-[var(--nexa-text-muted)] hover:underline inline-flex items-center gap-1 font-semibold">
+                  <Link href={loginHref} className="text-xs text-[var(--nexa-text-muted)] hover:underline inline-flex items-center gap-1 font-semibold">
                     <ArrowLeft className="w-3 h-3" /> Back to Sign In
                   </Link>
                 </div>

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"service_erp/utils"
 	"strings"
@@ -149,7 +150,7 @@ func HandleSendResetEmail(w http.ResponseWriter, r *http.Request) {
 			pwd = *u.Password
 		}
 		token := generateResetToken(u.Email, pwd)
-		resetLink := fmt.Sprintf("%s/reset-password?email=%s&token=%s", origin, u.Email, token)
+		resetLink := fmt.Sprintf("%s/erp/reset-password?email=%s&token=%s", origin, url.QueryEscape(u.Email), url.QueryEscape(token))
 
 		htmlBody := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en">

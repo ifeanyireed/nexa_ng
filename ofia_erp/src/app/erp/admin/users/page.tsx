@@ -241,8 +241,21 @@ function UserManagementContent() {
 
   // Password Reset Modal State
   const [resetModalUser, setResetModalUser] = useState<ERPStaffUser | null>(null);
-  const [resetPasswordValue, setResetPasswordValue] = useState("12345678");
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  const generateTemporaryPassword = () => {
+    const charset = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+    const bytes = new Uint8Array(12);
+    if (typeof window !== "undefined" && window.crypto?.getRandomValues) {
+      window.crypto.getRandomValues(bytes);
+    } else {
+      for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = Math.floor(Math.random() * 256);
+      }
+    }
+    return Array.from(bytes, (b) => charset[b % charset.length]).join("");
+  };
 
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
@@ -617,12 +630,18 @@ function UserManagementContent() {
 
   const handleOpenResetModal = (staffUser: ERPStaffUser) => {
     setResetModalUser(staffUser);
-    setResetPasswordValue("12345678");
+    setResetPasswordValue("");
   };
 
   const handleConfirmResetPassword = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!resetModalUser) return;
+
+    const cleanPassword = resetPasswordValue.trim();
+    if (cleanPassword.length < 6) {
+      showToast("Please enter a new password of at least 6 characters");
+      return;
+    }
 
     try {
       setIsResettingPassword(true);
@@ -645,7 +664,7 @@ function UserManagementContent() {
           company: resetModalUser.company,
           location: resetModalUser.location,
           assignedPages: resetModalUser.assignedPages,
-          password: resetPasswordValue || "12345678",
+          password: cleanPassword,
           tenantSlug: effectiveSlug,
         }),
       });
@@ -655,8 +674,9 @@ function UserManagementContent() {
         throw new Error(data.error || "Failed to reset password");
       }
 
-      showToast(`Password for ${resetModalUser.name} reset to "${resetPasswordValue || "12345678"}"!`);
+      showToast(`Password for ${resetModalUser.name} has been reset successfully!`);
       setResetModalUser(null);
+      setResetPasswordValue("");
     } catch (err: any) {
       console.error("Failed to reset user password:", err);
       showToast(err.message || "Failed to reset password");
@@ -1499,10 +1519,10 @@ function UserManagementContent() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setResetPasswordValue("12345678")}
+                    onClick={() => setResetPasswordValue(generateTemporaryPassword())}
                     className="text-[10px] font-bold text-[#1A56DB] hover:underline cursor-pointer"
                   >
-                    Use Default (12345678)
+                    Generate Secure Password
                   </button>
                 </div>
                 <div className="relative">

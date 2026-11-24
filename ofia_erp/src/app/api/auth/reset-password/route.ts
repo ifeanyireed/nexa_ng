@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { getTenantSql } from "@/lib/tenant-db-resolver";
+import {
+  resolveTenantSlugFromRequest,
+  ensurePasswordResetTokensTable,
+  syncUserPasswordAcrossTenantAndAuth,
+} from "@/lib/auth-password-sync";
+import { sendPlatformPasswordChangedEmail } from "@/lib/email-service";
+import { slugToTenantName } from "@/lib/tenant-utils";
 
 export const dynamic = "force-dynamic";
-
-const ERP_BASE =
-  process.env.ERP_SERVICE_URL ||
-  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
-  "";
 
 export async function GET(request: Request) {
   try {
@@ -20,8 +24,55 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json({ valid: true, email });
+    const tenantSlug = resolveTenantSlugFromRequest(request);
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { valid: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
+
+    const tenantSql = await getTenantSql(tenantSlug);
+    await ensurePasswordResetTokensTable(tenantSql);
+
+    const rows = await tenantSql`
+      SELECT id, email, token, tenant_slug, expires_at, used
+      FROM password_reset_tokens
+      WHERE token = ${token}
+        AND LOWER(email) = ${email}
+        AND (LOWER(tenant_slug) = ${tenantSlug} OR tenant_slug = '')
+      LIMIT 1;
+    `;
+
+    if (!rows || rows.length === 0) {
+      return NextResponse.json(
+        { valid: false, error: "This password reset link is invalid." },
+        { status: 404 }
+      );
+    }
+
+    const row = rows[0];
+    if (row.used) {
+      return NextResponse.json(
+        { valid: false, error: "This password reset link has already been used. Please request a new one." },
+        { status: 400 }
+      );
+    }
+
+    if (Date.now() > new Date(row.expires_at).getTime()) {
+      return NextResponse.json(
+        { valid: false, error: "This password reset link has expired. Please request a new one." },
+        { status: 410 }
+      );
+    }
+
+    return NextResponse.json({
+      valid: true,
+      email: row.email,
+      tenantSlug: row.tenant_slug || tenantSlug,
+    });
   } catch (error: any) {
+    console.error("[Reset Password GET] Error verifying token:", error);
     return NextResponse.json(
       { valid: false, error: error?.message || "Verification failed" },
       { status: 500 }
@@ -34,9 +85,9 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const { token, email, newPassword, password } = body;
 
-    const normalizedToken = (token || "").trim();
-    const normalizedEmail = (email || "").trim().toLowerCase();
-    const targetPassword = (newPassword || password || "").trim();
+    const normalizedToken = String(token || "").trim();
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const targetPassword = String(newPassword || password || "").trim();
 
     if (!normalizedToken || !normalizedEmail || !targetPassword) {
       return NextResponse.json(
@@ -45,50 +96,101 @@ export async function POST(request: Request) {
       );
     }
 
-    const host = request.headers.get("host") || "";
-    let tenantSlug = (request.headers.get("x-tenant-slug") || "").trim();
-    if (!tenantSlug && host) {
-      const parts = host.split(".");
-      if (parts.length > 1 && !["www", "admin", "app", "api", "localhost"].includes(parts[0])) {
-        tenantSlug = parts[0];
-      }
-    }
-
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (tenantSlug) {
-      headers["x-tenant-slug"] = tenantSlug;
-    }
-
-    const res = await fetch(`${ERP_BASE}/update-password`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        email: normalizedEmail,
-        token: normalizedToken,
-        new_password: targetPassword,
-        newPassword: targetPassword,
-        password: targetPassword,
-        tenant: tenantSlug,
-      }),
-      signal: AbortSignal.timeout(10000),
-    });
-
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
+    if (targetPassword.length < 8) {
       return NextResponse.json(
-        { error: data?.error || "Failed to update password" },
-        { status: res.status }
+        { error: "New password must be at least 8 characters long" },
+        { status: 400 }
       );
     }
+
+    const tenantSlug = resolveTenantSlugFromRequest(request, body);
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
+
+    const tenantSql = await getTenantSql(tenantSlug);
+    await ensurePasswordResetTokensTable(tenantSql);
+
+    // 1. Validate reset token against tenant's dedicated DB
+    const tokenRows = await tenantSql`
+      SELECT id, email, token, tenant_slug, expires_at, used
+      FROM password_reset_tokens
+      WHERE token = ${normalizedToken}
+        AND LOWER(email) = ${normalizedEmail}
+        AND (LOWER(tenant_slug) = ${tenantSlug} OR tenant_slug = '')
+      LIMIT 1;
+    `;
+
+    if (!tokenRows || tokenRows.length === 0) {
+      return NextResponse.json(
+        { error: "Invalid password reset link. Please request a new one." },
+        { status: 404 }
+      );
+    }
+
+    const tokenRow = tokenRows[0];
+    if (tokenRow.used) {
+      return NextResponse.json(
+        { error: "This password reset link has already been used. Please request a new one." },
+        { status: 400 }
+      );
+    }
+
+    if (Date.now() > new Date(tokenRow.expires_at).getTime()) {
+      return NextResponse.json(
+        { error: "This password reset link has expired. Please request a new one." },
+        { status: 410 }
+      );
+    }
+
+    // 2. Hash new password with bcrypt (cost 10)
+    const hashedPassword = await bcrypt.hash(targetPassword, 10);
+
+    // 3. Synchronize password hash across tenant's dedicated DB AND central auth DB (USERS_DATABASE_URL)
+    const syncResult = await syncUserPasswordAcrossTenantAndAuth({
+      tenantSlug,
+      email: normalizedEmail,
+      hashedPassword,
+    });
+
+    if (!syncResult.tenantDbUpdated && !syncResult.usersDbUpdated) {
+      return NextResponse.json(
+        { error: "Account could not be found to update password" },
+        { status: 404 }
+      );
+    }
+
+    // 4. Mark token as used so it cannot be replayed
+    await tenantSql`
+      UPDATE password_reset_tokens
+      SET used = TRUE
+      WHERE id = ${tokenRow.id}
+        AND LOWER(tenant_slug) = ${tenantSlug};
+    `;
+
+    // 5. Dispatch non-blocking password changed security notification
+    const tenantName = slugToTenantName(tenantSlug);
+    sendPlatformPasswordChangedEmail({
+      recipientEmail: normalizedEmail,
+      recipientName: syncResult.user?.name || normalizedEmail.split("@")[0],
+      tenantSlug,
+      tenantName,
+    }).catch((err) =>
+      console.warn("[Reset Password] Failed to dispatch password changed security alert:", err)
+    );
 
     return NextResponse.json({
       success: true,
       message: "Password updated successfully. You can now log in.",
     });
   } catch (error: any) {
+    console.error("[Reset Password POST] Error:", error);
     return NextResponse.json(
-      { error: "ERP microservice error: " + (error?.message || "Internal failure") },
-      { status: 502 }
+      { error: "Failed to update password: " + (error?.message || "Internal error") },
+      { status: 500 }
     );
   }
 }

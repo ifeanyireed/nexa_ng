@@ -771,7 +771,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
                   Password
                 </label>
                 <Link
-                  href="/erp/reset-password"
+                  href={rawPropSlug ? `/erp/reset-password?tenant=${encodeURIComponent(rawPropSlug)}` : "/erp/reset-password"}
                   className="text-xs font-bold hover:underline transition-colors"
                   style={{ color: primaryColor }}
                 >

@@ -379,13 +379,28 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  // 7. Login page handling
+  // 7. Login & Public Password Recovery Pages
   if (pathname === "/login") {
     // If user is already authenticated with a valid token, redirect directly to their role home portal
     if (authToken) {
       const homeRoute = getRoleHomeRoute(userRole, userAssignedPages);
       return NextResponse.redirect(new URL(homeRoute, request.url));
     }
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
+  if (
+    pathname === "/erp/reset-password" ||
+    pathname.startsWith("/erp/reset-password/") ||
+    pathname === "/reset-password" ||
+    pathname.startsWith("/reset-password/") ||
+    pathname === "/forgot-password" ||
+    pathname.startsWith("/forgot-password/")
+  ) {
     return NextResponse.next({
       request: {
         headers: requestHeaders,

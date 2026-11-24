@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { neon } from "@neondatabase/serverless";
 import { getTenantSql } from "./tenant-db-resolver";
 // Database access is fully decoupled to service_erp backend microservice
 interface DbResult {
@@ -2208,7 +2209,37 @@ export async function getPlatformAuthSmtp(
       platformSettings = platformDbSettings;
     }
   } catch (e) {
-    console.warn("Failed to retrieve platform SMTP settings from database:", e);
+    console.warn("Failed to retrieve platform SMTP settings from registry database:", e);
+  }
+
+  // 1b. Also check Central Users Database (USERS_DATABASE_URL) where ofia_admin persists platform SMTP
+  if (!platformSettings && process.env.USERS_DATABASE_URL) {
+    try {
+      const usersSql = neon(process.env.USERS_DATABASE_URL);
+      const rows = await usersSql`
+        SELECT tenant_slug, provider, host, port, encryption, from_email, from_name, username, password
+        FROM tenant_smtp_settings
+        WHERE LOWER(tenant_slug) = 'platform'
+        LIMIT 1;
+      `;
+      if (rows && rows.length > 0 && rows[0].host && rows[0].password) {
+        const row = rows[0];
+        platformSettings = {
+          tenantSlug: "platform",
+          provider: row.provider || "custom",
+          host: row.host,
+          port: Number(row.port) || 587,
+          encryption: (row.encryption as any) || "tls",
+          fromEmail: row.from_email || "",
+          fromName: row.from_name || "",
+          username: row.username || "",
+          password: row.password || "",
+          hasPassword: true,
+        };
+      }
+    } catch (e) {
+      console.warn("Failed to retrieve platform SMTP settings from users database:", e);
+    }
   }
 
   // 2. Platform Environment Variables Fallback (.env)
@@ -2389,8 +2420,10 @@ If you did not request a password reset, please ignore this email. Your account 
     if (settings !== envSettings) {
       try {
         const fallbackTransporter = createNodemailerTransporter(envSettings);
+        const fallbackSenderName = (envSettings.fromName || senderName || "Ofia Platform Security").replace(/"/g, "");
+        const fallbackFrom = `"${fallbackSenderName}" <${envSettings.fromEmail}>`;
         const fallbackInfo = await fallbackTransporter.sendMail({
-          from: senderFormatted,
+          from: fallbackFrom,
           to: recipientEmail,
           replyTo: "support@ofia.ng",
           subject,
@@ -2526,8 +2559,10 @@ export async function sendPlatformPasswordChangedEmail(
     if (settings !== envSettings) {
       try {
         const fallbackTransporter = createNodemailerTransporter(envSettings);
+        const fallbackSenderName = (envSettings.fromName || senderName || "Ofia Platform Security").replace(/"/g, "");
+        const fallbackFrom = `"${fallbackSenderName}" <${envSettings.fromEmail}>`;
         const fallbackInfo = await fallbackTransporter.sendMail({
-          from: senderFormatted,
+          from: fallbackFrom,
           to: recipientEmail,
           replyTo: "support@ofia.ng",
           subject,

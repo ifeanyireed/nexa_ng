@@ -1,5 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantSql } from "@/lib/tenant-db-resolver";
+import { getTenantSubscriptionState } from "@/lib/subscription-enforcer";
+import { getCommissionRate } from "@/lib/pricing-plans";
+
+function isConfigured(val?: string): boolean {
+  const clean = (val || "").trim();
+  return Boolean(clean && !clean.toUpperCase().startsWith("AWAITING"));
+}
+
+/** Wallet rules resolved from the tenant's plan and environment (no hardcoded rates). */
+async function resolveWalletSettings(tenantSlug: string) {
+  let directPct: number | null = null;
+  let escrowPct: number | null = null;
+  try {
+    const sub = await getTenantSubscriptionState(tenantSlug);
+    directPct = getCommissionRate(sub.planTier, false) * 100;
+    escrowPct = getCommissionRate(sub.planTier, true) * 100;
+  } catch {}
+
+  const minRaw = Number(process.env.WALLET_MIN_PAYOUT_NGN);
+  const minPayout = Number.isFinite(minRaw) && minRaw > 0 ? minRaw : 0;
+
+  // Bank list comes from the payment provider when its key is configured
+  let banks: string[] = [];
+  const secret = process.env.OFIA_MANAGED_PAYSTACK_SECRET_KEY;
+  if (isConfigured(secret)) {
+    try {
+      const res = await fetch("https://api.paystack.co/bank?country=nigeria&perPage=200", {
+        headers: { Authorization: `Bearer ${secret}` },
+        cache: "no-store",
+      });
+      const json = await res.json();
+      if (Array.isArray(json?.data)) {
+        banks = Array.from(new Set<string>(json.data.map((b: any) => String(b.name)))).sort();
+      }
+    } catch {}
+  }
+  return { directPct, escrowPct, minPayout, banks };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +71,7 @@ export async function GET(request: NextRequest) {
         },
         transactions: [],
         payouts: [],
+        settings: await resolveWalletSettings(tenantSlug),
       });
     }
 
@@ -74,6 +113,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       tenantSlug,
+      settings: await resolveWalletSettings(tenantSlug),
       wallet: {
         id: walletData?.id || `wal-${tenantSlug}`,
         availableBalance: Number(walletData?.available_balance || 0),

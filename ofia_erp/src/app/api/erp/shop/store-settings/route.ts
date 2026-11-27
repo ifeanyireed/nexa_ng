@@ -111,6 +111,44 @@ export async function PUT(request: NextRequest) {
         ...(existingConfig.hero || {}),
         ...(payload.hero || {}),
       },
+      collections: payload.collections
+        ? {
+            ...(existingConfig.collections || {}),
+            ...payload.collections,
+            card1: payload.collections.card1
+              ? {
+                  ...(existingConfig.collections?.card1 || {}),
+                  ...payload.collections.card1,
+                  images: Array.isArray(payload.collections.card1.images)
+                    ? payload.collections.card1.images
+                    : existingConfig.collections?.card1?.images || [],
+                  image: Array.isArray(payload.collections.card1.images)
+                    ? payload.collections.card1.images[0] || ""
+                    : payload.collections.card1.image ?? "",
+                  imagesCustomized: true,
+                }
+              : existingConfig.collections?.card1,
+            card2: payload.collections.card2
+              ? {
+                  ...(existingConfig.collections?.card2 || {}),
+                  ...payload.collections.card2,
+                  images: Array.isArray(payload.collections.card2.images)
+                    ? payload.collections.card2.images
+                    : existingConfig.collections?.card2?.images || [],
+                  image: Array.isArray(payload.collections.card2.images)
+                    ? payload.collections.card2.images[0] || ""
+                    : payload.collections.card2.image ?? "",
+                  imagesCustomized: true,
+                }
+              : existingConfig.collections?.card2,
+            card3: payload.collections.card3
+              ? {
+                  ...(existingConfig.collections?.card3 || {}),
+                  ...payload.collections.card3,
+                }
+              : existingConfig.collections?.card3,
+          }
+        : existingConfig.collections,
     };
 
     // Extract core fields to also synchronize into platform_tenants root columns

@@ -301,6 +301,18 @@ export interface CartItem {
   selectedPortion?: string;
   selectedAddOns?: string[];
   selectedAccessories?: Array<{ id: string; name: string; price: number; image?: string }>;
+  bespokeMeasurements?: {
+    chest: string;
+    waist: string;
+    hips: string;
+    shoulder: string;
+    sleeveLength: string;
+    garmentLength: string;
+    neck?: string;
+    notes?: string;
+    unit?: "in" | "cm";
+    presetName?: string;
+  };
   specialInstructions?: string;
   deliveryOption?: string;
 }
@@ -546,12 +558,17 @@ export interface StorefrontOrderPayload {
   itemCount: number;
   totalAmount: string;
   rawAmount: number;
-  status: "PENDING" | "CONFIRMED" | "IN_PREPARATION" | "READY_DISPATCH" | "DELIVERED";
-  paymentStatus: "PAID" | "PENDING" | "REFUNDED";
+  status: "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "IN_PREPARATION" | "READY_DISPATCH" | "DELIVERED" | "COMPLETED" | "CANCELLED" | "DISPUTED" | "REFUNDED";
+  paymentStatus: "PAID" | "PENDING" | "REFUNDED" | "FAILED" | "PARTIALLY_REFUNDED";
+  paymentMode?: "merchant_byok" | "ofia_managed" | "protected_escrow" | string;
+  paymentProvider?: string;
+  paymentReference?: string;
+  fulfilmentStatus?: string;
+  protectionFee?: number;
   deliveryMethod: "DISPATCH" | "STORE_PICKUP";
   isEscrow?: boolean;
-  escrowStatus?: "NONE" | "DIRECT_SETTLEMENT" | "HELD" | "RELEASED" | "REFUNDED";
-  settlementStatus?: "AVAILABLE" | "HELD_ESCROW" | "WITHDRAWN";
+  escrowStatus?: "NONE" | "DIRECT_SETTLEMENT" | "HELD" | "AWAITING_BUYER_CONFIRMATION" | "DISPUTED" | "RELEASED" | "REFUNDED" | string;
+  settlementStatus?: "PENDING" | "AVAILABLE" | "HELD_ESCROW" | "WITHDRAWN" | "REFUNDED" | string;
   merchantAmount?: number;
   platformFee?: number;
   createdAt?: string;

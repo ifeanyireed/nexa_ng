@@ -25,7 +25,8 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, removeFromCart, updateQuantity, subtotal, clearCart, activeVertical } = useCart();
   const { tenantSlug, handshake, store } = useStorefrontTenant();
-  const { buyer, syncWithOrder } = useBuyerAuth();
+  const { buyer, isAuthenticated, isLoading: isAuthLoading, requireAuthModal, syncWithOrder } =
+    useBuyerAuth();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -33,8 +34,41 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("Lagos");
   const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">("card");
-  const [requestEscrow, setRequestEscrow] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState<"standard" | "protected_escrow">("standard");
+  const [acceptedEscrowTerms, setAcceptedEscrowTerms] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentConfig, setPaymentConfig] = useState<{
+    standardPayment: {
+      available: boolean;
+      paymentMode: "merchant_byok" | "ofia_managed";
+      provider: string;
+      label: string;
+    };
+    protectedPayment: {
+      enabled: boolean;
+      eligible: boolean;
+      providerAvailable: boolean;
+      providerName: string;
+      protectionFeePct: number;
+    };
+  } | null>(null);
+
+  useEffect(() => {
+    const activeSlug = (tenantSlug || "").toLowerCase().trim();
+    if (!activeSlug) return;
+    fetch(`/api/storefront/payments?tenant=${encodeURIComponent(activeSlug)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.success && data.standardPayment && data.protectedPayment) {
+          setPaymentConfig({
+            standardPayment: data.standardPayment,
+            protectedPayment: data.protectedPayment,
+          });
+        }
+      })
+      .catch(() => null);
+  }, [tenantSlug]);
 
   // Auto pre-fill checkout contact & address if buyer is logged in
   useEffect(() => {
@@ -52,33 +86,59 @@ export default function CheckoutPage() {
     }
   }, [buyer]);
 
-  // Escrow is strictly opt-in on request IF tenant allows escrow option
+  // Escrow is opt-in if enabled in tenant payment settings or storefront config
   const tenantAllowsEscrow = Boolean(
-    handshake?.storefrontConfig?.allowEscrow ??
-    handshake?.storefrontConfig?.sectionVisibility?.escrowOption ??
-    false
+    paymentConfig?.protectedPayment
+      ? paymentConfig.protectedPayment.enabled && paymentConfig.protectedPayment.eligible
+      : handshake?.storefrontConfig?.allowEscrow ??
+        handshake?.storefrontConfig?.sectionVisibility?.escrowOption ??
+        true
   );
+  const escrowProviderAvailable = paymentConfig?.protectedPayment
+    ? paymentConfig.protectedPayment.providerAvailable
+    : true;
+  const protectionFeePct = paymentConfig?.protectedPayment?.protectionFeePct ?? 2.5;
 
   const deliveryFee = 3500;
-  const grandTotal = subtotal + (items.length > 0 ? deliveryFee : 0);
+  const baseTotal = subtotal + (items.length > 0 ? deliveryFee : 0);
+  const isEscrowSelected = selectedRoute === "protected_escrow";
+  const protectionFee = isEscrowSelected ? Math.round(baseTotal * (protectionFeePct / 100)) : 0;
+  const grandTotal = baseTotal + protectionFee;
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCheckoutError(null);
+    if (!isAuthenticated) {
+      requireAuthModal("Please sign in or create a storefront account to complete checkout.");
+      return;
+    }
     if (!fullName || !phone || !address || items.length === 0) return;
 
+    if (!tenantSlug) {
+      setCheckoutError("Tenant storefront context is required to complete checkout.");
+      return;
+    }
+
+    if (isEscrowSelected) {
+      if (!tenantAllowsEscrow) {
+        setCheckoutError("Protected Payment (Escrow) is not enabled for this merchant.");
+        return;
+      }
+      if (!escrowProviderAvailable) {
+        setCheckoutError(
+          "Protected Payment is currently unavailable because the approved escrow partner cannot be reached. Per platform policy, your order was NOT converted to a standard payment."
+        );
+        return;
+      }
+      if (!acceptedEscrowTerms) {
+        setCheckoutError("Please accept the Protected Payment escrow custody and release terms before paying.");
+        return;
+      }
+    }
+
     setIsProcessing(true);
-
-    const derivedSlug = (
-      tenantSlug ||
-      (items[0]?.vertical ? `${items[0].vertical}-demo` : "") ||
-      activeVertical ||
-      "fashion"
-    )
-      .toLowerCase()
-      .trim();
-    const targetSlug = derivedSlug || "fashion";
-
-    const isEscrowActive = tenantAllowsEscrow && requestEscrow;
+    const targetSlug = tenantSlug.toLowerCase().trim();
+    const isEscrowActive = isEscrowSelected;
 
     const orderPayload = {
       tenantSlug: targetSlug,
@@ -91,8 +151,8 @@ export default function CheckoutPage() {
       paymentMethod: paymentMethod,
       channel: "STOREFRONT",
       isEscrow: isEscrowActive,
-      escrowStatus: isEscrowActive ? "HELD" : "NONE",
-      settlementStatus: isEscrowActive ? "HELD_ESCROW" : "AVAILABLE",
+      escrowStatus: isEscrowActive ? "AWAITING_FUNDING" : "NONE",
+      settlementStatus: "PENDING",
       items: items.map((i) => ({
         id: i.id,
         productId: i.productId,
@@ -116,21 +176,52 @@ export default function CheckoutPage() {
       itemCount: items.reduce((acc, i) => acc + i.quantity, 0),
       totalAmount: `₦${grandTotal.toLocaleString()}`,
       rawAmount: grandTotal,
-      status: "IN_PREPARATION",
-      paymentStatus: "PAID",
+      status: "AWAITING_PAYMENT",
+      paymentStatus: "PENDING",
       deliveryMethod: "DISPATCH",
     };
 
     try {
+      // 1. Create authoritative order in AWAITING_PAYMENT state
       const res = await fetch("/api/storefront/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
       const data = await res.json().catch(() => null);
-      const orderRef = data?.order?.orderNumber || `OFIA-${Math.floor(100000 + Math.random() * 900000)}`;
+      if (!res.ok || !data?.order) {
+        throw new Error(data?.error || "Unable to create order");
+      }
 
-      // Persist contact details & delivery address to buyer profile
+      const orderId = data.order.id;
+      const orderRef = data.order.orderNumber;
+
+      // 2. Initialize & verify payment route server-side (never declare paid without backend verification)
+      const payRes = await fetch("/api/storefront/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "INITIALIZE_PAYMENT",
+          tenantSlug: targetSlug,
+          orderId,
+          orderNumber: orderRef,
+          requestedMode: isEscrowActive ? "protected_escrow" : "standard",
+          baseAmount: baseTotal,
+          rawAmount: grandTotal,
+          paymentMethod,
+          customerName: fullName,
+          customerEmail: email,
+          customerPhone: phone,
+        }),
+      });
+      const payData = await payRes.json().catch(() => null);
+      if (!payRes.ok || !payData?.success) {
+        throw new Error(
+          payData?.error ||
+            "Payment verification failed. Your order was not charged."
+        );
+      }
+
       syncWithOrder({
         customerName: fullName,
         customerEmail: email,
@@ -140,21 +231,16 @@ export default function CheckoutPage() {
       });
 
       clearCart();
-      const redirectTenant = targetSlug ? `&tenant=${encodeURIComponent(targetSlug)}` : "";
+      const redirectTenant = `&tenant=${encodeURIComponent(targetSlug)}`;
       const escrowParam = `&escrow=${isEscrowActive ? "1" : "0"}`;
-      router.push(`/order-confirmed?ref=${orderRef}&name=${encodeURIComponent(fullName)}${redirectTenant}${escrowParam}`);
-    } catch {
-      const orderRef = `OFIA-${Math.floor(100000 + Math.random() * 900000)}`;
-      syncWithOrder({
-        customerName: fullName,
-        customerEmail: email,
-        customerPhone: phone,
-        shippingAddress: address,
-        city: city,
-      });
-      clearCart();
-      const isEscrowActive = tenantAllowsEscrow && requestEscrow;
-      router.push(`/order-confirmed?ref=${orderRef}&name=${encodeURIComponent(fullName)}&escrow=${isEscrowActive ? "1" : "0"}`);
+      const payRefParam = payData.providerReference
+        ? `&paymentRef=${encodeURIComponent(payData.providerReference)}`
+        : "";
+      router.push(
+        `/order-confirmed?ref=${encodeURIComponent(orderRef)}&name=${encodeURIComponent(fullName)}${redirectTenant}${escrowParam}${payRefParam}`
+      );
+    } catch (err: any) {
+      setCheckoutError(err?.message || "Checkout payment initialization failed.");
     } finally {
       setIsProcessing(false);
     }
@@ -190,6 +276,32 @@ export default function CheckoutPage() {
                 Provide your dispatch contact and delivery destination in Nigeria or international.
               </p>
             </div>
+
+            {!isAuthLoading && !isAuthenticated && (
+              <div className="p-6 rounded-3xl bg-amber-50 border border-amber-200/90 space-y-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <h3 className="font-dropa text-base font-bold text-amber-950">
+                      Storefront Account Required for Checkout
+                    </h3>
+                    <p className="text-xs text-amber-800 mt-0.5">
+                      Please sign in or create your storefront customer account to place your order, track delivery, and access saved bespoke presets.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      requireAuthModal(
+                        "Sign in or create a storefront account to unlock checkout and place your order."
+                      )
+                    }
+                    className="px-5 py-2.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold shadow-sm cursor-pointer shrink-0"
+                  >
+                    Sign In / Create Account
+                  </button>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handlePlaceOrder} className="space-y-6">
               {/* Customer Contact */}
@@ -335,36 +447,109 @@ export default function CheckoutPage() {
                   </button>
                 </div>
 
-                {/* Conditional Opt-In Escrow Protection (Only if tenant allows Escrow Option) */}
-                {tenantAllowsEscrow ? (
-                  <div className="mt-4 p-4 rounded-2xl border border-blue-200 bg-blue-50/60 transition-all">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={requestEscrow}
-                        onChange={(e) => setRequestEscrow(e.target.checked)}
-                        className="mt-0.5 w-4 h-4 rounded text-blue-600 cursor-pointer accent-blue-600"
-                      />
-                      <div className="flex-1 text-xs">
-                        <span className="font-bold text-blue-950 flex items-center gap-1.5">
-                          <ShieldCheck className="w-4 h-4 text-blue-600" />
-                          Request Ofia Escrow Protection (Optional)
+                {/* Payment Route Selection: Standard vs Protected Payment (Escrow) */}
+                <div className="space-y-3 pt-2 border-t border-stone-100">
+                  <label className="text-[11px] font-bold text-stone-700 block">
+                    Choose Payment Protection Route
+                  </label>
+
+                  {/* Option 1: Standard Payment */}
+                  <div
+                    onClick={() => setSelectedRoute("standard")}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                      selectedRoute === "standard"
+                        ? "border-blue-600 bg-blue-50/40 ring-2 ring-blue-600/15"
+                        : "border-stone-200 hover:border-stone-300"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="text-xs">
+                        <span className="font-bold text-stone-900 block">
+                          {paymentConfig?.standardPayment?.label || "Standard Payment"}
                         </span>
-                        <p className="text-blue-800/80 mt-0.5 leading-relaxed text-[11px]">
-                          Hold payment safely in the Ofia Escrow Vault until delivery OTP confirmation. (Leave unchecked for standard instant merchant settlement).
+                        <p className="text-[11px] text-stone-600 mt-0.5 leading-relaxed">
+                          Pay through the merchant&apos;s connected payment provider ({paymentConfig?.standardPayment?.provider?.toUpperCase() || "PAYSTACK"}). No extra buyer protection fee.
                         </p>
                       </div>
-                    </label>
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                        +₦0 Fee
+                      </span>
+                    </div>
                   </div>
-                ) : null}
+
+                  {/* Option 2: Protected Payment (Escrow) */}
+                  <div
+                    onClick={() => {
+                      if (tenantAllowsEscrow) setSelectedRoute("protected_escrow");
+                    }}
+                    className={`p-4 rounded-2xl border transition-all ${
+                      !tenantAllowsEscrow
+                        ? "border-stone-200 bg-stone-50 opacity-60 cursor-not-allowed"
+                        : selectedRoute === "protected_escrow"
+                        ? "border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20 cursor-pointer"
+                        : "border-stone-200 hover:border-blue-300 cursor-pointer"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="text-xs space-y-1">
+                        <span className="font-bold text-blue-950 flex items-center gap-1.5">
+                          <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
+                          <span>Protected Payment (Escrow Partner Custody)</span>
+                        </span>
+                        <p className="text-[11px] text-stone-600 leading-relaxed">
+                          Your funds are collected and held under the approved escrow partner&apos;s custody arrangement. The merchant receives release only after delivery is fulfilled and you confirm receipt. If an issue arises, you can report a problem on your order-details page to freeze release.
+                        </p>
+                        {!tenantAllowsEscrow && (
+                          <p className="text-[11px] font-bold text-amber-700">
+                            Protected Payment is not enabled for this merchant storefront.
+                          </p>
+                        )}
+                        {tenantAllowsEscrow && !escrowProviderAvailable && (
+                          <p className="text-[11px] font-bold text-rose-700">
+                            Escrow partner is temporarily unavailable. Protected Payment cannot be initialized right now.
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-[11px] font-bold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-200 shrink-0">
+                        +{protectionFeePct}% Fee
+                      </span>
+                    </div>
+
+                    {selectedRoute === "protected_escrow" && tenantAllowsEscrow && (
+                      <div className="mt-3 pt-3 border-t border-blue-200/80 space-y-2 text-[11px]">
+                        <div className="flex justify-between text-blue-900 font-semibold">
+                          <span>Escrow Protection Fee ({protectionFeePct}%)</span>
+                          <span>₦{protectionFee.toLocaleString()}</span>
+                        </div>
+                        <label className="flex items-start gap-2 cursor-pointer text-blue-950 font-medium">
+                          <input
+                            type="checkbox"
+                            checked={acceptedEscrowTerms}
+                            onChange={(e) => setAcceptedEscrowTerms(e.target.checked)}
+                            className="mt-0.5 w-3.5 h-3.5 rounded accent-blue-600"
+                          />
+                          <span>
+                            I understand Protected Payment is optional, uses an independent escrow partner custody arrangement, and I accept the escrow release &amp; dispute terms.
+                          </span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {checkoutError && (
+                  <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold">
+                    {checkoutError}
+                  </div>
+                )}
 
                 {/* Settlement Notice */}
                 <div className="flex items-center gap-2 pt-2 text-[11px] text-stone-500">
                   <Lock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>
-                    {tenantAllowsEscrow && requestEscrow
-                      ? "Escrow Protection Active · Payment safely locked in vault until recipient confirms delivery"
-                      : "Direct Merchant Settlement · Instant automated split directly to merchant earnings wallet"}
+                    {isEscrowSelected
+                      ? "Protected Payment Active · Funds safeguarded by approved escrow partner until delivery confirmation"
+                      : `Standard Payment Active · Processed via ${paymentConfig?.standardPayment?.label || "verified merchant payment gateway"}`}
                   </span>
                 </div>
               </div>
@@ -456,6 +641,12 @@ export default function CheckoutPage() {
                     <span>Ofia Dispatch Logistics</span>
                     <span className="font-semibold text-stone-900">₦{deliveryFee.toLocaleString()}</span>
                   </div>
+                  {isEscrowSelected && (
+                    <div className="flex justify-between text-blue-700 font-medium">
+                      <span>Protected Payment Fee ({protectionFeePct}%)</span>
+                      <span className="font-semibold">₦{protectionFee.toLocaleString()}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm font-bold text-stone-900 pt-2 border-t border-stone-200">
                     <span>Total Due</span>
                     <span className="font-dropa text-lg text-blue-600">₦{grandTotal.toLocaleString()}</span>

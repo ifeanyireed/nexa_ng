@@ -106,12 +106,12 @@ export async function POST(request: NextRequest) {
         (body.rawAmount ? `₦${Number(body.rawAmount).toLocaleString()}` : "₦0"),
       rawAmount: rawAmount,
       isEscrow: isEscrow,
-      escrowStatus: isEscrow ? "HELD" : "NONE",
-      settlementStatus: isEscrow ? "HELD_ESCROW" : "AVAILABLE",
+      escrowStatus: isEscrow ? "AWAITING_FUNDING" : "NONE",
+      settlementStatus: "PENDING",
       merchantAmount: merchantAmount,
       platformFee: platformFee,
-      status: "IN_PREPARATION",
-      paymentStatus: "PAID",
+      status: body.status || "AWAITING_PAYMENT",
+      paymentStatus: body.paymentStatus || "PENDING",
       deliveryMethod: body.deliveryMethod || "DISPATCH",
       createdAt: new Date().toLocaleDateString("en-US", {
         month: "short",
@@ -138,44 +138,47 @@ export async function POST(request: NextRequest) {
       console.warn("[Orders API] Omnichannel notification warning:", notifErr);
     }
 
-    // Forward to ofia_erp and service_erp for Neon PostgreSQL persistence
+    // Forward to ofia_erp and service_erp for Neon PostgreSQL persistence when configured in env
     try {
-      const erpNextUrl = process.env.ERP_NEXT_URL || "http://localhost:3002";
-      const erpServiceUrl = process.env.ERP_SERVICE_URL || "http://localhost:8084";
+      const erpNextUrl = (process.env.ERP_NEXT_URL || "").trim();
+      const erpServiceUrl = (process.env.ERP_SERVICE_URL || "").trim();
+      const marketplaceUrl = (process.env.MARKETPLACE_SERVICE_URL || "").trim();
 
-      // 1. Forward to ERP Next.js API route (saves to Neon via @neondatabase/serverless)
-      fetch(`${erpNextUrl}/api/erp/shop/orders?tenant=${encodeURIComponent(newOrder.tenantSlug)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newOrder),
-        signal: AbortSignal.timeout(2000),
-      }).catch(() => null);
+      if (erpNextUrl) {
+        fetch(`${erpNextUrl}/api/erp/shop/orders?tenant=${encodeURIComponent(newOrder.tenantSlug)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newOrder),
+          signal: AbortSignal.timeout(2000),
+        }).catch(() => null);
+      }
 
-      // 2. Forward to service_erp Go microservice if available
-      fetch(`${erpServiceUrl}/shop/orders?tenant=${encodeURIComponent(newOrder.tenantSlug)}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-tenant-slug": newOrder.tenantSlug,
-        },
-        body: JSON.stringify(newOrder),
-        signal: AbortSignal.timeout(2000),
-      }).catch(() => null);
+      if (erpServiceUrl) {
+        fetch(`${erpServiceUrl}/shop/orders?tenant=${encodeURIComponent(newOrder.tenantSlug)}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-tenant-slug": newOrder.tenantSlug,
+          },
+          body: JSON.stringify(newOrder),
+          signal: AbortSignal.timeout(2000),
+        }).catch(() => null);
+      }
 
-      // 3. Forward to marketplace_service
-      const marketplaceUrl = process.env.MARKETPLACE_SERVICE_URL || "http://localhost:8083";
-      fetch(`${marketplaceUrl}/api/v1/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          product_id: newOrder.items[0]?.productId || "prod-storefront",
-          quantity: newOrder.items[0]?.quantity || 1,
-          amount: newOrder.rawAmount,
-          shipping_address: newOrder.shippingAddress,
-          phone: newOrder.customerPhone,
-        }),
-        signal: AbortSignal.timeout(1500),
-      }).catch(() => null);
+      if (marketplaceUrl) {
+        fetch(`${marketplaceUrl}/api/v1/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            product_id: newOrder.items[0]?.productId || "prod-storefront",
+            quantity: newOrder.items[0]?.quantity || 1,
+            amount: newOrder.rawAmount,
+            shipping_address: newOrder.shippingAddress,
+            phone: newOrder.customerPhone,
+          }),
+          signal: AbortSignal.timeout(1500),
+        }).catch(() => null);
+      }
     } catch {}
 
     return NextResponse.json({ success: true, order: saved }, { status: 201 });

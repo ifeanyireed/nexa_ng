@@ -39,10 +39,9 @@ function CollectionCardSlideView({
 }: {
   card: CategoryCardData;
 }) {
-  const images =
-    Array.isArray(card.images) && card.images.length > 0
-      ? card.images
-      : [card.image];
+  const images = (
+    Array.isArray(card.images) ? card.images : card.image ? [card.image] : []
+  ).filter((u) => typeof u === "string" && u.trim().length > 0);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);

@@ -2850,4 +2850,270 @@ export const sendTenantPasswordResetEmail = sendPlatformPasswordResetEmail;
 export const sendTenantPasswordChangedEmail = sendPlatformPasswordChangedEmail;
 export const sendTenantEmailVerificationEmail = sendPlatformEmailVerificationEmail;
 
+export interface FintechPartnerTarget {
+  institutionName: string;
+  recipientEmail: string;
+  contactTeam?: string;
+  roleCategory: "ESCROW_CUSTODY_AND_DISPUTE" | "MANAGED_SUBACCOUNT_SPLIT_AND_BYOK";
+}
+
+export const DEFAULT_FINTECH_PARTNER_TARGETS: FintechPartnerTarget[] = [
+  {
+    institutionName: "Vesicash Innovative Technologies",
+    recipientEmail: "info@vesicash.com",
+    contactTeam: "Partnerships, Compliance & Escrow API Team",
+    roleCategory: "ESCROW_CUSTODY_AND_DISPUTE",
+  },
+  {
+    institutionName: "Nomba Financial Services",
+    recipientEmail: "support@nomba.com",
+    contactTeam: "Enterprise Partnerships & Platform APIs Team",
+    roleCategory: "MANAGED_SUBACCOUNT_SPLIT_AND_BYOK",
+  },
+  {
+    institutionName: "Paystack (A Stripe Company)",
+    recipientEmail: "support@paystack.com",
+    contactTeam: "Platform Partnerships & Subaccount Compliance Team",
+    roleCategory: "MANAGED_SUBACCOUNT_SPLIT_AND_BYOK",
+  },
+  {
+    institutionName: "Payaza Africa",
+    recipientEmail: "info@payaza.africa",
+    contactTeam: "Institutional Partnerships & Escrow Collections Team",
+    roleCategory: "ESCROW_CUSTODY_AND_DISPUTE",
+  },
+];
+
+export interface FintechComplianceInquiryOptions {
+  targets?: FintechPartnerTarget[];
+  replyToEmail?: string;
+  ccSenderCopy?: boolean;
+}
+
+/**
+ * Dispatches formal Regulatory Licensing & Technical Capability Inquiry (RFP) emails
+ * to candidate Nigerian payment & escrow fintech institutions per ofia_payments.md.
+ */
+export async function sendFintechComplianceInquiryEmails(
+  options: FintechComplianceInquiryOptions = {}
+): Promise<{
+  success: boolean;
+  replyTo: string;
+  results: Array<{
+    institutionName: string;
+    recipientEmail: string;
+    success: boolean;
+    messageId?: string;
+    error?: string;
+  }>;
+}> {
+  const targets =
+    Array.isArray(options.targets) && options.targets.length > 0
+      ? options.targets
+      : DEFAULT_FINTECH_PARTNER_TARGETS;
+  const replyTo = (options.replyToEmail || "ifeanyireed@gmail.com").trim();
+  const ccSenderCopy = options.ccSenderCopy !== false;
+
+  const { settings, senderFormatted, envSettings } = await getPlatformAuthSmtp(
+    "Ofia Technologies Ltd"
+  );
+
+  const results: Array<{
+    institutionName: string;
+    recipientEmail: string;
+    success: boolean;
+    messageId?: string;
+    error?: string;
+  }> = [];
+
+  for (const target of targets) {
+    const subject = `Partnership & Regulatory Compliance Inquiry: Multi-Tenant Escrow & Split Payment Infrastructure — Ofia.ng`;
+    const contactGreeting = target.contactTeam
+      ? `Dear ${target.institutionName} (${target.contactTeam}),`
+      : `Dear ${target.institutionName} Partnerships & Compliance Team,`;
+
+    const text = `${contactGreeting}
+
+I am writing from Ofia Technologies Ltd (https://www.ofia.ng), an enterprise multi-tenant commerce, POS, and ERP platform powering merchants and storefronts across Nigeria.
+
+We are finalizing external provider onboarding for our three-mode payment architecture and are evaluating ${target.institutionName} as an approved infrastructure partner. Because Ofia strictly operates as a software orchestration platform and does not directly custody regulated third-party escrow funds, we require written confirmation that our payment and escrow partners meet the following regulatory and technical requirements:
+
+1. CBN / Regulatory Licensing & Custody Compliance
+- Confirmation of your current Central Bank of Nigeria (CBN) license status (e.g., PSSP, Switching & Processing, or licensed Commercial/Trust Bank escrow custody partnership).
+- Confirmation that regulated customer funds (specifically for Protected Payments / Escrow holds and platform subaccount splits) are held in licensed custodial/trust accounts compliant with Nigerian financial regulations.
+
+2. Conditional Escrow Lifecycle & Dispute APIs (For Protected Payments)
+- Programmatic API support for creating an order-linked escrow hold where funds remain in licensed escrow custody until buyer delivery confirmation or verified Proof of Delivery (POD) + inspection window expiry.
+- Strict separation between escrow-held funds and available merchant payout balances, with automated freeze/hold capabilities when a buyer opens a dispute.
+- API endpoints for partial or full buyer refunds and automated net merchant settlement release upon dispute resolution.
+
+3. Subaccount Split Settlement & BYOK Support (For Standard & Managed Payments)
+- Programmatic subaccount creation and automated transaction split settlement (deducting Ofia's platform fee while settling net proceeds directly to the merchant's verified Nigerian bank account on a T+1 schedule).
+- Support for merchant BYOK (Bring Your Own Keys) credential verification and isolated per-merchant webhook routing.
+
+4. Cryptographic Webhooks & Reconciliation Guarantees
+- Signed webhook events (HMAC-SHA512 / HMAC-SHA256) covering payment.successful, payment.failed, settlement.completed, refund.processed, escrow.funded, escrow.release_eligible, escrow.released, and escrow.dispute_opened.
+- Unique transaction, settlement, and escrow case references for deterministic double-entry ledger reconciliation.
+
+Next Steps:
+Please reply directly to this email (${replyTo}) with:
+1. A summary of your regulatory license coverage for escrow custody and/or subaccount split settlements in Nigeria;
+2. Links to your API documentation for Escrow / Split Settlement / Webhooks;
+3. Your standard fee schedule, settlement SLAs (T+1 / instant), and onboarding KYB requirements for platform partners.
+
+Warm regards,
+
+Ifeanyi Felix
+Founder & Architecture Lead, Ofia Technologies Ltd
+Web: https://www.ofia.ng
+Direct Reply: ${replyTo}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f8f9fa;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#202124;">
+  <div style="width:100%;background-color:#f8f9fa;padding:32px 16px;box-sizing:border-box;">
+    <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:10px;border:1px solid #dadce0;overflow:hidden;">
+      <div style="padding:28px 32px 20px;border-bottom:1px solid #dadce0;background:#0f172a;color:#ffffff;">
+        <div style="display:inline-block;padding:4px 10px;background:rgba(59,130,246,0.2);border:1px solid rgba(96,165,250,0.4);border-radius:999px;color:#93c5fd;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">
+          Ofia Platform Payment &amp; Escrow Architecture RFP
+        </div>
+        <h2 style="margin:12px 0 4px;font-size:20px;font-weight:700;color:#ffffff;">
+          Regulatory Licensing &amp; Technical Capability Inquiry
+        </h2>
+        <p style="margin:0;font-size:13px;color:#94a3b8;">
+          Prepared for ${target.institutionName} · Reply-To: ${replyTo}
+        </p>
+      </div>
+
+      <div style="padding:28px 32px;font-size:14px;line-height:1.65;color:#334155;">
+        <p style="margin:0 0 16px;font-weight:600;color:#0f172a;">${contactGreeting}</p>
+
+        <p style="margin:0 0 16px;">
+          I am writing from <strong>Ofia Technologies Ltd</strong> (<a href="https://www.ofia.ng" style="color:#1d4ed8;text-decoration:none;">https://www.ofia.ng</a>), an enterprise multi-tenant commerce, POS, and ERP platform powering merchants and storefronts across Nigeria.
+        </p>
+
+        <p style="margin:0 0 16px;">
+          We are finalizing external provider onboarding for our three-mode payment architecture (<strong>Merchant BYOK</strong>, <strong>Ofia Managed Subaccount Splits</strong>, and <strong>Protected Escrow Payments</strong>) and are evaluating <strong>${target.institutionName}</strong> as an approved infrastructure partner. Because Ofia strictly operates as a software orchestration platform and does not directly custody regulated third-party escrow funds, we require confirmation that your infrastructure satisfies the following regulatory and technical requirements:
+        </p>
+
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #1d4ed8;border-radius:6px;padding:16px 20px;margin:20px 0;">
+          <h3 style="margin:0 0 8px;font-size:14px;color:#0f172a;">1. CBN / Regulatory Licensing &amp; Fund Custody Compliance</h3>
+          <ul style="margin:0 0 14px;padding-left:18px;font-size:13px;color:#334155;">
+            <li>Confirmation of your current <strong>Central Bank of Nigeria (CBN)</strong> license status (e.g., PSSP, Switching &amp; Processing, or licensed Commercial/Trust Bank escrow custody arrangement).</li>
+            <li>Confirmation that customer funds held during Protected Payment (Escrow) windows and subaccount splits are ring-fenced in licensed custodial/trust accounts compliant with Nigerian financial regulations.</li>
+          </ul>
+
+          <h3 style="margin:0 0 8px;font-size:14px;color:#0f172a;">2. Conditional Escrow Lifecycle &amp; Dispute Resolution APIs</h3>
+          <ul style="margin:0 0 14px;padding-left:18px;font-size:13px;color:#334155;">
+            <li>Programmatic creation of order-linked escrow holds where funds remain in licensed custody until buyer delivery confirmation or verified Proof of Delivery (POD) + inspection window expiry.</li>
+            <li>Automated payout freeze when a buyer opens a dispute within the inspection window, with API support for full/partial refunds or merchant release upon resolution.</li>
+          </ul>
+
+          <h3 style="margin:0 0 8px;font-size:14px;color:#0f172a;">3. Multi-Tenant Subaccount Split Settlement &amp; BYOK</h3>
+          <ul style="margin:0 0 14px;padding-left:18px;font-size:13px;color:#334155;">
+            <li>Programmatic merchant subaccount provisioning and automated split settlement (deducting Ofia's platform fee while settling net proceeds directly to the merchant's verified bank account on a T+1 schedule).</li>
+            <li>Support for merchant BYOK API credential validation and tenant-isolated webhook metadata.</li>
+          </ul>
+
+          <h3 style="margin:0 0 8px;font-size:14px;color:#0f172a;">4. Signed Webhooks &amp; Ledger Reconciliation</h3>
+          <ul style="margin:0;padding-left:18px;font-size:13px;color:#334155;">
+            <li>Cryptographically signed webhooks (HMAC-SHA512 / HMAC-SHA256) for <code>payment.successful</code>, <code>settlement.completed</code>, <code>refund.processed</code>, <code>escrow.funded</code>, <code>escrow.released</code>, and <code>escrow.dispute_opened</code>.</li>
+          </ul>
+        </div>
+
+        <p style="margin:0 0 16px;">
+          <strong>Next Steps:</strong> Please reply directly to <a href="mailto:${replyTo}" style="color:#1d4ed8;font-weight:600;">${replyTo}</a> with:
+        </p>
+        <ol style="margin:0 0 20px;padding-left:20px;font-size:13.5px;color:#334155;">
+          <li>Your regulatory license coverage for escrow custody and/or subaccount split settlements in Nigeria;</li>
+          <li>Links to your developer API documentation for Escrow, Split Settlements, and Webhooks;</li>
+          <li>Your commercial fee schedule, settlement SLAs, and platform KYB onboarding checklist.</li>
+        </ol>
+
+        <p style="margin:0;color:#0f172a;">
+          Warm regards,<br/><br/>
+          <strong>Ifeanyi Felix</strong><br/>
+          Founder &amp; Architecture Lead, Ofia Technologies Ltd<br/>
+          <a href="https://www.ofia.ng" style="color:#1d4ed8;text-decoration:none;">https://www.ofia.ng</a> · Reply-To: <a href="mailto:${replyTo}" style="color:#1d4ed8;text-decoration:none;">${replyTo}</a>
+        </p>
+      </div>
+
+      <div style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;text-align:center;">
+        &copy; ${new Date().getFullYear()} Ofia Technologies Ltd. All replies are routed directly to ${replyTo}.
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    try {
+      const transporter = createNodemailerTransporter(settings);
+      const info = await transporter.sendMail({
+        from: senderFormatted,
+        to: target.recipientEmail,
+        replyTo,
+        ...(ccSenderCopy ? { cc: replyTo } : {}),
+        subject,
+        text,
+        html,
+      });
+      results.push({
+        institutionName: target.institutionName,
+        recipientEmail: target.recipientEmail,
+        success: true,
+        messageId: info.messageId,
+      });
+    } catch (primaryErr: any) {
+      if (settings !== envSettings) {
+        try {
+          const fallbackTransporter = createNodemailerTransporter(envSettings);
+          const fallbackInfo = await fallbackTransporter.sendMail({
+            from: senderFormatted,
+            to: target.recipientEmail,
+            replyTo,
+            ...(ccSenderCopy ? { cc: replyTo } : {}),
+            subject,
+            text,
+            html,
+          });
+          results.push({
+            institutionName: target.institutionName,
+            recipientEmail: target.recipientEmail,
+            success: true,
+            messageId: fallbackInfo.messageId,
+          });
+          continue;
+        } catch (fallbackErr: any) {
+          results.push({
+            institutionName: target.institutionName,
+            recipientEmail: target.recipientEmail,
+            success: false,
+            error: fallbackErr.message,
+          });
+          continue;
+        }
+      }
+      results.push({
+        institutionName: target.institutionName,
+        recipientEmail: target.recipientEmail,
+        success: false,
+        error: primaryErr.message,
+      });
+    }
+  }
+
+  return {
+    success: results.every((r) => r.success),
+    replyTo,
+    results,
+  };
+}
+
+
 

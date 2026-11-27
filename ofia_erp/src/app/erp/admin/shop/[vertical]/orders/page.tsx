@@ -19,6 +19,8 @@ import {
   Package,
   RefreshCw,
   ExternalLink,
+  ShieldCheck,
+  CreditCard,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -27,10 +29,9 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaModal } from "@/components/nexa/NexaModal";
 import { useAuth } from "@/components/nexa/AuthContext";
-import { useActiveTenant } from "@/lib/tenant-context";
+import { useActiveTenant, extractSubdomainOrParam } from "@/lib/tenant-context";
 import {
   VERTICAL_DEFINITIONS,
-  getDefaultOrdersForVertical,
   CommerceOrderItem,
   VerticalKey,
 } from "@/lib/verticals";
@@ -40,6 +41,7 @@ export default function VerticalOrdersPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { activeTenant } = useActiveTenant(user?.email);
+  const resolvedSlug = activeTenant?.slug || extractSubdomainOrParam() || "";
 
   const rawVertical = (params?.vertical as string) || "fashion";
   const verticalKey: VerticalKey = (rawVertical in VERTICAL_DEFINITIONS ? rawVertical : "fashion") as VerticalKey;
@@ -52,9 +54,7 @@ export default function VerticalOrdersPage() {
     }
   }, [activeTenant?.vertical, verticalKey, router]);
 
-  const [orders, setOrders] = useState<CommerceOrderItem[]>(() =>
-    getDefaultOrdersForVertical(verticalKey)
-  );
+  const [orders, setOrders] = useState<CommerceOrderItem[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<CommerceOrderItem | null>(null);
   const [filterChannel, setFilterChannel] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -63,24 +63,24 @@ export default function VerticalOrdersPage() {
   const [liveAlert, setLiveAlert] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
-    const slug = activeTenant?.slug || "neweratransports";
+    if (!resolvedSlug) return;
     setIsRefreshing(true);
     try {
-      const res = await fetch(`/api/erp/shop/orders?tenant=${encodeURIComponent(slug)}&vertical=${encodeURIComponent(verticalKey)}`, {
+      const res = await fetch(`/api/erp/shop/orders?tenant=${encodeURIComponent(resolvedSlug)}&vertical=${encodeURIComponent(verticalKey)}`, {
         cache: "no-store",
       });
       const data = await res.json().catch(() => null);
-      if (data && Array.isArray(data.orders) && data.orders.length > 0) {
+      if (data && Array.isArray(data.orders)) {
         setOrders(data.orders);
       } else {
-        setOrders(getDefaultOrdersForVertical(verticalKey));
+        setOrders([]);
       }
     } catch {
-      setOrders(getDefaultOrdersForVertical(verticalKey));
+      setOrders([]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [activeTenant?.slug, verticalKey]);
+  }, [resolvedSlug, verticalKey]);
 
   useEffect(() => {
     fetchOrders();
@@ -88,12 +88,11 @@ export default function VerticalOrdersPage() {
 
   // Live real-time SSE stream listener
   useEffect(() => {
-    const slug = activeTenant?.slug || "neweratransports";
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !resolvedSlug) return;
 
     let eventSource: EventSource | null = null;
     try {
-      eventSource = new EventSource(`/api/erp/shop/orders/stream?tenant=${encodeURIComponent(slug)}`);
+      eventSource = new EventSource(`/api/erp/shop/orders/stream?tenant=${encodeURIComponent(resolvedSlug)}`);
 
       eventSource.onmessage = (e) => {
         try {
@@ -123,10 +122,10 @@ export default function VerticalOrdersPage() {
     return () => {
       if (eventSource) eventSource.close();
     };
-  }, [activeTenant?.slug]);
+  }, [resolvedSlug]);
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
-    const slug = activeTenant?.slug || "neweratransports";
+    if (!resolvedSlug) return;
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId || o.orderNumber === orderId ? { ...o, status: newStatus as any } : o))
     );
@@ -138,7 +137,7 @@ export default function VerticalOrdersPage() {
         body: JSON.stringify({
           orderId,
           status: newStatus,
-          tenantSlug: slug,
+          tenantSlug: resolvedSlug,
         }),
       });
     } catch {
@@ -147,13 +146,26 @@ export default function VerticalOrdersPage() {
   };
 
   const filteredOrders = useMemo(() => {
-    return orders.filter((o) => {
+    return orders.filter((o: any) => {
       const matchSearch =
         o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
         o.customerName.toLowerCase().includes(search.toLowerCase()) ||
         (o.itemsSummary && o.itemsSummary.toLowerCase().includes(search.toLowerCase()));
       const matchChannel = filterChannel === "ALL" || o.channel === filterChannel;
-      const matchStatus = filterStatus === "ALL" || o.status === filterStatus;
+      let matchStatus = true;
+      if (filterStatus === "AWAITING_PAYMENT") {
+        matchStatus = o.status === "AWAITING_PAYMENT" || o.paymentStatus === "PENDING" || o.paymentStatus === "awaiting_payment";
+      } else if (filterStatus === "PAID") {
+        matchStatus = o.paymentStatus === "PAID" || o.paymentStatus === "paid";
+      } else if (filterStatus === "PROTECTED_ESCROW") {
+        matchStatus = Boolean(o.isEscrow) || o.paymentMode === "protected_escrow";
+      } else if (filterStatus === "DISPUTED") {
+        matchStatus = o.escrowStatus === "DISPUTED" || o.escrowStatus === "dispute_opened" || o.status === "DISPUTED";
+      } else if (filterStatus === "REFUNDED") {
+        matchStatus = o.paymentStatus === "REFUNDED" || o.paymentStatus === "refunded" || o.status === "REFUNDED";
+      } else if (filterStatus !== "ALL") {
+        matchStatus = o.status === filterStatus;
+      }
       return matchSearch && matchChannel && matchStatus;
     });
   }, [orders, search, filterChannel, filterStatus]);
@@ -179,6 +191,12 @@ export default function VerticalOrdersPage() {
           >
             {isRefreshing ? "Syncing..." : "Sync"}
           </NexaButton>
+
+          <Link href={resolvedSlug ? `/tenant/payments?tenant=${encodeURIComponent(resolvedSlug)}` : "/tenant/payments"}>
+            <NexaButton size="sm" variant="outline" leftIcon={<CreditCard className="w-3.5 h-3.5" />} className="rounded-full font-bold">
+              Payments & Escrow
+            </NexaButton>
+          </Link>
 
           <Link href={`/erp/admin/shop/${verticalKey}/pos`}>
             <NexaButton size="sm" variant="primary" leftIcon={<ShoppingCart className="w-3.5 h-3.5" />} className="bg-[#1A56DB] text-white rounded-full font-bold shadow-xs">
@@ -264,11 +282,17 @@ export default function VerticalOrdersPage() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="px-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none cursor-pointer"
             >
-              <option value="ALL">All Statuses</option>
-              <option value="IN_PREPARATION">In Preparation</option>
-              <option value="READY_DISPATCH">Ready Dispatch</option>
+              <option value="ALL">All Orders</option>
+              <option value="AWAITING_PAYMENT">Awaiting Payment</option>
+              <option value="PAID">Paid</option>
+              <option value="IN_PREPARATION">In Preparation / Processing</option>
+              <option value="READY_DISPATCH">Dispatched / Ready</option>
               <option value="DELIVERED">Delivered</option>
+              <option value="COMPLETED">Completed</option>
               <option value="CANCELLED">Cancelled</option>
+              <option value="REFUNDED">Refunded</option>
+              <option value="PROTECTED_ESCROW">Protected (Escrow) Orders</option>
+              <option value="DISPUTED">Disputed Orders</option>
             </select>
           </div>
         </div>
@@ -281,10 +305,10 @@ export default function VerticalOrdersPage() {
                 <tr className="border-b border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] uppercase tracking-wider font-extrabold text-[10px]">
                   <th className="p-4">Order Ref</th>
                   <th className="p-4">Customer</th>
-                  <th className="p-4">Channel</th>
+                  <th className="p-4">Channel & Payment Mode</th>
                   <th className="p-4">Items / Summary</th>
                   <th className="p-4">Amount</th>
-                  <th className="p-4">Status</th>
+                  <th className="p-4">Status & Payment</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -296,7 +320,7 @@ export default function VerticalOrdersPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((ord) => (
+                  filteredOrders.map((ord: any) => (
                     <tr key={ord.id} className="hover:bg-[var(--nexa-bg-surface)]/50 transition-colors">
                       <td className="p-4 font-mono font-bold text-[var(--nexa-text-primary)]">
                         {ord.orderNumber}
@@ -306,7 +330,7 @@ export default function VerticalOrdersPage() {
                         <span className="font-bold text-[var(--nexa-text-primary)] block">{ord.customerName}</span>
                         <span className="text-[10px] text-[var(--nexa-text-muted)]">{ord.customerPhone}</span>
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 space-y-1">
                         <NexaBadge
                           variant={ord.channel === "POS_COUNTER" ? "purple" : "brand"}
                           size="sm"
@@ -314,12 +338,25 @@ export default function VerticalOrdersPage() {
                         >
                           {ord.channel}
                         </NexaBadge>
+                        <div>
+                          {ord.isEscrow || ord.paymentMode === "protected_escrow" ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                              <ShieldCheck className="w-3 h-3" /> Protected Escrow ({ord.escrowStatus || "HELD"})
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-[var(--nexa-text-muted)] font-semibold">
+                              {ord.paymentMode === "merchant_byok"
+                                ? `Direct BYOK (${ord.paymentProvider || "Gateway"})`
+                                : "Standard Payment"}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4 max-w-xs truncate text-[var(--nexa-text-secondary)]">
                         {ord.itemsSummary || "Direct Order Item"}
                       </td>
                       <td className="p-4 font-bold text-[#1A56DB]">{ord.totalAmount}</td>
-                      <td className="p-4">
+                      <td className="p-4 space-y-1">
                         <NexaBadge
                           variant={
                             ord.status === "DELIVERED"
@@ -335,6 +372,9 @@ export default function VerticalOrdersPage() {
                         >
                           {ord.status}
                         </NexaBadge>
+                        <span className="block text-[10px] font-bold text-[var(--nexa-text-muted)]">
+                          Payment: {ord.paymentStatus || "PAID"}
+                        </span>
                       </td>
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
@@ -453,10 +493,46 @@ export default function VerticalOrdersPage() {
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-[var(--nexa-text-muted)]">Payment:</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">{selectedOrder.paymentMethod || "Card / POS"}</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      {selectedOrder.paymentStatus || "PAID"} ({selectedOrder.paymentMethod || "Card / POS"})
+                    </span>
                   </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[var(--nexa-text-muted)]">Mode / Route:</span>
+                    <span className="font-bold text-[var(--nexa-text-primary)]">
+                      {selectedOrder.isEscrow || (selectedOrder as any).paymentMode === "protected_escrow"
+                        ? `Protected Escrow (${selectedOrder.escrowStatus || "HELD"})`
+                        : (selectedOrder as any).paymentMode || "Standard Payment"}
+                    </span>
+                  </div>
+                  {(selectedOrder as any).paymentReference && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[var(--nexa-text-muted)]">Gateway Ref:</span>
+                      <span className="font-mono text-[10px] text-[var(--nexa-text-secondary)]">
+                        {(selectedOrder as any).paymentReference}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {(selectedOrder.isEscrow || (selectedOrder as any).paymentMode === "protected_escrow") && (
+                <div className="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="font-bold text-indigo-700 dark:text-indigo-300 block">
+                      Protected Payment (Escrow Custody: {selectedOrder.escrowStatus || "HELD"})
+                    </span>
+                    <span className="text-[11px] text-[var(--nexa-text-secondary)]">
+                      Funds remain held in escrow until buyer delivery confirmation or inspection window expiry. Merchants cannot manually force escrow release.
+                    </span>
+                  </div>
+                  <Link href={resolvedSlug ? `/tenant/payments?tenant=${encodeURIComponent(resolvedSlug)}` : "/tenant/payments"}>
+                    <NexaButton size="sm" variant="outline" className="rounded-full text-[11px] shrink-0">
+                      Submit POD / Escrow Console
+                    </NexaButton>
+                  </Link>
+                </div>
+              )}
 
               {/* Ordered Items Breakdown */}
               <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-3">

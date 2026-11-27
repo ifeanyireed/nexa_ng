@@ -65,6 +65,10 @@ export function useCollectionsBento({
       }
     }
 
+    // Check if the merchant explicitly customized/saved card1 images (including deleting all fallback covers)
+    const hasExplicitCard1Images =
+      c1 && (Array.isArray(c1.images) || c1.imagesCustomized === true);
+
     // If no category selected or category has no product images, use configured Sliding Design Covers or product IDs:
     if (resolvedImages.length === 0) {
       if (Array.isArray(c1?.images) && c1.images.length > 0) {
@@ -77,8 +81,8 @@ export function useCollectionsBento({
       }
     }
 
-    if (resolvedImages.length === 0 && products.length > 0) {
-      // Pick first half of products for Collection 1
+    if (!hasExplicitCard1Images && resolvedImages.length === 0 && products.length > 0) {
+      // Pick first half of products for Collection 1 only if merchant hasn't explicitly configured/deleted covers
       const half = Math.ceil(products.length / 2);
       const pool = products.slice(0, half);
       resolvedImages = pool
@@ -87,11 +91,13 @@ export function useCollectionsBento({
         .slice(0, 5);
     }
 
-    if (resolvedImages.length === 0) {
+    if (!hasExplicitCard1Images && resolvedImages.length === 0) {
       resolvedImages = defaults.card1.images || (defaults.card1.image ? [defaults.card1.image] : []);
     }
 
-    const primaryImage = resolvedImages[0] || c1?.image || defaults.card1.image;
+    const primaryImage = hasExplicitCard1Images
+      ? resolvedImages[0] || ""
+      : resolvedImages[0] || c1?.image || defaults.card1.image;
 
     return {
       title: typeof rawTitle === "string" ? rawTitle.replace(/\\n/g, "\n") : rawTitle,
@@ -135,6 +141,9 @@ export function useCollectionsBento({
       }
     }
 
+    const hasExplicitCard2Images =
+      c2 && (Array.isArray(c2.images) || c2.imagesCustomized === true);
+
     // If no category selected or category has no product images, use configured Sliding Design Covers or product IDs:
     if (resolvedImages.length === 0) {
       if (Array.isArray(c2?.images) && c2.images.length > 0) {
@@ -147,7 +156,7 @@ export function useCollectionsBento({
       }
     }
 
-    if (resolvedImages.length === 0 && products.length > 0) {
+    if (!hasExplicitCard2Images && resolvedImages.length === 0 && products.length > 0) {
       // Pick second half of products for Collection 2
       const half = Math.ceil(products.length / 2);
       const pool = products.slice(half);
@@ -157,11 +166,13 @@ export function useCollectionsBento({
         .slice(0, 5);
     }
 
-    if (resolvedImages.length === 0) {
+    if (!hasExplicitCard2Images && resolvedImages.length === 0) {
       resolvedImages = defaults.card2.images || (defaults.card2.image ? [defaults.card2.image] : []);
     }
 
-    const primaryImage = resolvedImages[0] || c2?.image || defaults.card2.image;
+    const primaryImage = hasExplicitCard2Images
+      ? resolvedImages[0] || ""
+      : resolvedImages[0] || c2?.image || defaults.card2.image;
 
     return {
       title: typeof rawTitle === "string" ? rawTitle.replace(/\\n/g, "\n") : rawTitle,

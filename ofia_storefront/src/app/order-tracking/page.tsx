@@ -51,6 +51,18 @@ function TrackingContent() {
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [secondsAgo, setSecondsAgo] = useState(0);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [paymentInfo, setPaymentInfo] = useState<{
+    transaction: any;
+    escrowCase: any;
+    disputes: any[];
+    history: any[];
+    refunds: any[];
+  } | null>(null);
+  const [escrowActionLoading, setEscrowActionLoading] = useState(false);
+  const [escrowActionMessage, setEscrowActionMessage] = useState<string | null>(null);
+  const [showDisputeForm, setShowDisputeForm] = useState(false);
+  const [disputeReason, setDisputeReason] = useState("Item not as described or damaged");
+  const [disputeDescription, setDisputeDescription] = useState("");
 
   // Return navigation details
   const activeTenantSlug = order?.tenantSlug || tenantParam || "";
@@ -122,6 +134,25 @@ function TrackingContent() {
             } catch (nErr) {
               console.warn("[Notifications] Non-fatal notification fetch notice:", nErr);
             }
+
+            try {
+              const payRes = await fetch(
+                `/api/storefront/payments?ref=${encodeURIComponent(refToFetch.trim())}&tenant=${encodeURIComponent(effTenant)}`,
+                { cache: "no-store" }
+              );
+              if (payRes.ok) {
+                const payData = await payRes.json();
+                if (payData.success) {
+                  setPaymentInfo({
+                    transaction: payData.transaction || null,
+                    escrowCase: payData.escrowCase || null,
+                    disputes: Array.isArray(payData.disputes) ? payData.disputes : [],
+                    history: Array.isArray(payData.history) ? payData.history : [],
+                    refunds: Array.isArray(payData.refunds) ? payData.refunds : [],
+                  });
+                }
+              }
+            } catch {}
           }
         } else {
           // Direct dispatch shipment lookup fallback
@@ -562,11 +593,21 @@ function TrackingContent() {
 
             {/* Price & Payment Summary */}
             <div className="pt-3 border-t border-stone-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-2 text-stone-600">
+              <div className="flex flex-wrap items-center gap-2 text-stone-600">
                 <CreditCard className="w-4 h-4 text-emerald-600" />
                 <span>
                   Tender: <strong className="uppercase">{order.paymentMethod || "Card"}</strong> ·{" "}
-                  Status: <strong className="text-emerald-700">{order.paymentStatus}</strong>
+                  Mode:{" "}
+                  <strong className="uppercase">
+                    {paymentInfo?.transaction?.payment_mode ||
+                      (isEscrowOrder ? "protected_escrow" : "standard")}
+                  </strong>{" "}
+                  · Ref:{" "}
+                  <strong className="font-mono">
+                    {paymentInfo?.transaction?.provider_reference || order.orderNumber}
+                  </strong>{" "}
+                  · Payment Status:{" "}
+                  <strong className="text-emerald-700">{order.paymentStatus}</strong>
                 </span>
               </div>
               <div className="text-sm font-bold text-zinc-900 sm:text-right">
@@ -574,6 +615,216 @@ function TrackingContent() {
               </div>
             </div>
           </div>
+
+          {/* Protected Payment (Escrow Custody, Buyer Confirmation & Dispute Actions) */}
+          {(isEscrowOrder || paymentInfo?.escrowCase) && (
+            <div className="p-5 sm:p-6 rounded-2xl bg-blue-50/60 border border-blue-200 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-blue-200/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <span className="font-bold text-xs uppercase tracking-wider text-blue-950 block">
+                      Protected Payment · Escrow Partner Custody
+                    </span>
+                    <span className="text-[11px] text-blue-800">
+                      Escrow Ref:{" "}
+                      <strong className="font-mono">
+                        {paymentInfo?.escrowCase?.provider_escrow_reference || `ESCP-${order.orderNumber}`}
+                      </strong>{" "}
+                      · Provider:{" "}
+                      <strong>
+                        {paymentInfo?.escrowCase?.provider || "Ofia Approved Escrow Partner"}
+                      </strong>
+                    </span>
+                  </div>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-blue-600 text-white text-[11px] font-bold uppercase tracking-wider self-start sm:self-auto">
+                  Escrow Status: {(paymentInfo?.escrowCase?.status || (order as any).escrowStatus || "HELD").toUpperCase()}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-white border border-blue-100">
+                  <span className="text-[10px] font-bold uppercase text-stone-400 block">Funds Custody</span>
+                  <span className="font-bold text-stone-900">
+                    {paymentInfo?.escrowCase?.status === "released"
+                      ? "Released to Merchant"
+                      : paymentInfo?.escrowCase?.status === "refunded"
+                      ? "Refunded to Buyer"
+                      : paymentInfo?.escrowCase?.status === "disputed"
+                      ? "Frozen (Under Dispute)"
+                      : "Safeguarded by Escrow Partner"}
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-blue-100">
+                  <span className="text-[10px] font-bold uppercase text-stone-400 block">Merchant Fulfilment</span>
+                  <span className="font-bold text-stone-900 uppercase">
+                    {paymentInfo?.escrowCase?.fulfilment_status || order.status}
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-blue-100">
+                  <span className="text-[10px] font-bold uppercase text-stone-400 block">Delivery Evidence</span>
+                  <span className="font-bold text-stone-900">
+                    {paymentInfo?.escrowCase?.tracking_number
+                      ? `${paymentInfo.escrowCase.courier_name || "Courier"} · ${paymentInfo.escrowCase.tracking_number}`
+                      : paymentInfo?.escrowCase?.delivery_evidence_notes || "Awaiting merchant POD"}
+                  </span>
+                </div>
+              </div>
+
+              {escrowActionMessage && (
+                <div className="p-3 rounded-xl bg-white border border-blue-200 text-xs font-semibold text-blue-950">
+                  {escrowActionMessage}
+                </div>
+              )}
+
+              {/* Buyer Confirmation & Report Problem Actions */}
+              {paymentInfo?.escrowCase?.status !== "released" &&
+                paymentInfo?.escrowCase?.status !== "refunded" && (
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <button
+                      type="button"
+                      disabled={
+                        escrowActionLoading ||
+                        paymentInfo?.escrowCase?.status === "release_pending" ||
+                        paymentInfo?.escrowCase?.status === "disputed"
+                      }
+                      onClick={async () => {
+                        setEscrowActionLoading(true);
+                        setEscrowActionMessage(null);
+                        try {
+                          const res = await fetch("/api/storefront/payments", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              action: "CONFIRM_ESCROW_RECEIPT",
+                              tenantSlug: activeTenantSlug,
+                              orderNumber: order.orderNumber,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok || !data.success) {
+                            throw new Error(data.error || "Could not confirm receipt");
+                          }
+                          setEscrowActionMessage(data.message);
+                          fetchOrderDetails(order.orderNumber, true);
+                        } catch (err: any) {
+                          setEscrowActionMessage(err.message);
+                        } finally {
+                          setEscrowActionLoading(false);
+                        }
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-stone-300 text-white text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      {paymentInfo?.escrowCase?.status === "release_pending"
+                        ? "Release Requested from Escrow Partner"
+                        : "Confirm Delivery Receipt & Authorize Release"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowDisputeForm((prev) => !prev)}
+                      className="px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      Report a Problem / Open Dispute
+                    </button>
+                  </div>
+                )}
+
+              {showDisputeForm && (
+                <div className="p-4 rounded-xl bg-white border border-rose-200 space-y-3 text-xs">
+                  <div className="font-bold text-rose-900">
+                    Open Protected Payment Dispute (Freezes Escrow Release)
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-stone-600 block mb-1">Reason</label>
+                    <select
+                      value={disputeReason}
+                      onChange={(e) => setDisputeReason(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-stone-200 text-xs"
+                    >
+                      <option value="Item not as described or damaged">Item not as described or damaged</option>
+                      <option value="Order not delivered">Order not delivered</option>
+                      <option value="Incomplete or wrong items">Incomplete or wrong items</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-stone-600 block mb-1">
+                      Problem Details
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={disputeDescription}
+                      onChange={(e) => setDisputeDescription(e.target.value)}
+                      placeholder="Describe the issue clearly so the escrow dispute desk and merchant can resolve it..."
+                      className="w-full px-3 py-2 rounded-lg border border-stone-200 text-xs"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowDisputeForm(false)}
+                      className="px-3 py-1.5 rounded-lg border border-stone-200 text-stone-600 font-bold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={escrowActionLoading || !disputeDescription.trim()}
+                      onClick={async () => {
+                        setEscrowActionLoading(true);
+                        setEscrowActionMessage(null);
+                        try {
+                          const res = await fetch("/api/storefront/payments", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              action: "OPEN_ESCROW_DISPUTE",
+                              tenantSlug: activeTenantSlug,
+                              orderNumber: order.orderNumber,
+                              reason: disputeReason,
+                              description: disputeDescription,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok || !data.success) {
+                            throw new Error(data.error || "Could not open dispute");
+                          }
+                          setEscrowActionMessage(data.message);
+                          setShowDisputeForm(false);
+                          setDisputeDescription("");
+                          fetchOrderDetails(order.orderNumber, true);
+                        } catch (err: any) {
+                          setEscrowActionMessage(err.message);
+                        } finally {
+                          setEscrowActionLoading(false);
+                        }
+                      }}
+                      className="px-4 py-1.5 rounded-lg bg-rose-600 text-white font-bold"
+                    >
+                      Submit Dispute & Freeze Release
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {paymentInfo?.disputes && paymentInfo.disputes.length > 0 && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs space-y-1">
+                  <div className="font-bold text-rose-900">
+                    Active Dispute #{paymentInfo.disputes[0].provider_dispute_reference || paymentInfo.disputes[0].id} ({paymentInfo.disputes[0].status})
+                  </div>
+                  <p className="text-rose-800">
+                    <strong>Reason:</strong> {paymentInfo.disputes[0].reason} — {paymentInfo.disputes[0].description}
+                  </p>
+                  {paymentInfo.disputes[0].merchant_response && (
+                    <p className="text-stone-700 pt-1 border-t border-rose-200/60">
+                      <strong>Merchant Response:</strong> {paymentInfo.disputes[0].merchant_response}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Customer Omnichannel Touchpoints & Receipts */}
           <div className="p-5 sm:p-6 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">

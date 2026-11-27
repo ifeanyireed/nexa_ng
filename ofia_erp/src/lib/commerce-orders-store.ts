@@ -75,6 +75,11 @@ export async function getErpOrders(tenantSlug?: string, vertical?: VerticalKey):
                COALESCE(settlement_status, 'AVAILABLE') as settlement_status,
                COALESCE(merchant_amount, 0) as merchant_amount,
                COALESCE(platform_fee, 0) as platform_fee,
+               COALESCE(payment_mode, CASE WHEN is_escrow THEN 'protected_escrow' ELSE 'ofia_managed' END) as payment_mode,
+               COALESCE(payment_provider, '') as payment_provider,
+               COALESCE(payment_reference, '') as payment_reference,
+               COALESCE(fulfilment_status, 'awaiting_acceptance') as fulfilment_status,
+               COALESCE(protection_fee, 0) as protection_fee,
                COALESCE(vertical, 'retail') as vertical,
                created_at, updated_at
         FROM shop_orders
@@ -99,6 +104,11 @@ export async function getErpOrders(tenantSlug?: string, vertical?: VerticalKey):
           rawAmount: Number(r.raw_amount) || 0,
           status: r.status,
           paymentStatus: r.payment_status || "PAID",
+          paymentMode: r.payment_mode,
+          paymentProvider: r.payment_provider,
+          paymentReference: r.payment_reference,
+          fulfilmentStatus: r.fulfilment_status,
+          protectionFee: Number(r.protection_fee) || 0,
           deliveryMethod: r.delivery_method || "DISPATCH",
           shippingAddress: r.shipping_address,
           isEscrow: Boolean(r.is_escrow),
@@ -234,7 +244,10 @@ export async function saveErpOrder(order: Partial<CommerceOrderItem>): Promise<C
       `;
 
       // 1b. Multi-Tenant Wallet Credit & Split Execution
-      if (rawAmount > 0) {
+      // Only credit wallet at creation time if payment is already confirmed (e.g. POS counter).
+      // Orders created with paymentStatus = 'PENDING' are credited after server-side payment verification.
+      const isAlreadyPaid = (newOrder.paymentStatus || "").toUpperCase() === "PAID";
+      if (rawAmount > 0 && isAlreadyPaid) {
         const walletId = `wal-${slug}`;
         const txId = `tx-${Date.now().toString().slice(-8)}`;
 
@@ -338,38 +351,31 @@ export async function updateErpOrderStatus(
       `;
       if (rows && rows.length > 0) matchedOrder = rows[0];
 
-      if (newStatus === "DELIVERED" && matchedOrder?.is_escrow && matchedOrder?.escrow_status === "HELD") {
-        const mAmount = Number(matchedOrder.merchant_amount) || Math.max(0, Number(matchedOrder.raw_amount) * 0.985);
-
-        // Escrow Release upon delivery
+      if (newStatus === "DELIVERED" && matchedOrder?.is_escrow) {
+        // Part H Section 13 & Part I Section 15:
+        // Merchants must NEVER manually mark escrow funds as released.
+        // Marking an escrow order DELIVERED updates fulfilment_status to 'delivered'
+        // and transitions escrow_status to 'AWAITING_BUYER_CONFIRMATION'.
         await sql`
           UPDATE shop_orders
           SET status = 'DELIVERED',
-              escrow_status = 'RELEASED',
-              settlement_status = 'AVAILABLE',
+              fulfilment_status = 'delivered',
+              escrow_status = CASE WHEN escrow_status = 'RELEASED' THEN 'RELEASED' ELSE 'AWAITING_BUYER_CONFIRMATION' END,
               updated_at = NOW()
           WHERE (id = ${orderIdOrNum} OR order_number = ${orderIdOrNum})
             AND LOWER(tenant_slug) = ${cleanTenant}
         `;
 
-        await sql`
-          UPDATE tenant_wallets
-          SET escrow_balance = GREATEST(0, escrow_balance - ${mAmount}),
-              available_balance = available_balance + ${mAmount},
-              updated_at = NOW()
-          WHERE LOWER(tenant_slug) = ${cleanTenant}
-        `;
-
-        const releaseTxId = `tx-rel-${Date.now().toString().slice(-8)}`;
-        await sql`
-          INSERT INTO tenant_wallet_transactions (
-            id, tenant_slug, tenant_id, type, amount, reference, description, channel, is_escrow, status, created_at
-          ) VALUES (
-            ${releaseTxId}, ${cleanTenant}, ${matchedOrder.tenant_id || ""}, 'ESCROW_RELEASE', ${mAmount},
-            ${matchedOrder.order_number}, ${`Escrow payout released for order #${matchedOrder.order_number} upon delivery verification. Credited to available balance.`},
-            'STOREFRONT', FALSE, 'SUCCESS', NOW()
-          )
-        `;
+        try {
+          await sql`
+            UPDATE escrow_cases
+            SET fulfilment_status = 'delivered',
+                status = CASE WHEN status = 'released' THEN 'released' ELSE 'awaiting_buyer_confirmation' END,
+                updated_at = NOW()
+            WHERE (order_id = ${matchedOrder.id} OR order_number = ${matchedOrder.order_number})
+              AND LOWER(tenant_slug) = ${cleanTenant}
+          `;
+        } catch {}
       } else {
         await sql`
           UPDATE shop_orders

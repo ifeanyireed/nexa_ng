@@ -134,10 +134,8 @@ export default function VerticalStoreStudioPage() {
   );
 
   const [season, setSeason] = useState("Harmattan / Resort 2026");
-  const [collectionName, setCollectionName] = useState("Heritage Noir Capsule");
-  const [collectionDescription, setCollectionDescription] = useState(
-    "Curated hand-embroidered tunics, bespoke two-pieces, and structured seasonal outerwear."
-  );
+  const [collectionName, setCollectionName] = useState("");
+  const [collectionDescription, setCollectionDescription] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#1A56DB");
   const [badges, setBadges] = useState<string[]>([
     `${currentVerticalDef.name} Certified`,
@@ -153,11 +151,7 @@ export default function VerticalStoreStudioPage() {
   const [hero1Title, setHero1Title] = useState("Vida Collection");
   const [hero1Count, setHero1Count] = useState("Exclusive 12+ pieces");
   const [hero1Href, setHero1Href] = useState("/fashion/catalog?collection=vida");
-  const [hero1Images, setHero1Images] = useState<string[]>([
-    "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80",
-  ]);
+  const [hero1Images, setHero1Images] = useState<string[]>([]);
   const [hero1ProductIds, setHero1ProductIds] = useState<string[]>([]);
   const [hero1Category, setHero1Category] = useState<string>("");
   const [isUploadingHero1Cover, setIsUploadingHero1Cover] = useState(false);
@@ -166,11 +160,7 @@ export default function VerticalStoreStudioPage() {
   const [hero2Title, setHero2Title] = useState("Adetola Collection");
   const [hero2Count, setHero2Count] = useState("Artisanal 16+ pieces");
   const [hero2Href, setHero2Href] = useState("/fashion/catalog?collection=adetola");
-  const [hero2Images, setHero2Images] = useState<string[]>([
-    "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=800&q=80",
-  ]);
+  const [hero2Images, setHero2Images] = useState<string[]>([]);
   const [hero2ProductIds, setHero2ProductIds] = useState<string[]>([]);
   const [hero2Category, setHero2Category] = useState<string>("");
   const [isUploadingHero2Cover, setIsUploadingHero2Cover] = useState(false);
@@ -388,8 +378,17 @@ export default function VerticalStoreStudioPage() {
         if (cfg.heroSubheading || cfg.hero?.description) setHeroSubheading(cfg.heroSubheading || cfg.hero?.description);
         if (cfg.heroCtaText || cfg.hero?.ctaLabel) setHeroCtaText(cfg.heroCtaText || cfg.hero?.ctaLabel);
         if (cfg.season || cfg.hero?.season) setSeason(cfg.season || cfg.hero?.season);
-        if (cfg.collectionName || cfg.hero?.collectionName) setCollectionName(cfg.collectionName || cfg.hero?.collectionName);
-        if (cfg.collectionDescription || cfg.hero?.collectionDescription) setCollectionDescription(cfg.collectionDescription || cfg.hero?.collectionDescription);
+        if (cfg.collectionName !== undefined && cfg.collectionName !== "Heritage Noir Capsule") {
+          setCollectionName(cfg.collectionName);
+        } else if (cfg.featuredSection?.title) {
+          setCollectionName(cfg.featuredSection.title);
+        }
+        if (
+          cfg.collectionDescription !== undefined &&
+          !String(cfg.collectionDescription).startsWith("Curated hand-embroidered tunics")
+        ) {
+          setCollectionDescription(cfg.collectionDescription);
+        }
         if (cfg.primaryColor) setPrimaryColor(cfg.primaryColor);
         if (Array.isArray(cfg.badges) && cfg.badges.length > 0) setBadges(cfg.badges);
 
@@ -401,24 +400,24 @@ export default function VerticalStoreStudioPage() {
         if (cfg.hero?.ctaHref) setHeroCtaHref(cfg.hero.ctaHref);
         if (cfg.hero?.footnote) setHeroFootnote(cfg.hero.footnote);
 
-        // Hydrate Hero Featured Collections
+        // Hydrate Hero Featured Collections (strictly respect empty [] arrays when covers are deleted)
         if (cfg.collections?.card1) {
           const c1 = cfg.collections.card1;
-          if (c1.title) setHero1Title(c1.title);
-          if (c1.count) setHero1Count(c1.count);
-          if (c1.href) setHero1Href(c1.href);
-          if (Array.isArray(c1.images) && c1.images.length > 0) setHero1Images(c1.images);
+          if (c1.title !== undefined) setHero1Title(c1.title);
+          if (c1.count !== undefined) setHero1Count(c1.count);
+          if (c1.href !== undefined) setHero1Href(c1.href);
+          if (Array.isArray(c1.images)) setHero1Images(c1.images.filter(Boolean));
           if (Array.isArray(c1.productIds)) setHero1ProductIds(c1.productIds);
-          if (c1.category) setHero1Category(c1.category);
+          if (c1.category !== undefined) setHero1Category(c1.category);
         }
         if (cfg.collections?.card2) {
           const c2 = cfg.collections.card2;
-          if (c2.title) setHero2Title(c2.title);
-          if (c2.count) setHero2Count(c2.count);
-          if (c2.href) setHero2Href(c2.href);
-          if (Array.isArray(c2.images) && c2.images.length > 0) setHero2Images(c2.images);
+          if (c2.title !== undefined) setHero2Title(c2.title);
+          if (c2.count !== undefined) setHero2Count(c2.count);
+          if (c2.href !== undefined) setHero2Href(c2.href);
+          if (Array.isArray(c2.images)) setHero2Images(c2.images.filter(Boolean));
           if (Array.isArray(c2.productIds)) setHero2ProductIds(c2.productIds);
-          if (c2.category) setHero2Category(c2.category);
+          if (c2.category !== undefined) setHero2Category(c2.category);
         }
         if (cfg.collections?.card3) {
           const c3 = cfg.collections.card3;
@@ -518,19 +517,73 @@ export default function VerticalStoreStudioPage() {
     setBadges(badges.filter((b) => b !== badge));
   };
 
+  // Auto-persist sliding cover changes immediately so deletions survive page refresh
+  const persistSlidingCoversImmediate = async (
+    nextHero1Images: string[],
+    nextHero2Images: string[],
+    nextHero1ProductIds = hero1ProductIds,
+    nextHero2ProductIds = hero2ProductIds
+  ) => {
+    const slug =
+      activeTenant?.slug ||
+      (verticalKey === "fashion"
+        ? "funmyclothing"
+        : verticalKey === "cars"
+        ? "neweratransports"
+        : "reedbreed");
+    try {
+      await fetch(`/api/erp/shop/store-settings?tenant=${encodeURIComponent(slug)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: slug,
+          vertical: verticalKey,
+          collections: {
+            card1: {
+              title: hero1Title,
+              count: hero1Count,
+              href: hero1Href,
+              images: nextHero1Images,
+              image: nextHero1Images[0] || "",
+              productIds: nextHero1ProductIds,
+              category: hero1Category,
+              imagesCustomized: true,
+            },
+            card2: {
+              title: hero2Title,
+              count: hero2Count,
+              href: hero2Href,
+              images: nextHero2Images,
+              image: nextHero2Images[0] || "",
+              productIds: nextHero2ProductIds,
+              category: hero2Category,
+              imagesCustomized: true,
+            },
+          },
+        }),
+      });
+    } catch (err) {
+      console.warn("Immediate sliding cover persistence failed:", err);
+    }
+  };
+
   // Toggle attaching a catalog product cover to Hero Collection 1
   const toggleHero1Product = (prod: any) => {
     const img = (prod.images && prod.images[0]) || prod.image;
     if (!img) return;
 
     if (hero1ProductIds.includes(prod.id)) {
-      setHero1ProductIds(hero1ProductIds.filter((id) => id !== prod.id));
-      setHero1Images(hero1Images.filter((src) => src !== img));
+      const nextIds = hero1ProductIds.filter((id) => id !== prod.id);
+      const nextImgs = hero1Images.filter((src) => src !== img);
+      setHero1ProductIds(nextIds);
+      setHero1Images(nextImgs);
+      persistSlidingCoversImmediate(nextImgs, hero2Images, nextIds, hero2ProductIds);
     } else {
-      setHero1ProductIds([...hero1ProductIds, prod.id]);
-      if (!hero1Images.includes(img)) {
-        setHero1Images([...hero1Images, img]);
-      }
+      const nextIds = [...hero1ProductIds, prod.id];
+      const nextImgs = !hero1Images.includes(img) ? [...hero1Images, img] : hero1Images;
+      setHero1ProductIds(nextIds);
+      setHero1Images(nextImgs);
+      persistSlidingCoversImmediate(nextImgs, hero2Images, nextIds, hero2ProductIds);
     }
   };
 
@@ -540,13 +593,17 @@ export default function VerticalStoreStudioPage() {
     if (!img) return;
 
     if (hero2ProductIds.includes(prod.id)) {
-      setHero2ProductIds(hero2ProductIds.filter((id) => id !== prod.id));
-      setHero2Images(hero2Images.filter((src) => src !== img));
+      const nextIds = hero2ProductIds.filter((id) => id !== prod.id);
+      const nextImgs = hero2Images.filter((src) => src !== img);
+      setHero2ProductIds(nextIds);
+      setHero2Images(nextImgs);
+      persistSlidingCoversImmediate(hero1Images, nextImgs, hero1ProductIds, nextIds);
     } else {
-      setHero2ProductIds([...hero2ProductIds, prod.id]);
-      if (!hero2Images.includes(img)) {
-        setHero2Images([...hero2Images, img]);
-      }
+      const nextIds = [...hero2ProductIds, prod.id];
+      const nextImgs = !hero2Images.includes(img) ? [...hero2Images, img] : hero2Images;
+      setHero2ProductIds(nextIds);
+      setHero2Images(nextImgs);
+      persistSlidingCoversImmediate(hero1Images, nextImgs, hero1ProductIds, nextIds);
     }
   };
 
@@ -688,8 +745,12 @@ export default function VerticalStoreStudioPage() {
       heroSubheading,
       heroCtaText,
       season,
-      collectionName,
-      collectionDescription,
+      collectionName: collectionName.trim(),
+      collectionDescription: collectionDescription.trim(),
+      featuredSection: {
+        eyebrow: season ? `${season} Selection` : heroEyebrow,
+        title: collectionName.trim() || "Featured Collection Drops",
+      },
       primaryColor,
       badges,
       bannerUrl: heroImage,
@@ -1224,6 +1285,34 @@ export default function VerticalStoreStudioPage() {
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--nexa-border)]">
+                  <div>
+                    <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+                      Featured Section Heading / Capsule Title
+                    </label>
+                    <input
+                      type="text"
+                      value={collectionName}
+                      onChange={(e) => setCollectionName(e.target.value)}
+                      placeholder="e.g. Featured Collection Drops"
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[var(--nexa-text-primary)] mb-1">
+                      Catalog / Capsule Subtitle (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={collectionDescription}
+                      onChange={(e) => setCollectionDescription(e.target.value)}
+                      placeholder="Optional subtitle for catalog & featured drops"
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                    />
+                  </div>
+                </div>
               </div>
             </NexaCard>
 
@@ -1306,7 +1395,11 @@ export default function VerticalStoreStudioPage() {
                             <img src={img} alt={`Slot 1 cover ${idx + 1}`} className="w-full h-full object-cover" />
                             <button
                               type="button"
-                              onClick={() => setHero1Images(hero1Images.filter((_, i) => i !== idx))}
+                              onClick={() => {
+                                const nextImgs = hero1Images.filter((_, i) => i !== idx);
+                                setHero1Images(nextImgs);
+                                persistSlidingCoversImmediate(nextImgs, hero2Images);
+                              }}
                               className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] opacity-0 group-hover/cover:opacity-100 transition cursor-pointer"
                               title="Remove cover"
                             >
@@ -1512,7 +1605,11 @@ export default function VerticalStoreStudioPage() {
                             <img src={img} alt={`Slot 2 cover ${idx + 1}`} className="w-full h-full object-cover" />
                             <button
                               type="button"
-                              onClick={() => setHero2Images(hero2Images.filter((_, i) => i !== idx))}
+                              onClick={() => {
+                                const nextImgs = hero2Images.filter((_, i) => i !== idx);
+                                setHero2Images(nextImgs);
+                                persistSlidingCoversImmediate(hero1Images, nextImgs);
+                              }}
                               className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] opacity-0 group-hover/cover:opacity-100 transition cursor-pointer"
                               title="Remove cover"
                             >

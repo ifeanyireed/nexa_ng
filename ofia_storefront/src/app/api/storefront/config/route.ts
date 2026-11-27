@@ -105,8 +105,15 @@ export async function GET(request: NextRequest) {
           header: customConfig.header || {},
           hero: customConfig.hero || {},
           season: customConfig.season || customConfig.hero?.season || customConfig.fashion?.season || "Harmattan / Resort 2026",
-          collectionName: customConfig.collectionName || customConfig.hero?.collectionName || customConfig.fashion?.collectionName || "Capsule Drop & Couture",
-          collectionDescription: customConfig.collectionDescription || customConfig.fashion?.collectionDescription || "",
+          collectionName:
+            customConfig.collectionName && customConfig.collectionName !== "Heritage Noir Capsule"
+              ? customConfig.collectionName
+              : customConfig.featuredSection?.title || "",
+          collectionDescription:
+            customConfig.collectionDescription &&
+            !String(customConfig.collectionDescription).startsWith("Curated hand-embroidered tunics")
+              ? customConfig.collectionDescription
+              : customConfig.hero?.description || "",
           collections: customConfig.collections || {},
           collectionsList: customConfig.collectionsList || [],
           categories: customConfig.categories || [],

@@ -54,6 +54,8 @@ function AccountPageInner() {
     saveAddress,
     deleteAddress,
     setDefaultAddress,
+    deleteMeasurementPreset,
+    toggleSaveProduct,
   } = useBuyerAuth();
 
   const [activeTab, setActiveTab] = useState<AccountTab>("profile");
@@ -715,6 +717,116 @@ function AccountPageInner() {
                       </div>
                     </div>
                   )}
+
+                  {/* Saved Bespoke Measurement Presets (Shopfront Users Only) */}
+                  <div className="pt-6 border-t border-stone-100 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-dropa text-lg font-bold text-zinc-900 flex items-center gap-2">
+                          <Scissors className="w-4 h-4 text-amber-700" />
+                          <span>Saved Bespoke Measurement Presets ({buyer.measurementPresets?.length || 0})</span>
+                        </h3>
+                        <p className="text-xs text-stone-500 mt-0.5">
+                          One-click anatomical measurements and fabric preferences saved from product pages.
+                        </p>
+                      </div>
+                    </div>
+
+                    {!buyer.measurementPresets || buyer.measurementPresets.length === 0 ? (
+                      <div className="p-4 rounded-2xl bg-stone-50 border border-dashed border-stone-200 text-xs text-stone-500">
+                        No bespoke measurement presets saved yet. Select &ldquo;Bespoke Cut&rdquo; on any fashion piece to save your measurements to your profile.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {buyer.measurementPresets.map((preset) => (
+                          <div
+                            key={preset.id}
+                            className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/80 flex items-start justify-between gap-3"
+                          >
+                            <div className="space-y-1 text-xs">
+                              <span className="font-bold text-zinc-900 block">{preset.name}</span>
+                              <div className="text-[11px] text-stone-600 flex flex-wrap gap-x-2.5 gap-y-0.5">
+                                <span>Chest: {preset.measurements.chest}&quot;</span>
+                                <span>Waist: {preset.measurements.waist}&quot;</span>
+                                <span>Hips: {preset.measurements.hips}&quot;</span>
+                                <span>Shoulder: {preset.measurements.shoulder}&quot;</span>
+                                <span>Sleeve: {preset.measurements.sleeveLength}&quot;</span>
+                                <span>Length: {preset.measurements.garmentLength}&quot;</span>
+                              </div>
+                              {(preset.preferredPrint || preset.preferredColor) && (
+                                <span className="text-[10px] font-semibold text-amber-800 block">
+                                  Style: {[preset.preferredPrint, preset.preferredColor].filter(Boolean).join(" · ")}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => deleteMeasurementPreset(preset.id)}
+                              className="p-1.5 rounded-full text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Delete Preset"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Saved Pieces / Wishlist */}
+                  <div className="pt-6 border-t border-stone-100 space-y-4">
+                    <h3 className="font-dropa text-lg font-bold text-zinc-900 flex items-center gap-2">
+                      <Shirt className="w-4 h-4 text-amber-700" />
+                      <span>Saved Storefront Pieces ({buyer.savedProducts?.length || 0})</span>
+                    </h3>
+
+                    {!buyer.savedProducts || buyer.savedProducts.length === 0 ? (
+                      <div className="p-4 rounded-2xl bg-stone-50 border border-dashed border-stone-200 text-xs text-stone-500">
+                        You haven&apos;t saved any pieces to your profile yet.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {buyer.savedProducts.map((sp) => (
+                          <div
+                            key={sp.productId}
+                            className="p-3 rounded-2xl bg-stone-50 border border-stone-200/80 flex items-center justify-between gap-3"
+                          >
+                            <Link
+                              href={`/${sp.vertical || "fashion"}/product/${sp.productId}${tenantSlug ? `?tenant=${tenantSlug}` : ""}`}
+                              className="flex items-center gap-3 min-w-0 flex-1"
+                            >
+                              <img
+                                src={sp.image}
+                                alt={sp.title}
+                                className="w-12 h-12 rounded-xl object-cover border border-stone-200 shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <span className="text-xs font-bold text-zinc-900 block truncate">
+                                  {sp.title}
+                                </span>
+                                <span className="text-[11px] font-semibold text-amber-700 block">
+                                  ₦{Number(sp.price || 0).toLocaleString()}
+                                </span>
+                                {(sp.selectedPrint || sp.selectedSize) && (
+                                  <span className="text-[10px] text-stone-500 block truncate">
+                                    {[sp.selectedPrint, sp.selectedColor, sp.selectedSize].filter(Boolean).join(" · ")}
+                                  </span>
+                                )}
+                              </div>
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => toggleSaveProduct(sp)}
+                              className="p-1.5 rounded-full text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                              title="Remove Saved Piece"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Side Card: Ecosystem Status */}

@@ -77,10 +77,16 @@ function FashionCatalogContent() {
             {config?.hero?.headline || store.name} · {config?.hero?.eyebrow || "Curated Capsule Catalog"}
           </div>
           <h1 className="font-dropa text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight">
-            Apparel & Garment Catalog
+            {config?.featuredSection?.title || "Apparel & Garment Catalog"}
           </h1>
           <p className="text-stone-500 text-xs sm:text-sm font-light max-w-2xl">
-            {store.description || "Filter through our curated hand-embroidered tunics, bespoke two-pieces, and structured seasonal outerwear."}
+            {config?.hero?.description ||
+              (config?.collectionDescription &&
+              !config.collectionDescription.startsWith("Curated hand-embroidered tunics")
+                ? config.collectionDescription
+                : "") ||
+              store.description ||
+              "Explore our live apparel catalog and seasonal designs."}
           </p>
         </div>
 

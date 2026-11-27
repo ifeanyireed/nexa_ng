@@ -352,12 +352,16 @@ export async function saveStorefrontOrder(order: StorefrontOrderPayload): Promis
       `;
 
       // 1b. Multi-Tenant Wallet Credit & Split Execution
-      if (rawAmount > 0) {
+      // Only credit wallet at creation time if payment is already confirmed (e.g. POS counter).
+      // Storefront orders created with paymentStatus = 'PENDING' are credited only after
+      // server-side payment verification or verified webhook event.
+      const isAlreadyPaid = (order.paymentStatus || "").toUpperCase() === "PAID";
+      if (rawAmount > 0 && isAlreadyPaid) {
         const walletId = `wal-${cleanTenant}`;
         const txId = `tx-${Date.now().toString().slice(-8)}`;
 
         if (isEscrow) {
-          // Escrow: Lock 98.5% into escrow_balance pending delivery OTP confirmation
+          // Escrow: Lock funds into escrow_balance pending buyer delivery confirmation
           await sql`
             INSERT INTO tenant_wallets (
               id, tenant_slug, tenant_id, available_balance, escrow_balance, total_withdrawn, currency, created_at, updated_at
@@ -455,37 +459,15 @@ export async function updateStorefrontOrderStatus(
           LIMIT 1
         `;
 
-        if (existing.length > 0 && existing[0].is_escrow && existing[0].escrow_status === "HELD") {
-          const ord = existing[0];
-          const mAmount = Number(ord.merchant_amount) || Math.max(0, Number(ord.raw_amount) * 0.985);
-
+        if (existing.length > 0 && existing[0].is_escrow) {
           await sql`
             UPDATE shop_orders
             SET status = 'DELIVERED',
-                escrow_status = 'RELEASED',
-                settlement_status = 'AVAILABLE',
+                fulfilment_status = 'delivered',
+                escrow_status = CASE WHEN escrow_status = 'RELEASED' THEN 'RELEASED' ELSE 'AWAITING_BUYER_CONFIRMATION' END,
                 updated_at = NOW()
             WHERE (id = ${cleanRef} OR order_number = ${cleanRef})
               AND LOWER(tenant_slug) = ${cleanTenant}
-          `;
-
-          await sql`
-            UPDATE tenant_wallets
-            SET escrow_balance = GREATEST(0, escrow_balance - ${mAmount}),
-                available_balance = available_balance + ${mAmount},
-                updated_at = NOW()
-            WHERE LOWER(tenant_slug) = ${cleanTenant}
-          `;
-
-          const releaseTxId = `tx-rel-${Date.now().toString().slice(-8)}`;
-          await sql`
-            INSERT INTO tenant_wallet_transactions (
-              id, tenant_slug, tenant_id, type, amount, reference, description, channel, is_escrow, status, created_at
-            ) VALUES (
-              ${releaseTxId}, ${cleanTenant}, '', 'ESCROW_RELEASE', ${mAmount},
-              ${ord.order_number}, ${`Escrow payout released for order #${ord.order_number} upon delivery OTP confirmation. Credited to available balance.`},
-              'STOREFRONT', FALSE, 'SUCCESS', NOW()
-            )
           `;
         } else {
           await sql`

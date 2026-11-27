@@ -121,10 +121,29 @@ export default function FashionStorefrontView() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full lg:flex-1 min-h-0 items-stretch">
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
-              eyebrow={config?.season ? `${config.season} Drop` : (config?.hero?.eyebrow || store.tagline || "Capsule Drop & Couture")}
-              headline={config?.hero?.headline || store.name}
-              highlightText={config?.collectionName ? `· ${config.collectionName}` : (config?.hero?.highlightText !== undefined ? config.hero.highlightText : "· Artisanal Tailoring & Silhouettes")}
-              description={config?.collectionDescription || config?.hero?.description || store.description || "Artisanal linen tunics, hand-embroidered kaftans, and architectural outerwear tailored for effortless tropical elegance."}
+              eyebrow={
+                config?.hero?.eyebrow ||
+                (config?.season ? `${config.season} Drop` : store.tagline || "Capsule Drop & Couture")
+              }
+              headline={config?.hero?.headline || (config as any)?.heroHeading || store.name}
+              highlightText={
+                config?.hero?.highlightText !== undefined
+                  ? config.hero.highlightText
+                  : config?.collectionName && config.collectionName !== "Heritage Noir Capsule"
+                  ? `· ${config.collectionName}`
+                  : ""
+              }
+              description={
+                config?.hero?.description ||
+                (config?.hero as any)?.subheading ||
+                (config as any)?.heroSubheading ||
+                (config?.collectionDescription &&
+                !config.collectionDescription.startsWith("Curated hand-embroidered tunics")
+                  ? config.collectionDescription
+                  : "") ||
+                store.description ||
+                ""
+              }
               ctaLabel={config?.hero?.ctaLabel || (canBookServices ? "Schedule Bespoke Fitting" : "Explore Capsule Catalog")}
               ctaHref={config?.hero?.ctaHref || (canBookServices ? `/fashion/custom-tailoring${tenantQuery}` : `/fashion/catalog${tenantQuery}`)}
               footnote={config?.hero?.footnote || "Free Doorstep Sizing Exchanges · 7-Day Fit Guarantee"}
@@ -190,7 +209,8 @@ export default function FashionStorefrontView() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-amber-700">
-                  {config?.season ? `${config.season} Selection` : (config?.featuredSection?.eyebrow || "Signature Apparel")}
+                  {config?.featuredSection?.eyebrow ||
+                    (config?.season ? `${config.season} Selection` : "Signature Apparel")}
                 </span>
                 {isLiveMerchantCatalog && (
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -199,7 +219,10 @@ export default function FashionStorefrontView() {
                 )}
               </div>
               <h2 className="font-dropa text-3xl sm:text-4xl lg:text-5xl font-bold text-zinc-900 tracking-tight mt-1">
-                {config?.collectionName ? `${config.collectionName} Drops` : (config?.featuredSection?.title || "Featured Collection Drops")}
+                {config?.featuredSection?.title ||
+                  (config?.collectionName && config.collectionName !== "Heritage Noir Capsule"
+                    ? `${config.collectionName} Drops`
+                    : "Featured Collection Drops")}
               </h2>
             </div>
             <Link

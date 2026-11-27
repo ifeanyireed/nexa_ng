@@ -1,14 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag, ShieldCheck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useBuyerAuth } from "@/context/BuyerAuthContext";
 
 export default function CartDrawer() {
-  const { items, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, subtotal, totalCount } =
-    useCart();
+  const router = useRouter();
+  const {
+    items,
+    isCartOpen,
+    setIsCartOpen,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    subtotal,
+    totalCount,
+  } = useCart();
   const { tenantSlug } = useStorefrontTenant();
+  const { isAuthenticated, requireAuthModal } = useBuyerAuth();
 
   if (!isCartOpen) return null;
 
@@ -31,12 +43,25 @@ export default function CartDrawer() {
               {totalCount} {totalCount === 1 ? "item" : "items"}
             </span>
           </div>
-          <button
-            onClick={() => setIsCartOpen(false)}
-            className="p-1.5 rounded-full text-stone-500 hover:text-zinc-900 hover:bg-stone-200 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={() => clearCart()}
+                className="px-3 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-colors cursor-pointer"
+                title="Remove all items from bag"
+              >
+                Clear Bag
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsCartOpen(false)}
+              className="p-1.5 rounded-full text-stone-500 hover:text-zinc-900 hover:bg-stone-200 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Items List */}
@@ -60,16 +85,18 @@ export default function CartDrawer() {
                   className="w-18 h-18 rounded-xl object-cover border border-stone-200 shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-1">
+                  <div className="flex items-start justify-between gap-2">
                     <h4 className="text-xs sm:text-sm font-bold text-zinc-900 line-clamp-1">
                       {item.title}
                     </h4>
                     <button
+                      type="button"
                       onClick={() => removeFromCart(item.id)}
-                      className="text-stone-400 hover:text-red-600 transition-colors p-1"
-                      title="Remove"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-stone-100 hover:bg-rose-100 text-stone-600 hover:text-rose-700 text-[10px] font-bold transition-colors shrink-0 cursor-pointer"
+                      title="Delete item from bag"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3 h-3" />
+                      <span>Remove</span>
                     </button>
                   </div>
 
@@ -95,6 +122,11 @@ export default function CartDrawer() {
                     {item.selectedColor && (
                       <span className="text-[10px] font-semibold bg-stone-100 px-2 py-0.5 rounded text-stone-700">
                         Color: {item.selectedColor}
+                      </span>
+                    )}
+                    {item.bespokeMeasurements && (
+                      <span className="text-[10px] font-semibold bg-amber-100/80 text-amber-950 border border-amber-300 px-2 py-0.5 rounded block w-full mt-1">
+                        Bespoke: Chest {item.bespokeMeasurements.chest}&quot;, Waist {item.bespokeMeasurements.waist}&quot;, Hips {item.bespokeMeasurements.hips}&quot;, Length {item.bespokeMeasurements.garmentLength}&quot;
                       </span>
                     )}
                     {item.selectedPortion && (
@@ -172,14 +204,28 @@ export default function CartDrawer() {
               </div>
             </div>
 
-            <Link
-              href={tenantSlug ? `/checkout?tenant=${encodeURIComponent(tenantSlug)}` : "/checkout"}
-              onClick={() => setIsCartOpen(false)}
+            <button
+              type="button"
+              onClick={() => {
+                const targetUrl = tenantSlug
+                  ? `/checkout?tenant=${encodeURIComponent(tenantSlug)}`
+                  : "/checkout";
+                if (!isAuthenticated) {
+                  setIsCartOpen(false);
+                  requireAuthModal(
+                    "Please sign in or create a storefront account to proceed to checkout.",
+                    () => router.push(targetUrl)
+                  );
+                  return;
+                }
+                setIsCartOpen(false);
+                router.push(targetUrl);
+              }}
               className="w-full py-3.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
             >
               <span>Proceed to Checkout</span>
               <ArrowRight className="w-4 h-4" />
-            </Link>
+            </button>
 
             <div className="flex items-center justify-center gap-1.5 text-[11px] text-stone-500 pt-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />

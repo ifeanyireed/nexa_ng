@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       platformFee: platformFee,
       status: body.status || "AWAITING_PAYMENT",
       paymentStatus: body.paymentStatus || "PENDING",
-      deliveryMethod: body.deliveryMethod || "DISPATCH",
+      deliveryMethod: body.deliveryMethod || "UNASSIGNED",
       createdAt: new Date().toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",

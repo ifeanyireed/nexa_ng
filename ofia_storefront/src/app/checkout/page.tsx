@@ -87,16 +87,14 @@ export default function CheckoutPage() {
   }, [buyer]);
 
   // Escrow is opt-in if enabled in tenant payment settings or storefront config
+  // Hidden by default: only shown when the merchant turned it on AND the escrow provider keys are set in .env
+  const escrowProviderAvailable = Boolean(paymentConfig?.protectedPayment?.providerAvailable);
   const tenantAllowsEscrow = Boolean(
-    paymentConfig?.protectedPayment
-      ? paymentConfig.protectedPayment.enabled && paymentConfig.protectedPayment.eligible
-      : handshake?.storefrontConfig?.allowEscrow ??
-        handshake?.storefrontConfig?.sectionVisibility?.escrowOption ??
-        true
+    paymentConfig?.protectedPayment &&
+      paymentConfig.protectedPayment.enabled &&
+      paymentConfig.protectedPayment.eligible &&
+      escrowProviderAvailable
   );
-  const escrowProviderAvailable = paymentConfig?.protectedPayment
-    ? paymentConfig.protectedPayment.providerAvailable
-    : true;
   const protectionFeePct = paymentConfig?.protectedPayment?.protectionFeePct ?? 2.5;
 
   const deliveryFee = 3500;
@@ -178,7 +176,7 @@ export default function CheckoutPage() {
       rawAmount: grandTotal,
       status: "AWAITING_PAYMENT",
       paymentStatus: "PENDING",
-      deliveryMethod: "DISPATCH",
+      deliveryMethod: "UNASSIGNED",
     };
 
     try {
@@ -477,7 +475,8 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Option 2: Protected Payment (Escrow) */}
+                  {/* Option 2: Protected Payment (Escrow) - fully hidden unless enabled and configured */}
+                  {tenantAllowsEscrow && (
                   <div
                     onClick={() => {
                       if (tenantAllowsEscrow) setSelectedRoute("protected_escrow");
@@ -535,6 +534,7 @@ export default function CheckoutPage() {
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
 
                 {checkoutError && (

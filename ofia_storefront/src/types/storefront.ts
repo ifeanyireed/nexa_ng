@@ -565,7 +565,7 @@ export interface StorefrontOrderPayload {
   paymentReference?: string;
   fulfilmentStatus?: string;
   protectionFee?: number;
-  deliveryMethod: "DISPATCH" | "STORE_PICKUP";
+  deliveryMethod: "DISPATCH" | "STORE_PICKUP" | "UNASSIGNED";
   isEscrow?: boolean;
   escrowStatus?: "NONE" | "DIRECT_SETTLEMENT" | "HELD" | "AWAITING_BUYER_CONFIRMATION" | "DISPUTED" | "RELEASED" | "REFUNDED" | string;
   settlementStatus?: "PENDING" | "AVAILABLE" | "HELD_ESCROW" | "WITHDRAWN" | "REFUNDED" | string;

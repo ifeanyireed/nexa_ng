@@ -292,14 +292,14 @@ function AccountPageInner() {
         <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16 w-full">
           <div className="bg-white rounded-3xl border border-stone-200/90 shadow-xl overflow-hidden">
             {/* Top Header */}
-            <div className="bg-stone-900 text-white p-6 sm:p-8 text-center space-y-2">
+            <div className="bg-stone-50 text-stone-900 border-b border-stone-200 p-6 sm:p-8 text-center space-y-2">
               <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto shadow-md">
                 <User className="w-6 h-6" />
               </div>
               <h1 className="font-dropa text-2xl sm:text-3xl font-bold">
                 Customer Account & Order Portal
               </h1>
-              <p className="text-xs sm:text-sm text-stone-400 max-w-md mx-auto">
+              <p className="text-xs sm:text-sm text-stone-500 max-w-md mx-auto">
                 Sign in to view your real-time courier dispatches, manage saved delivery addresses, and review order receipts.
               </p>
             </div>

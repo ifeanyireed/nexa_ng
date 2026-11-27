@@ -260,11 +260,11 @@ export async function getStorefrontPaymentOptions(tenantSlug: string) {
     LIMIT 1;
   `;
 
-  const escrowPartnerAvailable = Boolean(
-    process.env.OFIA_ESCROW_SECRET_KEY ||
-      process.env.ESCROW_PARTNER_API_KEY ||
-      process.env.OFIA_ESCROW_SANDBOX_ENABLED !== "false"
-  );
+  // Escrow module is only available when the required provider keys are configured in .env
+  const escrowPartnerAvailable =
+    isConfiguredEnvValue(process.env.OFIA_ESCROW_API_BASE_URL) &&
+    isConfiguredEnvValue(process.env.OFIA_ESCROW_SECRET_KEY || process.env.ESCROW_PARTNER_API_KEY) &&
+    isConfiguredEnvValue(process.env.OFIA_ESCROW_WEBHOOK_SECRET);
 
   if (!rows || rows.length === 0) {
     return {
@@ -277,7 +277,7 @@ export async function getStorefrontPaymentOptions(tenantSlug: string) {
         feePct: 0,
       },
       protectedPayment: {
-        enabled: true,
+        enabled: false, // hidden by default until the merchant turns it on
         eligible: true,
         providerAvailable: escrowPartnerAvailable,
         providerName: "Ofia Approved Escrow Partner",
@@ -313,7 +313,7 @@ export async function getStorefrontPaymentOptions(tenantSlug: string) {
       feePct: 0,
     },
     protectedPayment: {
-      enabled: r.protected_payments_enabled !== false,
+      enabled: r.protected_payments_enabled === true,
       eligible: r.protected_payments_eligible !== false,
       providerAvailable: escrowPartnerAvailable,
       providerName: r.escrow_provider || "Ofia Approved Escrow Partner",

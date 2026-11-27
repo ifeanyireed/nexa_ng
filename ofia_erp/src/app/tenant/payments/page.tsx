@@ -860,7 +860,7 @@ export default function TenantPaymentsAndSettlementsPage() {
                   size="sm"
                   variant="outline"
                   onClick={async () => {
-                    setStatusMessage("Dispatching Regulatory Licensing & Escrow RFP inquiry emails (Reply-To: ifeanyireed@gmail.com)...");
+                    setStatusMessage({ type: "success", text: "Dispatching Regulatory Licensing & Escrow RFP inquiry emails (Reply-To: ifeanyireed@gmail.com)..." });
                     try {
                       const res = await fetch("/api/erp/payments/partner-outreach", {
                         method: "POST",
@@ -874,11 +874,11 @@ export default function TenantPaymentsAndSettlementsPage() {
                       const sentCount = Array.isArray(data?.results)
                         ? data.results.filter((r: any) => r.success).length
                         : 0;
-                      setStatusMessage(
+                      setStatusMessage({ type: "success", text:
                         `Dispatched ${sentCount}/${data?.results?.length || 0} Fintech Licensing & Escrow RFP emails (Reply-To & CC: ${data?.replyTo || "ifeanyireed@gmail.com"}).`
-                      );
+                      });
                     } catch (err: any) {
-                      setStatusMessage("Failed to dispatch partner outreach emails: " + err.message);
+                      setStatusMessage({ type: "error", text: "Failed to dispatch partner outreach emails: " + err.message });
                     }
                   }}
                 >

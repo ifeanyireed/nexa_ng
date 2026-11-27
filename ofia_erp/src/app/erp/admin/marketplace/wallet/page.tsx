@@ -66,7 +66,7 @@ const NIGERIAN_BANKS = [
 export default function MerchantWalletPage() {
   const { user } = useAuth();
   const { activeTenant } = useActiveTenant(user?.email);
-  const tenantSlug = activeTenant?.slug || "neweratransports";
+  const tenantSlug = activeTenant?.slug || "";
 
   const [wallet, setWallet] = useState<WalletData>({
     availableBalance: 0,
@@ -77,6 +77,14 @@ export default function MerchantWalletPage() {
     accountNumber: "",
     accountName: "",
   });
+  const [settings, setSettings] = useState<{
+    directPct: number | null;
+    escrowPct: number | null;
+    minPayout: number;
+    banks: string[];
+  }>({ directPct: null, escrowPct: null, minPayout: 0, banks: [] });
+  const merchantSharePct = settings.directPct === null ? null : Math.round((100 - settings.directPct) * 100) / 100;
+  const bankOptions = settings.banks.length > 0 ? settings.banks : NIGERIAN_BANKS;
   const [transactions, setTransactions] = useState<WalletTx[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +93,7 @@ export default function MerchantWalletPage() {
   // Withdrawal Modal State
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [selectedBank, setSelectedBank] = useState("Guaranty Trust Bank (GTBank)");
+  const [selectedBank, setSelectedBank] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
   const [isSubmittingPayout, setIsSubmittingPayout] = useState(false);
@@ -102,6 +110,7 @@ export default function MerchantWalletPage() {
       const data = await res.json().catch(() => null);
       if (data && data.success) {
         setWallet(data.wallet);
+        if (data.settings) setSettings(data.settings);
         setTransactions(data.transactions || []);
         setPayouts(data.payouts || []);
         if (data.wallet.bankName) setSelectedBank(data.wallet.bankName);
@@ -139,6 +148,16 @@ export default function MerchantWalletPage() {
       setErrorMessage(
         `Insufficient available balance. You have ₦${wallet.availableBalance.toLocaleString()} available. (Escrow funds cannot be withdrawn until delivery).`
       );
+      return;
+    }
+
+    if (settings.minPayout && numAmount < settings.minPayout) {
+      setErrorMessage(`Minimum withdrawal is ₦${settings.minPayout.toLocaleString()}.`);
+      return;
+    }
+
+    if (!selectedBank) {
+      setErrorMessage("Please select a destination bank.");
       return;
     }
 
@@ -241,7 +260,7 @@ export default function MerchantWalletPage() {
           </div>
           <div>
             <span className="font-bold text-sm text-[var(--nexa-text-primary)] block">
-              Automated 98.5% Split & Opt-In Escrow Architecture
+              {merchantSharePct === null ? "Automated Split" : `Automated ${merchantSharePct}% Split`} & Opt-In Escrow Architecture
             </span>
             <p className="text-[11px] text-[var(--nexa-text-secondary)] mt-0.5 leading-relaxed">
               Standard payments clear immediately into your <strong>Available Balance</strong> with zero delay, ready for anytime withdrawal. Orders where the buyer requested Escrow remain in <strong>Held in Escrow</strong> until delivery confirmation.
@@ -364,7 +383,7 @@ export default function MerchantWalletPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-xs text-[var(--nexa-text-primary)]">
                           {tx.type === "SALE_CREDIT"
-                            ? "Instant Sale Settlement (98.5% Split)"
+                            ? merchantSharePct === null ? "Instant Sale Settlement" : `Instant Sale Settlement (${merchantSharePct}% Split)`
                             : tx.type === "ESCROW_RELEASE"
                             ? "Escrow Payout Released"
                             : tx.type === "ESCROW_HOLD"
@@ -423,15 +442,15 @@ export default function MerchantWalletPage() {
             <div className="space-y-2 text-xs">
               <div className="flex justify-between text-[var(--nexa-text-secondary)]">
                 <span>Bank:</span>
-                <span className="font-bold text-[var(--nexa-text-primary)]">{wallet.bankName || "GTBank"}</span>
+                <span className="font-bold text-[var(--nexa-text-primary)]">{wallet.bankName || "Not configured"}</span>
               </div>
               <div className="flex justify-between text-[var(--nexa-text-secondary)]">
                 <span>Account Number:</span>
-                <span className="font-mono font-bold text-[var(--nexa-text-primary)]">{wallet.accountNumber || "0149204812"}</span>
+                <span className="font-mono font-bold text-[var(--nexa-text-primary)]">{wallet.accountNumber || "Not configured"}</span>
               </div>
               <div className="flex justify-between text-[var(--nexa-text-secondary)]">
                 <span>Account Name:</span>
-                <span className="font-bold text-[var(--nexa-text-primary)]">{wallet.accountName || activeTenant?.name || "New Era Transports Ltd"}</span>
+                <span className="font-bold text-[var(--nexa-text-primary)]">{wallet.accountName || activeTenant?.name || "Not configured"}</span>
               </div>
             </div>
 
@@ -523,7 +542,7 @@ export default function MerchantWalletPage() {
                   </div>
                   <input
                     type="number"
-                    min="1000"
+                    min={settings.minPayout || 1}
                     max={wallet.availableBalance}
                     placeholder="e.g. 50000"
                     value={withdrawAmount}
@@ -540,7 +559,10 @@ export default function MerchantWalletPage() {
                     onChange={(e) => setSelectedBank(e.target.value)}
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] cursor-pointer"
                   >
-                    {NIGERIAN_BANKS.map((b) => (
+                    <option value="" disabled>
+                      Select destination bank
+                    </option>
+                    {bankOptions.map((b) => (
                       <option key={b} value={b}>
                         {b}
                       </option>

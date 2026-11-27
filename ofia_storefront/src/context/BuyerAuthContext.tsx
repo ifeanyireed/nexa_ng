@@ -102,7 +102,8 @@ const STORAGE_KEY = "ofia_buyer_profile";
 const BuyerAuthContext = createContext<BuyerAuthContextType | undefined>(undefined);
 
 export function BuyerAuthProvider({ children }: { children: React.ReactNode }) {
-  const { tenantSlug } = useStorefrontTenant();
+  const { tenantSlug, store: dynamicStore, handshake } = useStorefrontTenant();
+  const tenantLogoUrl = handshake?.storefrontConfig?.logoUrl || "";
   const [buyer, setBuyer] = useState<BuyerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -667,23 +668,33 @@ export function BuyerAuthProvider({ children }: { children: React.ReactNode }) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-zinc-900 text-white p-6 relative">
+            <div className="bg-stone-50 text-stone-900 border-b border-stone-200 p-6 relative">
               <button
                 type="button"
                 onClick={() => setAuthModalOpen(false)}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-stone-200/70 hover:bg-stone-300/80 text-stone-700 flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Close Sign-In Modal"
               >
                 <X className="w-4 h-4" />
               </button>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-bold uppercase tracking-wider mb-2">
+              {tenantLogoUrl && (
+                <div className="mb-3">
+                  <img
+                    src={tenantLogoUrl}
+                    alt={dynamicStore?.name || tenantSlug || "Store logo"}
+                    referrerPolicy="no-referrer"
+                    className="h-10 max-w-[150px] object-contain"
+                  />
+                </div>
+              )}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-bold uppercase tracking-wider mb-2">
                 <Sparkles className="w-3 h-3" />
                 <span>Storefront Customer Profile</span>
               </div>
-              <h3 className="font-dropa text-xl font-bold text-white">
+              <h3 className="font-dropa text-xl font-bold text-stone-900">
                 {authMode === "signin" ? "Sign In to Your Storefront Profile" : "Create Your Storefront Account"}
               </h3>
-              <p className="text-xs text-stone-300 mt-1 leading-relaxed">
+              <p className="text-xs text-stone-600 mt-1 leading-relaxed">
                 {authModalReason ||
                   "Sign in or create a storefront account to save bespoke measurement presets, bookmark pieces, and complete checkout."}
               </p>

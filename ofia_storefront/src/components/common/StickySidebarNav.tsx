@@ -982,21 +982,21 @@ export default function StickySidebarNav() {
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 bg-[#FAF9F5] min-h-0">
               {/* Wallet Balance Card */}
-              <div className="relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-zinc-900 via-zinc-950 to-[#111216] text-white border border-stone-800 shadow-xl space-y-4">
+              <div className="relative overflow-hidden rounded-3xl p-5 bg-white text-stone-900 border border-stone-200/90 shadow-md space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-stone-300 tracking-wide">
+                  <span className="text-xs font-semibold text-stone-600 tracking-wide">
                     Available Store Credit
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                     Instant at Checkout
                   </span>
                 </div>
 
                 <div>
-                  <span className="font-dropa text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                  <span className="font-dropa text-3xl sm:text-4xl font-extrabold text-stone-900 tracking-tight">
                     {walletLoading && !isAuthenticated ? "" : `₦${walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   </span>
-                  <p className="text-[11px] text-stone-300/80 mt-1">
+                  <p className="text-[11px] text-stone-500 mt-1">
                     {isAuthenticated ? `Apply your credit at checkout on ${store.name}.` : "Sign in to see your store credit and refunds."}
                   </p>
                 </div>
@@ -1007,13 +1007,13 @@ export default function StickySidebarNav() {
                       setIsWalletOpen(false);
                       setIsCartOpen(true);
                     }}
-                    className="flex-1 py-2 rounded-xl bg-white text-zinc-950 hover:bg-stone-100 font-bold text-xs transition-colors shadow-xs cursor-pointer text-center"
+                    className="flex-1 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-bold text-xs transition-colors shadow-xs cursor-pointer text-center"
                   >
                     Use Credit at Checkout
                   </button>
                   <button
                     onClick={() => { setRefundSubmitted(false); setRefundError(null); setRefundFormOpen(!refundFormOpen); }}
-                    className="flex-1 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs transition-colors border border-white/15 cursor-pointer text-center"
+                    className="flex-1 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition-colors border border-stone-200 cursor-pointer text-center"
                   >
                     Request Refund
                   </button>

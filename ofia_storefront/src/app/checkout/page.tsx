@@ -36,6 +36,8 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">("card");
   const [selectedRoute, setSelectedRoute] = useState<"standard" | "protected_escrow">("standard");
   const [acceptedEscrowTerms, setAcceptedEscrowTerms] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [useWalletCredit, setUseWalletCredit] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState<{
@@ -99,10 +101,26 @@ export default function CheckoutPage() {
     : true;
   const protectionFeePct = paymentConfig?.protectedPayment?.protectionFeePct ?? 2.5;
 
+  // Load the signed-in buyer's store credit (server is the source of truth)
+  useEffect(() => {
+    if (!tenantSlug || !buyer || (!buyer.email && !buyer.phone)) {
+      setWalletBalance(0);
+      return;
+    }
+    const params = new URLSearchParams({ tenant: tenantSlug });
+    if (buyer.email) params.set("email", buyer.email);
+    if (buyer.phone) params.set("phone", buyer.phone);
+    fetch(`/api/storefront/wallet?${params.toString()}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setWalletBalance(d?.success ? Number(d.balance) || 0 : 0))
+      .catch(() => setWalletBalance(0));
+  }, [tenantSlug, buyer?.id]);
+
   const deliveryFee = 3500;
   const baseTotal = subtotal + (items.length > 0 ? deliveryFee : 0);
   const isEscrowSelected = selectedRoute === "protected_escrow";
   const protectionFee = isEscrowSelected ? Math.round(baseTotal * (protectionFeePct / 100)) : 0;
+  const walletCreditPreview = useWalletCredit ? Math.min(walletBalance, baseTotal) : 0;
   const grandTotal = baseTotal + protectionFee;
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
@@ -208,6 +226,7 @@ export default function CheckoutPage() {
           requestedMode: isEscrowActive ? "protected_escrow" : "standard",
           baseAmount: baseTotal,
           rawAmount: grandTotal,
+          useWalletCredit,
           paymentMethod,
           customerName: fullName,
           customerEmail: email,
@@ -446,6 +465,28 @@ export default function CheckoutPage() {
                     <span className="text-[10px] text-stone-500 block">Virtual Account Checkout</span>
                   </button>
                 </div>
+
+                {walletBalance > 0 && (
+                  <label className="flex items-start gap-2.5 p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/60 cursor-pointer text-xs">
+                    <input
+                      type="checkbox"
+                      checked={useWalletCredit}
+                      onChange={(e) => setUseWalletCredit(e.target.checked)}
+                      className="mt-0.5 w-3.5 h-3.5 rounded accent-emerald-600"
+                    />
+                    <span className="text-emerald-950">
+                      <span className="font-bold block">
+                        Use store credit (₦{walletBalance.toLocaleString()} available)
+                      </span>
+                      {useWalletCredit && (
+                        <span className="text-[11px] text-emerald-800">
+                          ₦{walletCreditPreview.toLocaleString()} will be deducted from your wallet; you pay ₦
+                          {Math.max(0, grandTotal - walletCreditPreview).toLocaleString()}.
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                )}
 
                 {/* Payment Route Selection: Standard vs Protected Payment (Escrow) */}
                 <div className="space-y-3 pt-2 border-t border-stone-100">

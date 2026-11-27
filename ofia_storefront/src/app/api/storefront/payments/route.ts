@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { getTenantSql } from "@/lib/tenant-db-resolver";
+import { ensureBuyerWalletTables, resolveBuyerKey } from "@/lib/buyer-wallet";
 import {
   ensureStorefrontPaymentTables,
   getStorefrontPaymentOptions,
@@ -195,7 +196,42 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const baseAmount = Math.max(0, Number(body.baseAmount || body.rawAmount || 0));
+      const requestedBase = Math.max(0, Number(body.baseAmount || body.rawAmount || 0));
+
+      // Optional store-wallet credit: amount is decided and debited server-side only.
+      let creditApplied = 0;
+      const creditBuyerKey = resolveBuyerKey(body.customerEmail, body.customerPhone);
+      if (body.useWalletCredit === true && creditBuyerKey && existingAttempts.length === 0 && requestedBase > 0) {
+        await ensureBuyerWalletTables(sql, tenantSlug);
+        const balRows = await sql`
+          SELECT balance FROM buyer_wallets
+          WHERE LOWER(tenant_slug) = ${tenantSlug} AND buyer_key = ${creditBuyerKey} AND status = 'ACTIVE'
+          LIMIT 1;
+        `;
+        const wanted = Math.min(Number(balRows[0]?.balance || 0), requestedBase);
+        if (wanted > 0) {
+          const debited = await sql`
+            UPDATE buyer_wallets
+            SET balance = balance - ${wanted}, updated_at = NOW()
+            WHERE LOWER(tenant_slug) = ${tenantSlug} AND buyer_key = ${creditBuyerKey}
+              AND status = 'ACTIVE' AND balance >= ${wanted}
+            RETURNING balance;
+          `;
+          if (debited.length > 0) {
+            creditApplied = wanted;
+            await sql`
+              INSERT INTO buyer_wallet_transactions (
+                id, tenant_slug, tenant_id, buyer_key, type, amount, reference, description, status
+              ) VALUES (
+                ${`bwt_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`}, ${tenantSlug},
+                ${`org-${tenantSlug}`}, ${creditBuyerKey}, 'ORDER_DEBIT', ${wanted}, ${orderNumber},
+                ${`Store credit applied to order ${orderNumber}`}, 'COMPLETED'
+              );
+            `;
+          }
+        }
+      }
+      const baseAmount = Math.max(0, requestedBase - creditApplied);
       const protectionFee =
         paymentMode === "protected_escrow"
           ? Math.round(baseAmount * (options.protectedPayment.protectionFeePct / 100) * 100) / 100
@@ -329,8 +365,8 @@ export async function POST(request: NextRequest) {
             protection_fee = ${protectionFee},
             platform_fee = ${ofiaFee},
             merchant_amount = ${merchantNet},
-            raw_amount = ${totalPayable},
-            total_amount = ${`₦${totalPayable.toLocaleString()}`},
+            raw_amount = ${totalPayable + creditApplied},
+            total_amount = ${`₦${(totalPayable + creditApplied).toLocaleString()}`},
             updated_at = NOW()
         WHERE (id = ${orderId} OR order_number = ${orderNumber})
           AND LOWER(tenant_slug) = ${tenantSlug};
@@ -358,6 +394,7 @@ export async function POST(request: NextRequest) {
         providerReference,
         protectionFee,
         totalPayable,
+        creditApplied,
         merchantNet,
       });
     }

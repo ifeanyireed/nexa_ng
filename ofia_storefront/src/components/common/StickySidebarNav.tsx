@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useBuyerAuth } from "@/context/BuyerAuthContext";
 import { MOCK_STORES } from "@/data/mockStores";
 
 interface ChatMessage {
@@ -61,7 +62,8 @@ type ValidVertical = (typeof VALID_VERTICALS)[number];
 export default function StickySidebarNav() {
   const pathname = usePathname();
   const { totalCount, setIsCartOpen, isCartOpen, activeVertical, setActiveVertical } = useCart();
-  const { vertical: tenantVertical, store: dynamicStore } = useStorefrontTenant();
+  const { vertical: tenantVertical, store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const { buyer, isAuthenticated, requireAuthModal } = useBuyerAuth();
 
   // Slide-over drawers state
   const [isInquiryOpen, setIsInquiryOpen] = useState(false);
@@ -153,8 +155,53 @@ export default function StickySidebarNav() {
   // Wallet / Refund states
   const [refundFormOpen, setRefundFormOpen] = useState(false);
   const [refundSubmitted, setRefundSubmitted] = useState(false);
-  const [refundOrderRef, setRefundOrderRef] = useState("OF-8419");
-  const [refundReason, setRefundReason] = useState("Size exchange or fit adjustment");
+  const [refundOrderRef, setRefundOrderRef] = useState("");
+  const [refundReason, setRefundReason] = useState("");
+  const [refundError, setRefundError] = useState<string | null>(null);
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [walletTx, setWalletTx] = useState<any[]>([]);
+  const [walletRefunds, setWalletRefunds] = useState<any[]>([]);
+  const [walletOrders, setWalletOrders] = useState<any[]>([]);
+  const [walletLoading, setWalletLoading] = useState(false);
+
+  const loadWallet = useCallback(async () => {
+    if (!tenantSlug || !buyer || (!buyer.email && !buyer.phone)) return;
+    const params = new URLSearchParams({ tenant: tenantSlug });
+    if (buyer.email) params.set("email", buyer.email);
+    if (buyer.phone) params.set("phone", buyer.phone);
+    setWalletLoading(true);
+    try {
+      const [w, o] = await Promise.all([
+        fetch(`/api/storefront/wallet?${params.toString()}`, { cache: "no-store" }).then((r) => r.json()),
+        fetch(`/api/storefront/orders?${params.toString()}`, { cache: "no-store" }).then((r) => r.json()),
+      ]);
+      if (w?.success) {
+        setWalletBalance(Number(w.balance) || 0);
+        setWalletTx(w.transactions || []);
+        setWalletRefunds(w.refunds || []);
+      }
+      if (o?.success) {
+        setWalletOrders(
+          (o.orders || []).filter(
+            (ord: any) =>
+              String(ord.paymentStatus).toUpperCase() === "PAID" &&
+              !(w?.refunds || []).some(
+                (rf: any) => rf.orderNumber === ord.orderNumber && ["PENDING", "APPROVED"].includes(rf.status)
+              )
+          )
+        );
+      }
+    } catch (err) {
+      console.warn("[Wallet] load failed", err);
+    } finally {
+      setWalletLoading(false);
+    }
+  }, [tenantSlug, buyer?.id, buyer?.email, buyer?.phone]);
+
+  useEffect(() => {
+    if (isWalletOpen && isAuthenticated) loadWallet();
+  }, [isWalletOpen, isAuthenticated, loadWallet]);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -406,9 +453,36 @@ export default function StickySidebarNav() {
     }, 900);
   };
 
-  const handleSubmitRefund = (e: React.FormEvent) => {
+  const handleSubmitRefund = async (e: React.FormEvent) => {
     e.preventDefault();
-    setRefundSubmitted(true);
+    if (!tenantSlug || !buyer) return;
+    setRefundError(null);
+    setRefundSubmitting(true);
+    try {
+      const res = await fetch("/api/storefront/wallet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "REQUEST_REFUND",
+          tenantSlug,
+          email: buyer.email,
+          phone: buyer.phone,
+          orderNumber: refundOrderRef,
+          reason: refundReason,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        setRefundError(data?.error || "Could not submit your refund request.");
+        return;
+      }
+      setRefundSubmitted(true);
+      setRefundReason("");
+      setRefundOrderRef("");
+      loadWallet();
+    } finally {
+      setRefundSubmitting(false);
+    }
   };
 
   const quickPrompts = [
@@ -920,10 +994,10 @@ export default function StickySidebarNav() {
 
                 <div>
                   <span className="font-dropa text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                    {store.currency === "$" ? "$120.00" : "₦38,500.00"}
+                    {walletLoading && !isAuthenticated ? "" : `₦${walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   </span>
                   <p className="text-[11px] text-stone-300/80 mt-1">
-                    Applicable automatically toward any item or booking across {store.name}.
+                    {isAuthenticated ? `Apply your credit at checkout on ${store.name}.` : "Sign in to see your store credit and refunds."}
                   </p>
                 </div>
 
@@ -935,10 +1009,10 @@ export default function StickySidebarNav() {
                     }}
                     className="flex-1 py-2 rounded-xl bg-white text-zinc-950 hover:bg-stone-100 font-bold text-xs transition-colors shadow-xs cursor-pointer text-center"
                   >
-                    Apply Credit to Bag
+                    Use Credit at Checkout
                   </button>
                   <button
-                    onClick={() => setRefundFormOpen(!refundFormOpen)}
+                    onClick={() => { setRefundSubmitted(false); setRefundError(null); setRefundFormOpen(!refundFormOpen); }}
                     className="flex-1 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs transition-colors border border-white/15 cursor-pointer text-center"
                   >
                     Request Refund
@@ -966,7 +1040,7 @@ export default function StickySidebarNav() {
                       <CheckCircle2 className="w-5 h-5 text-emerald-600 mx-auto" />
                       <p className="text-xs font-bold text-emerald-900">Refund Request Logged</p>
                       <p className="text-[11px] text-emerald-700 leading-relaxed">
-                        Refund reference #RF-9482 has been created. Funds return directly to your Store Wallet upon merchant verification.
+                        Your request was sent to the merchant. Approved refunds are credited to your Store Wallet.
                       </p>
                     </div>
                   ) : (
@@ -980,9 +1054,12 @@ export default function StickySidebarNav() {
                           onChange={(e) => setRefundOrderRef(e.target.value)}
                           className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs text-zinc-900 focus:outline-hidden"
                         >
-                          <option value="OF-8419">Order #OF-8419 (Delivered 3 days ago)</option>
-                          <option value="OF-7910">Order #OF-7910 (Delivered 1 week ago)</option>
-                          <option value="BK-4291">Booking #BK-4291 (Upcoming appointment)</option>
+                          <option value="">{walletOrders.length ? "Select an order" : "No eligible orders"}</option>
+                          {walletOrders.map((ord: any) => (
+                            <option key={ord.orderNumber} value={ord.orderNumber}>
+                              Order #{ord.orderNumber} (₦{Number(ord.rawAmount).toLocaleString()})
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -1001,10 +1078,12 @@ export default function StickySidebarNav() {
 
                       <button
                         type="submit"
+                        disabled={refundSubmitting || !refundOrderRef}
                         className="w-full py-2.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
                       >
-                        Submit Refund Request
+                        {refundSubmitting ? "Submitting..." : "Submit Refund Request"}
                       </button>
+                      {refundError && <p className="text-[11px] font-semibold text-rose-700">{refundError}</p>}
                     </form>
                   )}
                 </div>
@@ -1017,50 +1096,61 @@ export default function StickySidebarNav() {
                 </p>
 
                 <div className="space-y-2 text-xs">
-                  <div className="p-3 rounded-2xl bg-white border border-stone-200/80 shadow-2xs flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
-                        <RotateCcw className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-zinc-900">Refund #RF-9481 Approved</p>
-                        <p className="text-[11px] text-stone-500">Size Exchange Adjustment · Store Credit</p>
-                      </div>
+                  {!isAuthenticated ? (
+                    <button
+                      onClick={() => requireAuthModal("Sign in to view your store wallet and refunds.")}
+                      className="w-full p-3 rounded-2xl bg-white border border-stone-200/80 text-stone-700 font-bold cursor-pointer"
+                    >
+                      Sign in to view wallet activity
+                    </button>
+                  ) : walletTx.length === 0 && walletRefunds.length === 0 ? (
+                    <div className="p-3 rounded-2xl bg-white border border-stone-200/80 text-stone-500 text-center">
+                      No wallet activity yet.
                     </div>
-                    <span className="font-bold text-emerald-600">
-                      +{store.currency === "$" ? "$45.00" : "₦18,500.00"}
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-2xl bg-white border border-stone-200/80 shadow-2xs flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                        <CreditCard className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-zinc-900">Order #OF-8419 Redemption</p>
-                        <p className="text-[11px] text-stone-500">Applied at Checkout</p>
-                      </div>
-                    </div>
-                    <span className="font-bold text-stone-700">
-                      -{store.currency === "$" ? "$30.00" : "₦12,000.00"}
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-2xl bg-white border border-stone-200/80 shadow-2xs flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
-                        <Sparkles className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-zinc-900">Verified Customer Welcome</p>
-                        <p className="text-[11px] text-stone-500">Patron Tier Loyalty Credit</p>
-                      </div>
-                    </div>
-                    <span className="font-bold text-emerald-600">
-                      +{store.currency === "$" ? "$105.00" : "₦32,000.00"}
-                    </span>
-                  </div>
+                  ) : (
+                    <>
+                      {walletRefunds
+                        .filter((rf: any) => rf.status !== "APPROVED")
+                        .map((rf: any) => (
+                          <div key={rf.id} className="p-3 rounded-2xl bg-white border border-stone-200/80 shadow-2xs flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                                <RotateCcw className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-zinc-900">Refund request · Order #{rf.orderNumber}</p>
+                                <p className="text-[11px] text-stone-500">
+                                  {rf.status === "PENDING" ? "Awaiting merchant review" : "Declined"}
+                                  {rf.resolutionNote ? ` · ${rf.resolutionNote}` : ""}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="font-bold text-stone-500">₦{Number(rf.amount).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      {walletTx.map((tx: any) => {
+                        const isDebit = tx.type === "ORDER_DEBIT";
+                        return (
+                          <div key={tx.id} className="p-3 rounded-2xl bg-white border border-stone-200/80 shadow-2xs flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDebit ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}>
+                                {isDebit ? <CreditCard className="w-4 h-4" /> : <RotateCcw className="w-4 h-4" />}
+                              </div>
+                              <div>
+                                <p className="font-bold text-zinc-900">{tx.description || tx.type}</p>
+                                <p className="text-[11px] text-stone-500">
+                                  {new Date(tx.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                </p>
+                              </div>
+                            </div>
+                            <span className={`font-bold ${isDebit ? "text-stone-700" : "text-emerald-600"}`}>
+                              {isDebit ? "-" : "+"}₦{Number(tx.amount).toLocaleString()}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1068,9 +1158,9 @@ export default function StickySidebarNav() {
               <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-2xs flex items-start gap-3 text-xs text-stone-600">
                 <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-zinc-900 text-xs">Ofia Buyer Escrow Protection</h4>
+                  <h4 className="font-bold text-zinc-900 text-xs">Refunds & Store Credit</h4>
                   <p className="text-[11px] leading-relaxed mt-0.5">
-                    All customer refunds and size exchanges are backed by Ofia escrow. Store wallet credits never expire.
+                    Refund requests are reviewed by the merchant and credited to your Store Wallet once approved.
                   </p>
                 </div>
               </div>

@@ -293,9 +293,18 @@ function AccountPageInner() {
           <div className="bg-white rounded-3xl border border-stone-200/90 shadow-xl overflow-hidden">
             {/* Top Header */}
             <div className="bg-stone-50 text-stone-900 border-b border-stone-200 p-6 sm:p-8 text-center space-y-2">
-              <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto shadow-md">
-                <User className="w-6 h-6" />
-              </div>
+              {config?.logoUrl ? (
+                <img
+                  src={config.logoUrl}
+                  alt={dynamicStore?.name || tenantSlug || "Store logo"}
+                  referrerPolicy="no-referrer"
+                  className="h-14 max-w-[180px] object-contain mx-auto"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto shadow-md">
+                  <User className="w-6 h-6" />
+                </div>
+              )}
               <h1 className="font-dropa text-2xl sm:text-3xl font-bold">
                 Customer Account & Order Portal
               </h1>
